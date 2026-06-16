@@ -13,7 +13,7 @@ Rails.application.routes.draw do
   resources :clients do
     resources :contacts, only: %i[new create edit update destroy]
   end
-  get "projects", to: "pages#placeholder", as: :projects
+  resources :projects
   get "tasks",    to: "pages#placeholder", as: :tasks
   get "demands",  to: "pages#placeholder", as: :demands
   get "settings", to: "pages#placeholder", as: :settings

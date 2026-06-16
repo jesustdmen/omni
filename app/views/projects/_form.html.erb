@@ -1,0 +1,25 @@
+<%= form_with model: project do |f| %>
+  <% if project.errors.any? %>
+    <div class="errors">
+      <p><%= pluralize(project.errors.count, "erro") %> impediram salvar:</p>
+      <ul>
+        <% project.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :client_id, "Cliente" %><br>
+    <%= f.collection_select :client_id, Client.order(:name), :id, :name, prompt: "Selecione um cliente" %>
+  </div>
+  <div><%= f.label :name, "Nome" %><br><%= f.text_field :name %></div>
+  <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
+  <div><%= f.label :start_date, "Início" %><br><%= f.date_field :start_date %></div>
+  <div><%= f.label :end_date, "Término" %><br><%= f.date_field :end_date %></div>
+  <div><%= f.label :status, "Status" %><br><%= f.text_field :status %></div>
+  <div><%= f.label :budget, "Orçamento" %><br><%= f.text_field :budget %></div>
+
+  <div><%= f.submit %></div>
+<% end %>

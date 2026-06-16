@@ -1,5 +1,6 @@
 class Client < ApplicationRecord
   has_many :contacts, dependent: :destroy
+  has_many :projects, dependent: :destroy
 
   before_validation :normalize_cnpj
 

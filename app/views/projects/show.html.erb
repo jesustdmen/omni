@@ -1,0 +1,17 @@
+<% content_for :title, @project.name %>
+<h1><%= @project.name %></h1>
+
+<dl>
+  <dt>Cliente</dt><dd><%= link_to @project.client.name, @project.client %></dd>
+  <dt>Status</dt><dd><%= @project.status %></dd>
+  <dt>Descrição</dt><dd><%= @project.description.presence || "—" %></dd>
+  <dt>Início</dt><dd><%= @project.start_date || "—" %></dd>
+  <dt>Término</dt><dd><%= @project.end_date || "—" %></dd>
+  <dt>Orçamento</dt><dd><%= @project.budget.presence || "—" %></dd>
+</dl>
+
+<p>
+  <%= link_to "Editar", edit_project_path(@project) %> ·
+  <%= link_to "Excluir", @project, data: { turbo_method: :delete, turbo_confirm: "Excluir este projeto?" } %>
+</p>
+<p><%= link_to "Voltar", projects_path %></p>
