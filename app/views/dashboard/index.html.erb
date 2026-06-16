@@ -1,0 +1,5 @@
+<% content_for :title, "Dashboard" %>
+<h1>Dashboard</h1>
+<p>Bem-vindo, <%= current_user.username %>.</p>
+<p>Fundação Rails (Fase 1) operacional. Módulos de domínio chegam na Fase 2+.</p>
+<%= button_to "Sair", destroy_user_session_path, method: :delete %>

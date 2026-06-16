@@ -1,0 +1,3 @@
+# Sem fixtures de usuário — os testes criam usuários explicitamente
+# (Devise hash + custo bcrypt configurado em zz_devise_overrides.rb).
+# Fixtures vazias evitam violar os índices únicos de email/username.

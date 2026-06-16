@@ -1,0 +1,39 @@
+# PostgreSQL — Omni/Continuity (Fase 1).
+# Conexão com o container `omni_db` na rede `omni_net` (defaults sobrescrevíveis por ENV).
+# Um banco por ambiente; Solid Queue roda no banco primário (ADR-005).
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DB_HOST") { "omni_db" } %>
+  username: <%= ENV.fetch("DB_USERNAME") { "omni" } %>
+  password: <%= ENV.fetch("DB_PASSWORD") { "omni_dev" } %>
+
+development:
+  <<: *default
+  database: omni_development
+
+test:
+  <<: *default
+  database: omni_test
+
+# Produção fica como referência (não exercida na Fase 1). Mantém separação de
+# cache/queue/cable apenas para deploy futuro; ajustar quando for a fase de deploy.
+production:
+  primary: &primary_production
+    <<: *default
+    database: omni_production
+    username: omni
+    password: <%= ENV["APP_DATABASE_PASSWORD"] %>
+  cache:
+    <<: *primary_production
+    database: omni_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: omni_production_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    database: omni_production_cable
+    migrations_paths: db/cable_migrate
