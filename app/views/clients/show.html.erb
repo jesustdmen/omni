@@ -1,0 +1,37 @@
+<% content_for :title, @client.name %>
+<h1><%= @client.name %></h1>
+
+<dl>
+  <dt>Nome fantasia</dt><dd><%= @client.trade_name || "—" %></dd>
+  <dt>CNPJ</dt><dd><%= @client.cnpj || "—" %></dd>
+  <dt>Telefone</dt><dd><%= @client.phone || "—" %></dd>
+  <dt>Endereço</dt><dd><%= @client.address || "—" %></dd>
+  <dt>Status</dt><dd><%= @client.status %></dd>
+  <dt>Workspace paths</dt><dd><%= @client.workspace_paths.join(", ").presence || "—" %></dd>
+</dl>
+
+<p>
+  <%= link_to "Editar", edit_client_path(@client) %> ·
+  <%= link_to "Excluir", @client, data: { turbo_method: :delete, turbo_confirm: "Excluir este cliente?" } %>
+</p>
+
+<h2>Contatos</h2>
+<p><%= link_to "Novo contato", new_client_contact_path(@client) %></p>
+
+<% if @client.contacts.any? %>
+  <ul>
+    <% @client.contacts.order(:name).each do |contact| %>
+      <li>
+        <%= contact.name %> &lt;<%= contact.email %>&gt;
+        <%= "★ primário" if contact.is_primary %> ·
+        <%= link_to "Editar", edit_client_contact_path(@client, contact) %> ·
+        <%= link_to "Excluir", client_contact_path(@client, contact),
+              data: { turbo_method: :delete, turbo_confirm: "Excluir contato?" } %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>Nenhum contato.</p>
+<% end %>
+
+<p><%= link_to "Voltar", clients_path %></p>

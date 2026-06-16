@@ -16,3 +16,7 @@ module ActiveSupport
     end
   end
 end
+
+class ActionDispatch::IntegrationTest
+  include Devise::Test::IntegrationHelpers
+end

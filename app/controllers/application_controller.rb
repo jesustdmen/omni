@@ -12,7 +12,9 @@ class ApplicationController < ActionController::Base
 
   # Pundit (ADR-004): toda ação resourceful deve autorizar/escopar.
   # Controllers de fundação (dashboard/pages/health) e Devise são dispensados.
-  after_action :verify_authorized,    unless: :skip_pundit?
+  # Lambdas (não `only:`/`except:`) para não referenciar uma ação `index` inexistente
+  # em controllers sem index (Devise, contacts) — evita ActionNotFound.
+  after_action :verify_authorized, unless: -> { skip_pundit? || action_name == "index" }
   after_action :verify_policy_scoped, if: -> { action_name == "index" }, unless: :skip_pundit?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized

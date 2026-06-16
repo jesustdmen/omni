@@ -1,0 +1,25 @@
+<%= form_with model: client do |f| %>
+  <% if client.errors.any? %>
+    <div class="errors">
+      <p><%= pluralize(client.errors.count, "erro") %> impediram salvar:</p>
+      <ul>
+        <% client.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div><%= f.label :name, "Nome" %><br><%= f.text_field :name %></div>
+  <div><%= f.label :trade_name, "Nome fantasia" %><br><%= f.text_field :trade_name %></div>
+  <div><%= f.label :cnpj, "CNPJ" %><br><%= f.text_field :cnpj %></div>
+  <div><%= f.label :phone, "Telefone" %><br><%= f.text_field :phone %></div>
+  <div><%= f.label :address, "Endereço" %><br><%= f.text_field :address %></div>
+  <div><%= f.label :status, "Status" %><br><%= f.text_field :status %></div>
+  <div>
+    <%= f.label :workspace_paths_text, "Workspace paths (uma pasta por linha)" %><br>
+    <%= f.text_area :workspace_paths_text, rows: 4 %>
+  </div>
+
+  <div><%= f.submit %></div>
+<% end %>

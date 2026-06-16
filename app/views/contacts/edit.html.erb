@@ -1,0 +1,4 @@
+<% content_for :title, "Editar contato" %>
+<h1>Editar contato — <%= @client.name %></h1>
+<%= render "form", client: @client, contact: @contact %>
+<p><%= link_to "Voltar", @client %></p>

@@ -1,0 +1,23 @@
+<% content_for :title, "Clientes" %>
+<h1>Clientes</h1>
+<p><%= link_to "Novo cliente", new_client_path %></p>
+
+<table>
+  <thead>
+    <tr><th>Nome</th><th>CNPJ</th><th>Status</th><th>Ações</th></tr>
+  </thead>
+  <tbody>
+    <% @clients.each do |client| %>
+      <tr>
+        <td><%= link_to client.name, client %></td>
+        <td><%= client.cnpj || "—" %></td>
+        <td><%= client.status %></td>
+        <td><%= link_to "Editar", edit_client_path(client) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @clients.empty? %>
+  <p>Nenhum cliente ainda.</p>
+<% end %>

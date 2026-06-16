@@ -9,7 +9,10 @@ Rails.application.routes.draw do
 
   # Itens da sidebar — placeholders da Fundação (Fase 1).
   # O domínio real (clientes/projetos/tarefas/demandas) chega na Fase 2+.
-  get "clients",  to: "pages#placeholder", as: :clients
+  # Clientes + Contatos aninhados (F2.1).
+  resources :clients do
+    resources :contacts, only: %i[new create edit update destroy]
+  end
   get "projects", to: "pages#placeholder", as: :projects
   get "tasks",    to: "pages#placeholder", as: :tasks
   get "demands",  to: "pages#placeholder", as: :demands
