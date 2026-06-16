@@ -1,0 +1,25 @@
+<% content_for :title, "Tarefas" %>
+<h1>Tarefas</h1>
+<p><%= link_to "Nova tarefa", new_task_path %></p>
+
+<table>
+  <thead>
+    <tr><th>Título</th><th>Cliente</th><th>Projeto</th><th>Tipo</th><th>Status</th><th>Ações</th></tr>
+  </thead>
+  <tbody>
+    <% @tasks.each do |task| %>
+      <tr>
+        <td><%= link_to task.title, task %></td>
+        <td><%= task.client.name %></td>
+        <td><%= task.project&.name || "—" %></td>
+        <td><%= task.type %></td>
+        <td><%= task.status %></td>
+        <td><%= link_to "Editar", edit_task_path(task) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @tasks.empty? %>
+  <p>Nenhuma tarefa ainda.</p>
+<% end %>

@@ -1,0 +1,38 @@
+<%= form_with model: task do |f| %>
+  <% if task.errors.any? %>
+    <div class="errors">
+      <p><%= pluralize(task.errors.count, "erro") %> impediram salvar:</p>
+      <ul>
+        <% task.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :client_id, "Cliente" %><br>
+    <%= f.collection_select :client_id, Client.order(:name), :id, :name, prompt: "Selecione um cliente" %>
+  </div>
+  <div>
+    <%= f.label :project_id, "Projeto (opcional)" %><br>
+    <%= f.select :project_id,
+          options_for_select(
+            Project.includes(:client).order(:name).map { |p| ["#{p.name} (#{p.client.name})", p.id] },
+            task.project_id
+          ),
+          include_blank: "— sem projeto —" %>
+  </div>
+  <div><%= f.label :title, "Título" %><br><%= f.text_field :title %></div>
+  <div>
+    <%= f.label :type, "Tipo" %><br>
+    <%= f.select :type, options_for_select(Task::TYPES.map { |t| [t.humanize, t] }, task.type), prompt: "Selecione o tipo" %>
+  </div>
+  <div>
+    <%= f.label :status, "Status" %><br>
+    <%= f.select :status, options_for_select(Task.statuses.keys.map { |s| [s.humanize, s] }, task.status) %>
+  </div>
+  <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
+
+  <div><%= f.submit %></div>
+<% end %>

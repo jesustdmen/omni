@@ -1,5 +1,6 @@
 class Project < ApplicationRecord
   belongs_to :client
+  has_many :tasks, dependent: :nullify
 
   # Default em memória (espelha o default do banco) para satisfazer a validação
   # de presença em registros novos.

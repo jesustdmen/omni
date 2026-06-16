@@ -1,0 +1,44 @@
+<% content_for :title, @task.title %>
+
+<div class="row between itc">
+  <h1><%= @task.title %></h1>
+  <span><%= link_to "Editar", edit_task_path(@task) %> ·
+    <%= link_to "Excluir", @task, data: { turbo_method: :delete, turbo_confirm: "Excluir tarefa?" } %></span>
+</div>
+
+<%# Navegação de abas — apenas "Detalhes" tem conteúdo real nesta fase (F2.3). %>
+<nav class="tabs">
+  <span class="tab active">Detalhes</span>
+  <span class="tab">Conversas</span>
+  <span class="tab">Time entries</span>
+  <span class="tab">Histórico</span>
+  <span class="tab">Demanda</span>
+</nav>
+
+<section class="tab-panel" id="tab-detalhes">
+  <dl>
+    <dt>Título</dt><dd><%= @task.title %></dd>
+    <dt>Tipo</dt><dd><%= @task.type %></dd>
+    <dt>Status</dt><dd><%= @task.status %></dd>
+    <dt>Cliente</dt><dd><%= link_to @task.client.name, @task.client %></dd>
+    <dt>Projeto</dt><dd><%= @task.project ? link_to(@task.project.name, @task.project) : "—" %></dd>
+    <dt>Descrição</dt><dd><%= @task.description.presence || "—" %></dd>
+    <dt>Conversas (contador)</dt><dd><%= @task.conversation_count %></dd>
+    <dt>Última conversa</dt><dd><%= @task.last_conversation_at || "—" %></dd>
+  </dl>
+</section>
+
+<section class="tab-panel placeholder" id="tab-conversas">
+  <p><em>Conversas — em breve (Fase 5).</em></p>
+</section>
+<section class="tab-panel placeholder" id="tab-time">
+  <p><em>Time entries — em breve (fase futura).</em></p>
+</section>
+<section class="tab-panel placeholder" id="tab-historico">
+  <p><em>Histórico — em breve (fase futura).</em></p>
+</section>
+<section class="tab-panel placeholder" id="tab-demanda">
+  <p><em>Demanda — em breve (fase futura).</em></p>
+</section>
+
+<p><%= link_to "Voltar", tasks_path %></p>

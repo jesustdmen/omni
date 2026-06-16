@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_16_212001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_16_213001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -179,6 +179,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_212001) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "client_id", null: false
+    t.integer "conversation_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "last_conversation_at"
+    t.uuid "project_id"
+    t.string "status", default: "todo", null: false
+    t.string "title", null: false
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_tasks_on_client_id"
+    t.index ["created_at"], name: "index_tasks_on_created_at"
+    t.index ["project_id"], name: "index_tasks_on_project_id"
+    t.index ["status"], name: "index_tasks_on_status"
+    t.index ["type"], name: "index_tasks_on_type"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'todo'::character varying, 'in_progress'::character varying, 'done'::character varying, 'canceled'::character varying]::text[])", name: "tasks_status_check"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
@@ -205,4 +224,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_212001) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "tasks", "clients", on_delete: :cascade
+  add_foreign_key "tasks", "projects", on_delete: :nullify
 end
