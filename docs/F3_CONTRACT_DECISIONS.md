@@ -88,3 +88,22 @@ Migrations + importer idempotente focados **somente** em: `conversations`, `work
 (§3), join com `session_titles.json`, contadores e status `ok/partial/error`; testes com o
 **corpus sintético** em `test/fixtures/normalized_corpus/`. **Sem turnos, sem UI final, sem F4/F5,
 sem dados reais.**
+
+## 6. Resolução de folders de workspace (F3.3) — exceção controlada ao ADR-008
+- **Necessidade:** `output/normalized/` **não** carrega o mapa `workspace_hash → folder`; ele só existe
+  na área **`raw/.../workspaceStorage/<hash>/workspace.json`**. Resolver `workspace_maps.folder` exige
+  ler essa área.
+- **Decisão (exceção autorizada):** o serviço `Sync::ResolveWorkspaceFolders` lê **somente** os
+  `workspace.json` (`{ "folder": "file://…" }`) em **modo leitura (`:ro`)** — uma exceção **controlada**
+  ao princípio "consumir só `output/normalized/`" (ADR-007/008). **Não** lê conversas/turnos/`sessions.jsonl`/shards
+  e **não** executa o pipeline. *(Se for desejável formalizar, cabe um ADR-020 curto — sugerido, não criado.)*
+- **Normalização do `folder`:** decodifica a URI (`file:///c%3A/AtivaLocal` → `c:/AtivaLocal`).
+- **Privacidade:** paths sob `Users/<nome>` (ou `home/<nome>`) têm o usuário **redigido para `<USER>`**
+  antes de gravar (ex.: `c:/Users/Jesus/…` → `c:/Users/<USER>/…`). Paths fora de home ficam completos/decodificados.
+- **Escopo:** **atualiza apenas** `WorkspaceMap` já existentes (vistos em conversas); **não cria** os
+  workspaces extras do snapshot. Idempotente; pula `workspace.json` sem `folder`; parse defensivo.
+
+## Resultado da F3.3 (`development`, 2026-06-17)
+- Fonte: `raw/snapshot_20260616_112333/workspaceStorage` (`:ro`); backup `app/tmp/dev_wsmaps_backup_pre_f33_20260617_161045.sql`.
+- 1ª execução: `scanned=98, resolved=83, updated=83, unchanged=0, not_found_in_db=11, skipped_without_folder=4, errors=0`. 2ª (idempotente): `updated=0, unchanged=83`.
+- **`WorkspaceMap.count=86` (sem novos)**, **`orphan` 86 → 3** (resíduo = `workspace.json` sem `folder`). `Conversation.count=1635`, `SyncRun.count=4` e domínio **inalterados**. **0** folders com usuário cru; redação `<USER>` aplicada.

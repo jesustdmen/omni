@@ -46,7 +46,8 @@
 - **F3.1 (2026-06-17, `fe291d9`) — CONCLUÍDA:** tabelas `conversations`/`workspace_maps`/`sync_runs`/`sync_run_items` + serviço `Sync::ImportSummaries` + rake `sync:summaries`, **idempotente por `thread_id`**, **só summaries/metadados** (turnos/`sessions.jsonl`/shards fora — ADR-018).
 - **F3.2 (2026-06-17) — CONCLUÍDA:** **primeiro sync real controlado** de `summaries.jsonl` (`output/normalized/`, allowlist `:ro` + `pg_dump`), em `development`: **1635 conversas**, `status=partial` (1 linha sem `thread_id`), idempotente (re-sync `imported=0/updated=1635`). Domínio preservado.
 - **F3.2.1 (2026-06-17, `bd0a9ce`) — CONCLUÍDA:** correção do merge de escalares com `last_ts` nulo (regra de empate/ordem-de-leitura + backfill): `source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 (limitação do dado).
-- **Ainda FORA da Fase 3:** turnos (`sessions.jsonl`/shards lazy — antes da F5), render de mensagens, vínculo conversa↔tarefa (F4), UI/triagem (F5/F6). **Próximo:** **F3.3** resolver `workspace_maps.folder` (a partir de `raw/.../workspace.json`).
+- **F3.3 (2026-06-17) — CONCLUÍDA:** `Sync::ResolveWorkspaceFolders` resolveu `workspace_maps.folder` a partir de `raw/.../workspaceStorage/<hash>/workspace.json` (**exceção controlada ao ADR-008**, read-only; usuário redigido `<USER>`): **órfãos 86 → 3**; `WorkspaceMap=86` (sem novos); domínio/sync inalterados.
+- **Ainda FORA da Fase 3:** turnos (`sessions.jsonl`/shards lazy — antes da F5), render de mensagens, vínculo conversa↔tarefa (F4), UI/triagem (F5/F6).
 - **Entregáveis:** `conversations` (metadados), `workspace_maps`, `sync_runs`/`sync_run_items`; turnos lazy; streaming + upsert por `thread_id`; resiliência a linha malformada.
 - **Critérios de aceite:** re-sync não duplica; 240 MB sem OOM; linha inválida → `partial`.
 - **Dependências BLOQUEANTES da Fase 3:**

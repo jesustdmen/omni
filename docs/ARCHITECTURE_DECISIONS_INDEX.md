@@ -23,6 +23,7 @@
 | ADR-017 | CNPJ nullable + partial unique | ✅ Aceito | 2026-06-16 | 2 | Baixo | — | normalizar `''`→NULL na migração |
 | ADR-018 | Addendum ao ADR-009 — shards por arquivo-fonte; turnos lazy fora da F3 | ✅ Aceito | 2026-06-17 | 3 | Médio | 009,008 | decidir índice `thread_id→offset/shard` antes da F5 |
 | ADR-019 | Consolidação em repositório único (`app/`) + docs em `app/docs/` | ✅ Aceito | 2026-06-17 | 3 | Médio | — | configurar remoto único e primeiro push |
+| ADR-020 | Exceção read-only para `workspaceStorage` (resolução de folders) | ✅ Aceito | 2026-06-17 | 3 | Médio | 008,007 | remover se RepoB emitir `workspace_maps.json` normalizado |
 
 ## Manutenção
 - Ao aceitar um ADR: mudar Status para **Aceito** e preencher *Aprovado em*.

@@ -5,13 +5,13 @@
 ## Status geral
 - **Fase atual:** Fase 2 — **domínio CRUD COMPLETO (2026-06-17)**: F2.1–F2.4 (Client+Contact, Project, Task base + `/tasks/:id`, Demand + ConvertDemand) + **F2.5 TimeEntry (WD-07) concluída**. M1 fechado. **F2.UI — baseline visual hi-fi provisório aprovado (2026-06-17)** (apresentação apenas; não é a UI final, que cabe à Fase 5; sem features novas). **M2 pleno (contagens origem×destino) ainda pendente de migração/validação de dados reais — não declarar M2 100% fechado.**
 - **Próxima fase:** Fase 3 — sync de conversas normalizadas. **F3.0/F3.1/F3.2/F3.2.1 CONCLUÍDAS e PUBLICADAS (2026-06-17, até commit `bd0a9ce`).** **F3.2 = primeiro sync real controlado de `summaries.jsonl`** (1635 conversas, metadados). **F3.2.1 = correção do merge** (escalares com `last_ts` nulo). Próximo (sob autorização): **F3.3** (resolver `workspace_maps.folder`) e/ou migração de dados reais para o **M2 pleno**.
-- **Status geral:** Domínio CRUD completo (F2). **Conversas (metadados) com sync real entregue**: 1635 conversas importadas de `summaries.jsonl` (idempotente); `source_nil=0`, `workspace_hash_nil=13`, `title_nil=1067` (limitação do dado, não bug); `WorkspaceMap=86` (todos órfãos — folders na F3.3). **Turnos/UI/vínculo conversa↔tarefa FORA** (ADR-018; F4/F5). **M3 parcial** (metadados sim; módulo completo de conversas não). 161 testes verdes; lint/brakeman/bundler-audit verdes.
+- **Status geral:** Domínio CRUD completo (F2). **Conversas (metadados) com sync real entregue**: 1635 conversas de `summaries.jsonl` (idempotente); `source_nil=0`, `workspace_hash_nil=13`, `title_nil=1067` (limitação do dado). **F3.3 resolveu folders de workspace** (exceção controlada ao ADR-008, read-only): `WorkspaceMap=86`, **órfãos 86 → 3** (83 resolvidos; usuário redigido `<USER>`). **Turnos/UI/vínculo conversa↔tarefa FORA** (ADR-018; F4/F5). **M3 parcial** (metadados+folders; módulo completo de conversas não). 162 testes verdes; lint/brakeman/bundler-audit verdes.
 - **Stack provisionada:** Rails 8.1.3 + PostgreSQL 16 via Docker (sem instalar nada no host; `_origem/` intocado).
 - **Bloqueadores da Fase 2:** Nenhum, exceto autorização explícita do usuário.
 - **Bloqueadores futuros (Fase 3):** **resolvidos na F3.0/F3.1/F3.2** — corpus; `thread_id → shard` via **ADR-018** (turnos fora); `schema_version` por-run; importer idempotente; **sync real validado** (backup + allowlist `:ro`). Próximos itens (não bloqueantes): **F3.3** resolver folders de workspace; opcional limpar `sync_runs/sync_run_items` de auditoria no dev.
 - **Ação de segurança:** dump do RepoA fora do versionamento — protegido no repo de planejamento via `.gitignore`; RepoA tratado como referência/leitura.
-- **Última decisão tomada:** **F3.2 + F3.2.1 concluídas e publicadas (2026-06-17, commit `bd0a9ce`)** — primeiro sync real de `summaries.jsonl` (1635 conversas, metadados) + correção do merge de escalares com `last_ts` nulo (backfill idempotente; `source_nil` 1069→0).
-- **Próxima decisão necessária:** autorizar a **F3.3** (resolver `workspace_maps.folder` a partir de `raw/.../workspace.json`) **ou** a migração/validação de dados reais do domínio para fechar o **M2 pleno**.
+- **Última decisão tomada:** **F3.3 concluída (2026-06-17)** — `Sync::ResolveWorkspaceFolders` resolveu `workspace_maps.folder` a partir de `raw/.../workspace.json` (exceção controlada ao ADR-008, read-only; usuário redigido `<USER>`): órfãos 86→3. *(commit/push pendentes de revisão.)* Antes: F3.2/F3.2.1 (sync real de metadados; `bd0a9ce`).
+- **Próxima decisão necessária:** (a) opcional **ADR-020** formalizando a exceção ao ADR-008; (b) **migração/validação de dados reais do domínio** para fechar o **M2 pleno**; ou (c) **Fase 4** (vínculo conversa↔tarefa).
 
 ## Semáforo por área
 | Área | Status | Observação |
@@ -21,7 +21,7 @@
 | Banco de dados | 🟢 Verde | Postgres 16 (omni_db) + migration de `users` aplicada; domínio na F2 |
 | Migração Repo A | 🟡 Amarelo | Domínio CRUD completo (Client+Contact+Project+Task+Demand+ConvertDemand+**TimeEntry**); **migração/validação de dados reais pendente** (M2 pleno) |
 | Pipeline Repo B | 🟢 Verde | Externo, estável, intocado |
-| Importação de conversas | 🟡 Amarelo | **F3.0/F3.1/F3.2/F3.2.1 publicadas** (`bd0a9ce`): **sync real de metadados** entregue — 1635 conversas (`source_nil=0`, `workspace_hash_nil=13`, `title_nil=1067` por limitação do dado); `WorkspaceMap=86` (órfãos). **Turnos/UI/vínculo FORA** (ADR-018; F4/F5). M3 parcial (metadados) |
+| Importação de conversas | 🟡 Amarelo | **F3.0→F3.3** (sync real de metadados: 1635 conversas; `source_nil=0`/`workspace_hash_nil=13`/`title_nil=1067`). **F3.3** resolveu folders (`orphan` 86→3; usuário redigido). **Turnos/UI/vínculo FORA** (ADR-018; F4/F5). M3 parcial (metadados+folders) |
 | Vínculo conversa/tarefa | ⬜ Cinza | Modelado; não iniciado |
 | UI | 🟡 Amarelo | **F2.UI**: baseline visual hi-fi provisório nas telas existentes (shell/sidebar/topbar, dashboard, listas, detalhes, forms). Não é a UI final — UI unificada real fica na Fase 5 |
 | Testes | 🟡 Amarelo | Fundação coberta (auth/authz/CSRF/rate-limit/job); corpus de parser pendente (F3) |

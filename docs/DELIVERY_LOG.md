@@ -9,6 +9,25 @@
 
 ## Entradas
 
+## 2026-06-17 — [Fase 3 · F3.3] Resolução de folders de workspace — CONCLUÍDA (development)
+### Resumo
+Resolveu `workspace_maps.folder` a partir dos `workspace.json` reais do RepoB. **Exceção controlada ao ADR-008**: lê **somente** o mapa `workspace_hash → folder` da área `raw/.../workspaceStorage/<hash>/workspace.json` em **modo leitura (`:ro`)** — **não** lê conversas/turnos/`sessions.jsonl`/shards e **não** executa o pipeline.
+### Features entregues
+- **Serviço** `Sync::ResolveWorkspaceFolders`: lê `<base>/<hash>/workspace.json`; hash = nome da pasta; parse defensivo; decodifica URI (`file:///c%3A/AtivaLocal` → `c:/AtivaLocal`); **redige usuário** em paths sob `Users/<nome>` → `<USER>` (privacidade no banco); **atualiza só `WorkspaceMap` existentes** (não cria os extras do snapshot); pula `workspace.json` sem `folder`; idempotente; relatório (`scanned/resolved/updated/unchanged/not_found_in_db/skipped_without_folder/errors`).
+- **Rake** `bin/rails 'sync:workspace_folders[path]'`.
+### Alterações realizadas (repo app/)
+`app/services/sync/resolve_workspace_folders.rb` (novo); `lib/tasks/sync.rake` (+task); `test/services/sync/resolve_workspace_folders_test.rb` (novo); docs (`F3_CONTRACT_DECISIONS.md` §6, este log, `PROJECT_STATUS.md`, `ROADMAP.md`). **Sem migrations/schema/models/UI.**
+### Execução real (development)
+Fonte: `raw/snapshot_20260616_112333/workspaceStorage` (`:ro`); backup `app/tmp/dev_wsmaps_backup_pre_f33_20260617_161045.sql`. 1ª execução: `scanned=98, resolved=83, updated=83, unchanged=0, not_found_in_db=11, skipped_without_folder=4, errors=0`. 2ª (idempotente): `updated=0, unchanged=83`. **`orphan` 86 → 3** (resíduo = `workspace.json` sem `folder`); `WorkspaceMap=86` (sem novos). `Conversation.count=1635`, `SyncRun.count=4`, domínio **inalterados**. **0** folders com usuário cru; `<USER>` aplicado.
+### Testes/validações
+`bin/rails test`: 162 runs, 555 assertions, 0 falhas/erros/skips. rubocop 0 ofensas (101 arquivos); brakeman 0; bundler-audit 0. Teste do serviço cobre: decodificação URI, redação de home, update-only, não-cria-extra, pula sem-folder, idempotência, parse defensivo.
+### Pendências
+3 workspaces permanecem órfãos (sem `folder` no `workspace.json`). **M3 segue parcial** (metadados + folders; módulo completo de conversas — turnos/UI/vínculo — fora, F4/F5). Possível **ADR-020** para formalizar a exceção ao ADR-008 (sugerido, não criado).
+### Riscos
+Nenhum novo. Exceção ADR-008 é controlada (read-only, só hash→folder).
+### Próximo passo
+Registrado. Depois: ADR-020 (se desejado) e/ou migração de dados reais do domínio (M2 pleno) e/ou Fase 4 (vínculo).
+
 ## 2026-06-17 — [Fase 3 · F3.2 + F3.2.1] Primeiro sync real de summaries + correção do merge — CONCLUÍDAS e PUBLICADAS
 ### Resumo
 Primeiro **sync real controlado** de `summaries.jsonl` (metadados de conversa) em `development`, e a correção **F3.2.1** de um bug de merge exposto pelo dado real. Publicado até o commit **`bd0a9ce`**. **Só metadados** — turnos/`sessions.jsonl`/shards/UI/vínculo continuam fora (ADR-018).

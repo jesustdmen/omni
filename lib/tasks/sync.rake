@@ -21,4 +21,16 @@ namespace :sync do
     puts "  conversations=#{Conversation.count} workspace_maps=#{WorkspaceMap.count} " \
          "(órfãos=#{WorkspaceMap.orphan.count})"
   end
+
+  desc "F3.3 — resolve workspace_maps.folder a partir de <workspaceStorage>/<hash>/workspace.json " \
+       "(read-only; atualiza só existentes). Uso: bin/rails 'sync:workspace_folders[/caminho/workspaceStorage]'"
+  task :workspace_folders, [ :path ] => :environment do |_task, args|
+    path = args[:path].to_s
+    abort("Informe o caminho da pasta workspaceStorage") if path.empty?
+
+    report = Sync::ResolveWorkspaceFolders.call(workspace_storage_path: path)
+
+    puts "ResolveWorkspaceFolders — #{report.inspect}"
+    puts "  workspace_maps=#{WorkspaceMap.count} (órfãos=#{WorkspaceMap.orphan.count})"
+  end
 end
