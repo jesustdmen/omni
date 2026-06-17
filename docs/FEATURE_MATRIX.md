@@ -1,0 +1,92 @@
+# Omni/Continuity — Matriz de Features
+
+> **Baseline 2026-06-16.** Status: Não iniciado · Em análise · Em desenvolvimento · Em validação · Entregue · Bloqueado · Fora de escopo · Pronta p/ iniciar.
+> **Governança aprovada.** Software **em progresso (Fase 2)**: WD-01 a WD-07 entregues nos recortes F2.1–F2.5 (Client/Contact, Project, Task base + `/tasks/:id`, Demand + ConvertDemand, **TimeEntry**) — **domínio CRUD completo**. **M2 pleno (contagens origem×destino) ainda pendente de migração/validação de dados reais — não declarar M2 100% fechado.** Demais features conforme o status na tabela.
+> **F2.UI (2026-06-17):** aplicado um **baseline visual hi-fi provisório** sobre as telas já existentes — **não cria features novas** e **não é a UI final** (a UI unificada real é a Fase 5). Ver [DELIVERY_LOG.md](DELIVERY_LOG.md).
+
+## Governança / Fase 0 (documentação e decisão)
+
+| ID | Item | Tipo | Status |
+|---|---|---|---|
+| GOV-00 | Diagnóstico técnico | Documentação | ✅ Entregue (aprovado) |
+| GOV-01 | ADRs 001–017 | Decisão | ✅ Aprovado (Aceito) |
+| GOV-02 | Modelo de dados + DDL de revisão | Documentação | ✅ Aprovado (planejado, não executado) |
+| GOV-03 | Estratégia de import | Documentação | ✅ Aprovado |
+| GOV-04 | 6 documentos de controle | Documentação | ✅ Aprovado (baseline) |
+| GOV-05 | Corpus de caracterização | Documentação/plano | 🟡 Definido; criação pendente (pré-F3) |
+| GOV-06 | Fronteiras do projeto documentadas | Documentação | ✅ Aprovado |
+
+## Domínio de trabalho
+
+| ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
+|---|---|---|---|---|---|---|---|
+| WD-01 | Clientes (+workspace_paths, cnpj nullable) | Repo A/Mockup | 2 | MVP | ✅ Entregue (F2.1) | M1 | CRUD + partial-unique cnpj + GIN |
+| WD-02 | Contatos | Repo A | 2 | MVP | ✅ Entregue (F2.1) | WD-01 | CRUD + FK cascade |
+| WD-03 | Projetos | Repo A | 2 | MVP | ✅ Entregue (F2.2) | WD-01 | CRUD + FK |
+| WD-04 | Tarefas (+counters, página /tasks/:id) | Repo A/Mockup | 2 | MVP | ✅ Entregue (F2.3 base) | WD-01,WD-03 | CRUD + abas + counters |
+| WD-05 | Demandas | Repo A | 2 | MVP | ✅ Entregue (F2.4) | WD-01 | CRUD + filtros |
+| WD-06 | Conversão demanda→tarefa (transacional) | Repo A | 2 | MVP | ✅ Entregue (F2.4) | WD-04,WD-05 | Task+demand atômico |
+| WD-07 | Apontamento de horas (+conversation_id) | Repo A/Mockup | 2 | MVP | ✅ Entregue (F2.5) | WD-04 | CRUD + soma duration |
+| WD-08 | Usuários (migração Devise) | Repo A | 1 | MVP | ✅ Entregue (M1) | M0 ✅ | model User + Devise (custo bcrypt 10 + re-hash); migração de dados na F2 |
+| WD-09 | Permissões (Pundit) | Mockup | 1 | MVP | ✅ Entregue (M1) | WD-08 | Pundit + verify_authorized; UserPolicy testada |
+
+## Conversas
+
+| ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
+|---|---|---|---|---|---|---|---|
+| CV-01 | Import `summaries.jsonl` | Repo B/Mockup | 3 | MVP | Não iniciado | M2 + corpus + validação shard | linhas válidas == count |
+| CV-02 | Import `sessions.jsonl` (turnos, lazy) | Repo B | 3/5 | MVP | Não iniciado | CV-01 | turnos == turn_count |
+| CV-03 | Títulos de sessão | Repo B | 3 | MVP | Não iniciado | CV-01 | títulos esperados |
+| CV-04 | Lista de conversas | Mockup/Viewer | 5 | MVP | Não iniciado | CV-01 | filtros funcionam |
+| CV-05 | Detalhe de conversa | Mockup/Viewer | 5 | MVP | Não iniciado | CV-02 | render ordenado |
+| CV-06 | Turnos ordenados (`seq`) | Repo B | 3/5 | MVP | Não iniciado | CV-02 | UNIQUE(conv,seq) |
+| CV-07 | Markdown sanitizado | Mockup | 5 | MVP | Não iniciado | CV-05 | payload XSS neutralizado |
+| CV-08 | Tool calls (tool_input escapado) | Repo B/Mockup | 5 | MVP | Não iniciado | CV-05 | tool_input nunca HTML |
+| CV-09 | Arquivos alterados | Repo B | 5 | v1 | Não iniciado | CV-05 | lista correta |
+| CV-10 | Tags (conversa) | Repo B/Mockup | 3/5 | MVP | Não iniciado | CV-01 | filtro por tag |
+
+## Vínculos
+
+| ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
+|---|---|---|---|---|---|---|---|
+| LK-01 | Vincular conversa↔tarefa | Mockup | 4 | MVP | Não iniciado | CV-01,WD-04 | link transacional |
+| LK-02 | Vínculo primário (exclusivo) | Mockup | 4 | MVP | Não iniciado | LK-01 | partial-unique ≤1 |
+| LK-03 | Vínculo por menção | Mockup | 4 | MVP | Não iniciado | LK-01 | não conta em contadores |
+| LK-04 | Auto-link (≥0.85) | Mockup | 4 | v1 | Não iniciado | LK-02, WS-map | auditado/reversível |
+| LK-05 | Sugestões de vínculo (scorer) | Mockup | 4 | v1 | Não iniciado | CV-01,WD-04 | faixas 0.55/0.85 |
+| LK-06 | Aceitar sugestão (lote) | Mockup | 6 | v1 | Não iniciado | LK-05 | lote atômico/item |
+| LK-07 | Desfazer vínculo | Mockup | 4/5 | MVP | Não iniciado | LK-01 | reversível + counter |
+| LK-08 | Auditoria de vínculo | Mockup | 4 | MVP | Não iniciado | LK-01 | log origin/created_by |
+
+## UI unificada
+
+> **Nota (F2.UI, 2026-06-17):** as telas existentes receberam um **baseline visual hi-fi provisório** (shell/sidebar/topbar, dashboard com callout+cards, listas, detalhes, formulários, `/tasks/:id` com abas placeholder). Isso é apenas apresentação: **UI-01..UI-11 permanecem como Fase 5 (UI unificada real)** e seguem com o status abaixo. Sem conversas/sync/scorer/triage/TimeEntry/import.
+
+| ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
+|---|---|---|---|---|---|---|---|
+| UI-01 | Dashboard | Mockup/Repo A | 5 | MVP | Não iniciado | WD-04,CV-01 | zonas renderizam |
+| UI-02 | Lista de tarefas | Repo A | 2 | MVP | Não iniciado | WD-04 | paridade Repo A |
+| UI-03 | Página `/tasks/:id` | Mockup | 2/5 | MVP | Não iniciado | WD-04 | abas navegáveis |
+| UI-04 | Aba Conversas | Mockup | 5 | MVP | Não iniciado | LK-01 | lista por kind |
+| UI-05 | Inbox de triagem | Mockup | 6 | v1 | Não iniciado | LK-05 | lote + atalhos |
+| UI-06 | Diário (view sob demanda) | Mockup/Viewer | 6 | v1 | Não iniciado | LK-01 | `?day=` mix |
+| UI-07 | Settings de sync | Mockup | 6 | v1 | Não iniciado | OP-03 | parcial/erro visíveis |
+| UI-08 | Workspaces órfãos | Mockup | 6 | v1 | Não iniciado | WS-map | órfão listável |
+| UI-09 | Modal de vínculo (Ctrl+L) | Mockup | 5 | MVP | Não iniciado | LK-01 | Turbo modal |
+| UI-10 | Criar tarefa de conversa | Mockup | 5 | MVP | Não iniciado | LK-01 | transação testada |
+| UI-11 | Handoff IA externa | Mockup | 6 | v1 | Não iniciado | UI-03 | contexto correto |
+
+## Operação
+
+| ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
+|---|---|---|---|---|---|---|---|
+| OP-01 | Sync manual (lê normalized) | Mockup | 3 | MVP | Não iniciado | CV-01 | lê sem disparar pipeline |
+| OP-02 | Sync agendado (agendador externo) | Mockup | 6 | v1 | Não iniciado | OP-01 | agenda dispara + Rails lê |
+| OP-03 | Histórico de sync | Mockup | 3 | MVP | Não iniciado | CV-01 | parcial/erro registrados |
+| OP-04 | Logs (redação de conteúdo) | Repo A/Novo | 1 | MVP | ✅ Entregue (M1) | M1 | filter_parameter_logging (passw/secret/token/email/…) |
+| OP-05 | Retenção (>30d) | Mockup | 6 | v1 | Não iniciado | CV-01 | vinculadas preservadas |
+| OP-06 | Backup (pg_dump pré-carga) | Novo | 2/7 | MVP | Não iniciado | M1 | backup antes de import |
+| OP-07 | Rollback | Novo | 7 | MVP | Não iniciado | OP-06 | reverter validado |
+| OP-08 | Testes + corpus | Novo | 1–7 | MVP | Em análise (corpus definido) | M0 | suíte verde |
+| OP-09 | CI | Repo A/Novo | 1 | MVP | ✅ Entregue (M1) | M1 | 4 jobs (scan_ruby/scan_js/lint/test) verdes localmente |
+| SEC-DUMP | Remover snapshot/dump do VCS + gitignore | Segurança | 1 | MVP | ✅ Entregue | — | planejamento protegido via .gitignore; RepoA = referência/leitura |

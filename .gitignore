@@ -33,3 +33,13 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Proteção defensiva contra dumps/snapshots/exportações de banco (higiene SEC-DUMP).
+# Não bloqueia arquivos do Rails; alvo são despejos de dados sensíveis.
+*.tgz
+*.tar
+*.dump
+*.backup
+*.bak
+*.sql
+postgres-volume-snapshot-*
+
