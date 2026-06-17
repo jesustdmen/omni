@@ -18,7 +18,7 @@
           <td><%= link_to entry.task.title, entry.task %></td>
           <td><%= entry.date %></td>
           <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
-          <td><%= entry.duration %></td>
+          <td><%= duration_label(entry.duration) %></td>
           <td><%= entry.is_running ? tag.span("Em execução", class: "badge badge--info") : tag.span("Parado", class: "badge badge--neutral") %></td>
           <td><%= link_to "Editar", edit_time_entry_path(entry), class: "btn btn--ghost btn--sm" %></td>
         </tr>

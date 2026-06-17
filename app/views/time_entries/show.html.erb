@@ -27,7 +27,7 @@
     <dt>Data</dt><dd><%= @time_entry.date %></dd>
     <dt>Início</dt><dd><%= @time_entry.start_time&.strftime("%d/%m/%Y %H:%M") %></dd>
     <dt>Término</dt><dd><%= @time_entry.end_time&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
-    <dt>Duração</dt><dd><%= @time_entry.duration %></dd>
+    <dt>Duração</dt><dd><%= duration_label(@time_entry.duration) %></dd>
     <dt>Em execução</dt><dd><%= @time_entry.is_running ? "Sim" : "Não" %></dd>
     <dt>Descrição</dt><dd><%= @time_entry.description.presence || "—" %></dd>
   </dl>

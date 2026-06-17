@@ -23,14 +23,14 @@
   </div>
 </div>
 
-<%# Navegação de abas — apenas "Detalhes" tem conteúdo real nesta fase (F2.3).
-    As demais permanecem como placeholders (ocultas por CSS até a Fase 5+). %>
+<%# Abas: "Detalhes" e "Time entries" têm conteúdo real; as demais são placeholders
+    intencionais (sinalizadas "em breve") até a Fase 5+. Sem troca dinâmica nesta fase. %>
 <nav class="tabs">
   <span class="tab active">Detalhes</span>
-  <span class="tab">Conversas</span>
+  <span class="tab soon">Conversas<span class="soon-flag">em breve</span></span>
   <span class="tab">Time entries</span>
-  <span class="tab">Histórico</span>
-  <span class="tab">Demanda</span>
+  <span class="tab soon">Histórico<span class="soon-flag">em breve</span></span>
+  <span class="tab soon">Demanda<span class="soon-flag">em breve</span></span>
 </nav>
 
 <section class="tab-panel" id="tab-detalhes">
@@ -42,17 +42,13 @@
       <dt>Cliente</dt><dd><%= link_to @task.client.name, @task.client %></dd>
       <dt>Projeto</dt><dd><%= @task.project ? link_to(@task.project.name, @task.project) : "—" %></dd>
       <dt>Descrição</dt><dd><%= @task.description.presence || "—" %></dd>
-      <dt>Conversas (contador)</dt><dd><%= @task.conversation_count %></dd>
+      <dt>Conversas</dt><dd><%= @task.conversation_count %></dd>
       <dt>Última conversa</dt><dd><%= @task.last_conversation_at || "—" %></dd>
     </dl>
   </div>
 </section>
 
-<section class="tab-panel placeholder" id="tab-conversas">
-  <p><em>Conversas — em breve (Fase 5).</em></p>
-</section>
-<%# Aba "Time entries" — conteúdo real read-only (F2.5). Sem timer/edição inline;
-    CRUD completo vive em /time_entries. %>
+<%# Aba "Time entries" — conteúdo real read-only (F2.5). CRUD completo vive em /time_entries. %>
 <section class="tab-panel" id="tab-time">
   <div class="subhead">
     <h2>Time entries</h2>
@@ -70,14 +66,14 @@
           <tr>
             <td><%= entry.date %></td>
             <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
-            <td><%= entry.duration %></td>
+            <td><%= duration_label(entry.duration) %></td>
             <td><%= entry.description.presence || "—" %></td>
             <td><%= link_to "Ver", entry, class: "btn btn--ghost btn--sm" %></td>
           </tr>
         <% end %>
       </tbody>
     </table>
-    <p class="te-total">Total de duração: <strong><%= @task.total_duration %></strong></p>
+    <p class="te-total">Total de duração: <strong><%= duration_label(@task.total_duration) %></strong></p>
   <% else %>
     <div class="empty">
       <p>Nenhum apontamento nesta tarefa.</p>
@@ -85,11 +81,15 @@
     </div>
   <% end %>
 </section>
+
+<section class="tab-panel placeholder" id="tab-conversas">
+  Conversas vinculadas aparecerão aqui em fase futura.
+</section>
 <section class="tab-panel placeholder" id="tab-historico">
-  <p><em>Histórico — em breve (fase futura).</em></p>
+  Histórico operacional será exibido aqui em fase futura.
 </section>
 <section class="tab-panel placeholder" id="tab-demanda">
-  <p><em>Demanda — em breve (fase futura).</em></p>
+  Dados da demanda relacionada aparecerão aqui quando aplicável.
 </section>
 
 <p><%= link_to "Voltar", tasks_path, class: "back-link" %></p>

@@ -54,6 +54,20 @@
   --tone-danger-text: #b42318;
   --tone-danger-border: #f6cfca;
 
+  /* tons adicionais alinhados ao hi-fi (spec-hifi.jsx): completed=violeta,
+     support=ciano, commercial=rosa */
+  --tone-violet-bg: #ede9fe;
+  --tone-violet-text: #6d3bd1;
+  --tone-violet-border: #d7ccf7;
+
+  --tone-cyan-bg: #cffafe;
+  --tone-cyan-text: #0e7490;
+  --tone-cyan-border: #a5eef5;
+
+  --tone-pink-bg: #fce7f3;
+  --tone-pink-text: #b83280;
+  --tone-pink-border: #f7c6e0;
+
   --radius: 12px;
   --radius-md: 9px;
   --radius-sm: 6px;
@@ -357,6 +371,9 @@ p { margin: 0 0 12px; }
 .badge--success { background: var(--tone-success-bg); color: var(--tone-success-text); border-color: var(--tone-success-border); }
 .badge--warning { background: var(--tone-warning-bg); color: var(--tone-warning-text); border-color: var(--tone-warning-border); }
 .badge--danger  { background: var(--tone-danger-bg);  color: var(--tone-danger-text);  border-color: var(--tone-danger-border); }
+.badge--violet  { background: var(--tone-violet-bg);  color: var(--tone-violet-text);  border-color: var(--tone-violet-border); }
+.badge--cyan    { background: var(--tone-cyan-bg);    color: var(--tone-cyan-text);    border-color: var(--tone-cyan-border); }
+.badge--pink    { background: var(--tone-pink-bg);    color: var(--tone-pink-text);    border-color: var(--tone-pink-border); }
 
 .badge-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
 
@@ -441,10 +458,31 @@ dl dt:last-of-type, dl dd:last-of-type { border-bottom: none; }
   user-select: none;
 }
 .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+/* abas ainda sem implementação: sinalizadas como "em breve" (não parecem quebradas) */
+.tab.soon { color: var(--text-subtle); }
+.tab .soon-flag {
+  margin-left: 6px;
+  font-size: .6rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0 6px;
+}
 
-/* Abas sem conteúdo nesta fase (Conversas/Histórico/Demanda) ficam ocultas
-   como placeholders até serem implementadas (Fase 5+). */
-.tab-panel.placeholder { display: none; }
+/* Painel de aba ainda sem implementação: placeholder VISÍVEL e intencional
+   (Fase 5+) — nunca oculto/sem mensagem. */
+.tab-panel.placeholder {
+  background: var(--surface-subtle);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  color: var(--text-muted);
+  font-size: .875rem;
+}
+.tab-panel.placeholder + .tab-panel.placeholder { margin-top: 12px; }
 
 /* linha de total (soma de duração) na aba Time entries da task */
 .te-total { margin-top: 14px; font-size: .95rem; color: var(--text-muted); }
