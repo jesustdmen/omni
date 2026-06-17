@@ -9,6 +9,24 @@
 
 ## Entradas
 
+## 2026-06-17 — [Fase 3 · F3.UI.1] Console read-only de validação — CONCLUÍDA
+### Resumo
+UI **mínima e somente leitura** para validar visualmente os dados da Fase 3 (1635 conversas + sync runs). **É um console de validação, não a UI final da Fase 5.** Não renderiza turnos, não lê `sessions.jsonl`/shards, não cria vínculo conversa↔tarefa, não executa sync e não altera dados.
+### Features entregues
+4 telas read-only: `/conversations` (KPIs + filtros + tabela paginada manual 50/pág), `/conversations/:id` (**somente metadados**, sem turnos/conteúdo), `/sync_runs` (execuções + contadores), `/sync_runs/:id` (resumo + `sync_run_items`). Sidebar com grupo "Conversas" (Conversas + Sync). Filtros: source, com/sem título, com folder/órfão, busca por título/`thread_id`. KPIs: total, workspaces resolvidos/órfãos, sem título, último sync, skipped/erros.
+### Alterações realizadas (repo app/)
+Novos: `controllers/{conversations,sync_runs}_controller.rb`, `policies/{conversation,sync_run}_policy.rb`, `views/conversations/{index,show}`, `views/sync_runs/{index,show}`, testes de integração. Alterados: `config/routes.rb` (`resources … only: %i[index show]`), `SidebarComponent`, `application_helper.rb` (tons `ok/partial/error`), `application.css` (`.filters/.pagination/.mono`). **Sem migration/schema/model; sem importer/sync.**
+### Segurança/escopo
+Tudo via ERB **auto-escapado** (sem `html_safe`, sem markdown, sem conteúdo de conversa); rotas só `index/show` (sem `new/edit/create/update/destroy`); read-only (sem edição/exclusão/reprocessamento).
+### Testes/validações
+`bin/rails test`: 172 runs, 599 assertions, 0 falhas/erros/skips (+10). rubocop 0 ofensas (107 arquivos); brakeman 0; bundler-audit 0. Smoke autenticado: 4 telas 200; KPIs reais (1635/83); show sem `<table>` de conteúdo.
+### Pendências
+UI rica de conversa (render de turnos/markdown), vínculo conversa↔tarefa, triagem/sugestões, scorer → **Fase 4/5** (fora). 
+### Riscos
+Nenhum novo.
+### Próximo passo
+Decidir entre **Fase 4** (vínculo conversa↔tarefa) e refinamentos do console.
+
 ## 2026-06-17 — [Fase 2 · M2] Domínio concluído — migração de dados reais N/A
 ### Resumo
 Encerramento do **M2**: o domínio de trabalho está **completo por modelagem/CRUD** (WD-01..07) e a **migração de dados reais de domínio é N/A**, porque a aplicação de origem (RepoA) estava **inativa** e o snapshot real não tem massa histórica.

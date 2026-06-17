@@ -19,5 +19,10 @@ Rails.application.routes.draw do
     post :convert, on: :member
   end
   resources :time_entries
+
+  # F3.UI.1 — console read-only de validação da Fase 3 (somente leitura).
+  resources :conversations, only: %i[index show]
+  resources :sync_runs, only: %i[index show]
+
   get "settings", to: "pages#placeholder", as: :settings
 end

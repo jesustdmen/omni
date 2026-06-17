@@ -1,0 +1,79 @@
+<% content_for :title, "Conversas" %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Conversas</h1>
+    <p class="page-head__sub">Console read-only de validação da Fase 3 — metadados importados (sem turnos/conteúdo).</p>
+  </div>
+</div>
+
+<div class="metric-grid">
+  <div class="metric">
+    <p class="metric__label">Conversas</p>
+    <div class="metric__value"><%= @kpi_total %></div>
+    <p class="metric__foot muted"><%= @kpi_no_title %> sem título</p>
+  </div>
+  <div class="metric">
+    <p class="metric__label">Workspaces resolvidos</p>
+    <div class="metric__value"><%= @kpi_ws_resolved %></div>
+    <p class="metric__foot muted"><%= @kpi_ws_orphan %> órfãos</p>
+  </div>
+  <div class="metric">
+    <p class="metric__label">Último sync</p>
+    <div class="metric__value">
+      <% if @kpi_last_sync %><%= status_badge(@kpi_last_sync.status) %><% else %><span class="muted">—</span><% end %>
+    </div>
+    <p class="metric__foot muted"><%= @kpi_last_sync&.finished_at&.strftime("%d/%m/%Y %H:%M") || "nenhum" %></p>
+  </div>
+  <div class="metric">
+    <p class="metric__label">Skipped / erros (sync)</p>
+    <div class="metric__value"><%= @kpi_skipped %> / <%= @kpi_errors %></div>
+    <p class="metric__foot"><%= link_to "Ver sync runs", sync_runs_path %></p>
+  </div>
+</div>
+
+<%# Filtros — formulário GET, somente leitura (sem ações destrutivas). %>
+<%= form_with url: conversations_path, method: :get, class: "filters" do |f| %>
+  <%= f.select :source, options_for_select([ [ "Todas as fontes", "" ] ] + @sources.map { |s| [ s, s ] }, params[:source]) %>
+  <%= f.select :title, options_for_select([ [ "Título: todos", "" ], [ "Com título", "with" ], [ "Sem título", "without" ] ], params[:title]) %>
+  <%= f.select :folder, options_for_select([ [ "Workspace: todos", "" ], [ "Com folder", "with" ], [ "Órfão", "orphan" ] ], params[:folder]) %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Buscar título ou thread_id" %>
+  <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
+  <%= link_to "Limpar", conversations_path, class: "btn btn--ghost btn--sm" %>
+<% end %>
+
+<% if @conversations.any? %>
+  <table>
+    <thead>
+      <tr><th>Título</th><th>Source</th><th>Workspace</th><th>Thread</th><th>Última atividade</th><th>Msgs</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @conversations.each do |c| %>
+        <tr>
+          <td><%= c.title.presence || tag.span("— sem título —", class: "muted") %></td>
+          <td><%= status_badge(c.source) %></td>
+          <td>
+            <% folder = @folders[c.workspace_hash] %>
+            <% if folder.present? %><%= folder %>
+            <% elsif c.workspace_hash.present? %><span class="muted"><%= c.workspace_hash.truncate(12) %></span> <span class="badge badge--neutral">órfão</span>
+            <% else %><span class="muted">—</span><% end %>
+          </td>
+          <td class="mono"><%= c.thread_id.truncate(16) %></td>
+          <td><%= c.last_ts&.strftime("%d/%m/%Y %H:%M") || "—" %></td>
+          <td><%= c.message_count %></td>
+          <td><%= link_to "Ver", conversation_path(c), class: "btn btn--ghost btn--sm" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <span class="muted"><%= @total_count %> conversa(s) · página <%= @page %>/<%= @total_pages %></span>
+    <span class="actions">
+      <% if @page > 1 %><%= link_to "← Anterior", conversations_path(request.query_parameters.merge(page: @page - 1)) %><% end %>
+      <% if @page < @total_pages %><%= link_to "Próxima →", conversations_path(request.query_parameters.merge(page: @page + 1)) %><% end %>
+    </span>
+  </div>
+<% else %>
+  <div class="empty"><p>Nenhuma conversa para os filtros atuais.</p></div>
+<% end %>

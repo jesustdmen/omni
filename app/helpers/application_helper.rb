@@ -14,7 +14,9 @@ module ApplicationHelper
     "low" => :neutral, "medium" => :warning, "high" => :danger,
     # tipos de tarefa
     "support" => :cyan, "question" => :violet, "questions" => :violet,
-    "implementation" => :warning, "development" => :info, "commercial" => :pink
+    "implementation" => :warning, "development" => :info, "commercial" => :pink,
+    # status de sync (F3.UI.1)
+    "ok" => :success, "partial" => :warning, "error" => :danger
   }.freeze
 
   def status_badge(value, tone: nil)

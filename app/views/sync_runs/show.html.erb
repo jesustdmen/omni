@@ -1,0 +1,60 @@
+<% content_for :title, "Sync run" %>
+
+<nav class="breadcrumb">
+  <%= link_to "Sync runs", sync_runs_path %>
+  <span class="sep">/</span>
+  <span class="mono"><%= @sync_run.id.truncate(12) %></span>
+</nav>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Sync run</h1>
+    <div class="badge-row">
+      <%= status_badge(@sync_run.status) %>
+      <span class="muted"><%= @sync_run.source_label %> · schema <%= @sync_run.schema_version || "—" %></span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <dl>
+    <dt>Status</dt><dd><%= status_badge(@sync_run.status) %></dd>
+    <dt>Fonte</dt><dd><%= @sync_run.source_label || "—" %></dd>
+    <dt>Arquivo</dt><dd class="mono"><%= @sync_run.source_file || "—" %></dd>
+    <dt>Schema version</dt><dd><%= @sync_run.schema_version || "—" %></dd>
+    <dt>Linhas processadas</dt><dd><%= @sync_run.lines_processed %></dd>
+    <dt>Imported</dt><dd><%= @sync_run.imported %></dd>
+    <dt>Updated</dt><dd><%= @sync_run.updated %></dd>
+    <dt>Skipped</dt><dd><%= @sync_run.skipped %></dd>
+    <dt>Erros</dt><dd><%= @sync_run.error_lines %></dd>
+    <dt>Início</dt><dd><%= @sync_run.started_at&.strftime("%d/%m/%Y %H:%M:%S") || "—" %></dd>
+    <dt>Fim</dt><dd><%= @sync_run.finished_at&.strftime("%d/%m/%Y %H:%M:%S") || "—" %></dd>
+  </dl>
+</div>
+
+<div class="subhead">
+  <h2>Itens (erros / skips)</h2>
+</div>
+
+<% if @items.any? %>
+  <table>
+    <thead>
+      <tr><th>Linha</th><th>Status</th><th>Motivo</th><th>Thread</th><th>Trecho</th></tr>
+    </thead>
+    <tbody>
+      <% @items.each do |item| %>
+        <tr>
+          <td><%= item.line_number %></td>
+          <td><%= status_badge(item.status) %></td>
+          <td><%= item.reason %></td>
+          <td class="mono"><%= item.thread_id || "—" %></td>
+          <td class="mono"><%= item.raw_excerpt.to_s.truncate(80) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty"><p>Sem itens de erro/skip nesta execução.</p></div>
+<% end %>
+
+<%= link_to "Voltar", sync_runs_path, class: "back-link" %>

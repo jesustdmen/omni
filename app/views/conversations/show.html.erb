@@ -1,0 +1,41 @@
+<% content_for :title, (@conversation.title.presence || "Conversa") %>
+
+<nav class="breadcrumb">
+  <%= link_to "Conversas", conversations_path %>
+  <span class="sep">/</span>
+  <span><%= @conversation.title.presence || "— sem título —" %></span>
+</nav>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1><%= @conversation.title.presence || "— sem título —" %></h1>
+    <div class="badge-row">
+      <%= status_badge(@conversation.source) %>
+      <span class="muted">read-only · metadados (sem turnos)</span>
+    </div>
+  </div>
+</div>
+
+<%# SOMENTE metadados — nenhum conteúdo/turno/mensagem é lido ou renderizado. %>
+<div class="card">
+  <dl>
+    <dt>Thread</dt><dd class="mono"><%= @conversation.thread_id %></dd>
+    <dt>Session</dt><dd class="mono"><%= @conversation.session_id || "—" %></dd>
+    <dt>Source</dt><dd><%= @conversation.source || "—" %></dd>
+    <dt>Título</dt><dd><%= @conversation.title.presence || "—" %></dd>
+    <dt>Primeira atividade</dt><dd><%= @conversation.first_ts&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
+    <dt>Última atividade</dt><dd><%= @conversation.last_ts&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
+    <dt>Mensagens</dt><dd><%= @conversation.message_count %></dd>
+    <dt>Turnos (user / assistant)</dt><dd><%= @conversation.user_turns %> / <%= @conversation.assistant_turns %></dd>
+    <dt>Tool calls</dt><dd><%= @conversation.tool_calls %></dd>
+    <dt>Arquivos alterados</dt><dd><%= Array(@conversation.files_changed).join(", ").presence || "—" %></dd>
+    <dt>Workspace (hash)</dt><dd class="mono"><%= @conversation.workspace_hash || "—" %></dd>
+    <dt>Workspace (folder)</dt><dd><%= @folder.presence || tag.span("— órfão —", class: "muted") %></dd>
+    <dt>Pessoal</dt><dd><%= @conversation.personal ? "Sim" : "Não" %></dd>
+    <dt>user_id</dt><dd><%= @conversation.user_id || "—" %></dd>
+    <dt>Importada</dt><dd><%= @conversation.created_at&.strftime("%d/%m/%Y %H:%M") %></dd>
+    <dt>Atualizada</dt><dd><%= @conversation.updated_at&.strftime("%d/%m/%Y %H:%M") %></dd>
+  </dl>
+</div>
+
+<%= link_to "Voltar", conversations_path, class: "back-link" %>

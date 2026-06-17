@@ -10,8 +10,8 @@
 - **Bloqueadores da Fase 2:** Nenhum, exceto autorização explícita do usuário.
 - **Bloqueadores futuros (Fase 3):** **resolvidos (F3.0→F3.3)** — corpus; `thread_id → shard` via **ADR-018** (turnos fora); `schema_version` por-run; importer idempotente; sync real validado; folders resolvidos (**ADR-020**). Item opcional: limpar `sync_runs/sync_run_items` de auditoria no dev.
 - **Ação de segurança:** dump do RepoA fora do versionamento — protegido no repo de planejamento via `.gitignore`; RepoA tratado como referência/leitura.
-- **Última decisão tomada:** **M2 concluído com migração de dados de domínio = N/A (2026-06-17)** — RepoA inativo, domínio vazio na origem; usuários do snapshot não migrados. Antes: F3.3 (folders; `58f317c`), F3.2/F3.2.1 (sync real de metadados).
-- **Próxima decisão necessária:** escolher o próximo foco — (a) **tela read-only de Conversas/Sync** (validação visual dos 1635 registros) ou (b) **Fase 4** (vínculo conversa↔tarefa).
+- **Última decisão tomada:** **F3.UI.1 — console read-only de validação (2026-06-17)**: telas `/conversations` e `/sync_runs` (só metadados; não é a UI da Fase 5). Antes: M2 concluído (dados N/A); F3.3 (folders); F3.2/F3.2.1 (sync real). *(commit/push pendentes de revisão.)*
+- **Próxima decisão necessária:** próximo foco — **Fase 4** (vínculo conversa↔tarefa) ou refinamentos do console.
 
 ## Semáforo por área
 | Área | Status | Observação |
@@ -23,7 +23,7 @@
 | Pipeline Repo B | 🟢 Verde | Externo, estável, intocado |
 | Importação de conversas | 🟡 Amarelo | **F3.0→F3.3** (sync real de metadados: 1635 conversas; `source_nil=0`/`workspace_hash_nil=13`/`title_nil=1067`). **F3.3** resolveu folders (`orphan` 86→3; usuário redigido). **Turnos/UI/vínculo FORA** (ADR-018; F4/F5). M3 parcial (metadados+folders) |
 | Vínculo conversa/tarefa | ⬜ Cinza | Modelado; não iniciado |
-| UI | 🟡 Amarelo | **F2.UI**: baseline visual hi-fi provisório nas telas existentes (shell/sidebar/topbar, dashboard, listas, detalhes, forms). Não é a UI final — UI unificada real fica na Fase 5 |
+| UI | 🟡 Amarelo | **F2.UI** (baseline visual provisório) + **F3.UI.1** (console **read-only** de validação: `/conversations` e `/sync_runs`, só metadados — sem turnos/conteúdo/vínculo/sync). **Não é a UI final** — UI unificada real fica na Fase 5 |
 | Testes | 🟡 Amarelo | Fundação coberta (auth/authz/CSRF/rate-limit/job); corpus de parser pendente (F3) |
 | Segurança | 🟢 Verde | Devise + Pundit + CSRF nativo + rack-attack; dump fora do versionamento |
 | Documentação | 🟢 Verde | Baseline + M1 registrados |

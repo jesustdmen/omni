@@ -489,6 +489,41 @@ dl dt:last-of-type, dl dd:last-of-type { border-bottom: none; }
 .te-total strong { color: var(--text); }
 
 /* ------------------------------------------------------------------ */
+/* F3.UI.1 — console read-only (conversas / sync runs)                */
+/* ------------------------------------------------------------------ */
+.mono { font-family: ui-monospace, "Cascadia Code", "Consolas", monospace; font-size: .82rem; }
+
+/* filtros inline (formulário GET, somente leitura) */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  max-width: none;
+}
+.filters select,
+.filters input[type="search"] {
+  width: auto;
+  font-size: .85rem;
+  padding: 7px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.filters input[type="search"] { min-width: 240px; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: .85rem;
+}
+.pagination .actions a { color: var(--text-muted); }
+
+/* ------------------------------------------------------------------ */
 /* Dashboard                                                          */
 /* ------------------------------------------------------------------ */
 .callout {
