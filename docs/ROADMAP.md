@@ -34,10 +34,10 @@
 - **NÃO fazer:** conversas; domínio além de `users`; importar dados.
 - **Marco:** M1.
 
-### Fase 2 — Migração do domínio de trabalho — 🟡 Em progresso (CRUD completo; M2 pleno pendente de dados reais)
+### Fase 2 — Migração do domínio de trabalho — ✅ Concluída (M2, 2026-06-17)
 - **Entregáveis:** clients (+`workspace_paths`, cnpj nullable + partial unique)/contacts/projects/tasks (+`conversation_count`/`last_conversation_at`)/demands/time_entries (+`conversation_id` null); ConvertDemand transacional; `/tasks/:id` página (abas Detalhes/Time/Histórico/Demanda); migração de dados; auditoria.
-- **Status:** **WD-01..WD-07 entregues (2026-06-17) — domínio/CRUD completo** (Client/Contact, Project, Task + `/tasks/:id`, Demand + ConvertDemand, TimeEntry). Falta apenas a **migração/validação de dados reais** (contagens origem×destino) para o **M2 pleno**.
-- **Critérios de aceite:** contagens origem×destino batem; convert atômico; paridade CRUD.
+- **Status:** **WD-01..WD-07 entregues (2026-06-17) — domínio/CRUD completo**. **Migração de dados reais = N/A**: o RepoA estava **inativo**; o snapshot real (`postgres-volume-snapshot-20260328.tgz`, DB `app_v2`) tem o **domínio vazio** (clients/contacts/projects/tasks/demands/time_entries = 0; só 2 usuários de teste, **não migrados**). Sem massa histórica a importar.
+- **Critérios de aceite:** convert atômico; paridade CRUD. (Contagens origem×destino: **N/A** — origem vazia.)
 - **NÃO fazer:** sync/conversas/scorer; campos de Task de v1.
 - **Marco:** M2.
 
@@ -83,7 +83,7 @@
 |---|---|---|---|
 | M0 | Decisões arquiteturais aprovadas | 0 | ✅ Concluído (2026-06-16) |
 | M1 | Rails base operacional | 1 | ✅ Concluído (2026-06-16) |
-| M2 | Domínio de trabalho migrado | 2 | 🟡 Em progresso (WD-01..07 entregues — CRUD completo; M2 pleno pendente de dados reais / contagens origem×destino) |
+| M2 | Domínio de trabalho migrado | 2 | ✅ Concluído (2026-06-17) — WD-01..07 CRUD completo; **migração de dados reais N/A** (RepoA inativo / domínio vazio na origem) |
 | M3 | Importação de conversas idempotente | 3 | 🟡 Em progresso (sync real de **metadados** entregue: 1635 conversas, idempotente, `bd0a9ce`; **módulo completo** de conversas — turnos/UI/vínculo — ainda fora) |
 | M4 | Vínculo conversa/tarefa operacional | 4 | ⬜ Não iniciado |
 | M5 | UI principal unificada | 5 | ⬜ Não iniciado |

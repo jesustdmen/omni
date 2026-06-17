@@ -22,6 +22,8 @@
 
 ## Matriz origem → destino
 
+> **Atualização (2026-06-17 — M2):** as linhas de **domínio** (`clients`/`contacts`/`projects`/`tasks`/`demands`/`time_entries`) e `users` ficaram **N/A para migração de dados**: o RepoA estava **inativo** e o snapshot real (`postgres-volume-snapshot-20260328.tgz`, DB `app_v2`) tem o **domínio vazio** (0 registros) e apenas **2 usuários de teste (não migrados)**. O **M2 está concluído** pela modelagem/CRUD; **não há massa histórica a importar**. A matriz abaixo permanece como **referência de mapeamento** caso surjam dados no futuro. As linhas de **conversas (Fase 3)** foram efetivamente executadas.
+
 | Origem | Destino Rails | Estratégia | Risco | Validação | Fase |
 |---|---|---|---|---|---|
 | `users` | `users` (Devise) | `password_hash`→`encrypted_password`; manter custo bcrypt (~10); re-hash oportunístico no login; não bloquear migrados | M | login de amostra sem reset | 2 |

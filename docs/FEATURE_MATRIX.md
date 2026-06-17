@@ -1,7 +1,7 @@
 # Omni/Continuity — Matriz de Features
 
 > **Baseline 2026-06-16.** Status: Não iniciado · Em análise · Em desenvolvimento · Em validação · Entregue · Bloqueado · Fora de escopo · Pronta p/ iniciar.
-> **Governança aprovada.** Software **em progresso (Fase 2)**: WD-01 a WD-07 entregues nos recortes F2.1–F2.5 (Client/Contact, Project, Task base + `/tasks/:id`, Demand + ConvertDemand, **TimeEntry**) — **domínio CRUD completo**. **M2 pleno (contagens origem×destino) ainda pendente de migração/validação de dados reais — não declarar M2 100% fechado.** Demais features conforme o status na tabela.
+> **Governança aprovada.** WD-01 a WD-07 entregues nos recortes F2.1–F2.5 (Client/Contact, Project, Task base + `/tasks/:id`, Demand + ConvertDemand, **TimeEntry**) — **domínio CRUD completo; M2 concluído (2026-06-17)**. **Migração de dados reais de domínio = N/A**: o RepoA estava **inativo** e o snapshot real (DB `app_v2`) tem o **domínio vazio** (clients/contacts/projects/tasks/demands/time_entries = 0; só 2 usuários de teste, **não migrados**) — não há import histórico de domínio. Demais features conforme o status na tabela.
 > **F2.UI (2026-06-17):** aplicado um **baseline visual hi-fi provisório** sobre as telas já existentes — **não cria features novas** e **não é a UI final** (a UI unificada real é a Fase 5). Ver [DELIVERY_LOG.md](DELIVERY_LOG.md).
 
 ## Governança / Fase 0 (documentação e decisão)

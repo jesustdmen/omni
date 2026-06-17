@@ -3,15 +3,15 @@
 > Snapshot: **2026-06-17**. Atualizar ao fim de cada sessão de trabalho e em toda decisão/entrega.
 
 ## Status geral
-- **Fase atual:** Fase 2 — **domínio CRUD COMPLETO (2026-06-17)**: F2.1–F2.4 (Client+Contact, Project, Task base + `/tasks/:id`, Demand + ConvertDemand) + **F2.5 TimeEntry (WD-07) concluída**. M1 fechado. **F2.UI — baseline visual hi-fi provisório aprovado (2026-06-17)** (apresentação apenas; não é a UI final, que cabe à Fase 5; sem features novas). **M2 pleno (contagens origem×destino) ainda pendente de migração/validação de dados reais — não declarar M2 100% fechado.**
-- **Próxima fase:** Fase 3 — sync de conversas normalizadas. **F3.0/F3.1/F3.2/F3.2.1 CONCLUÍDAS e PUBLICADAS (2026-06-17, até commit `bd0a9ce`).** **F3.2 = primeiro sync real controlado de `summaries.jsonl`** (1635 conversas, metadados). **F3.2.1 = correção do merge** (escalares com `last_ts` nulo). Próximo (sob autorização): **F3.3** (resolver `workspace_maps.folder`) e/ou migração de dados reais para o **M2 pleno**.
+- **Fase atual:** Fase 2 — **CONCLUÍDA (2026-06-17)**: domínio CRUD completo (F2.1–F2.4 + F2.5 TimeEntry). M1 fechado. **F2.UI — baseline visual hi-fi provisório aprovado** (apresentação; UI final = Fase 5). **M2 CONCLUÍDO por modelagem/CRUD; migração de dados reais de domínio = N/A** — o RepoA estava **inativo** e o snapshot real (`postgres-volume-snapshot-20260328.tgz`, DB `app_v2`) tem o **domínio vazio** (clients/contacts/projects/tasks/demands/time_entries = 0; só 2 usuários de teste, **não migrados**). Não há massa histórica a importar.
+- **Próxima fase:** Fase 3 — sync de conversas normalizadas. **F3.0→F3.3 CONCLUÍDAS e PUBLICADAS (2026-06-17, até commit `58f317c`)**: sync real de metadados (1635 conversas) + correção de merge + resolução de folders (órfãos 86→3). Próximo (sob autorização): **Fase 4** (vínculo conversa↔tarefa) ou uma **tela read-only de Conversas/Sync** para validação visual.
 - **Status geral:** Domínio CRUD completo (F2). **Conversas (metadados) com sync real entregue**: 1635 conversas de `summaries.jsonl` (idempotente); `source_nil=0`, `workspace_hash_nil=13`, `title_nil=1067` (limitação do dado). **F3.3 resolveu folders de workspace** (exceção controlada ao ADR-008, read-only): `WorkspaceMap=86`, **órfãos 86 → 3** (83 resolvidos; usuário redigido `<USER>`). **Turnos/UI/vínculo conversa↔tarefa FORA** (ADR-018; F4/F5). **M3 parcial** (metadados+folders; módulo completo de conversas não). 162 testes verdes; lint/brakeman/bundler-audit verdes.
 - **Stack provisionada:** Rails 8.1.3 + PostgreSQL 16 via Docker (sem instalar nada no host; `_origem/` intocado).
 - **Bloqueadores da Fase 2:** Nenhum, exceto autorização explícita do usuário.
-- **Bloqueadores futuros (Fase 3):** **resolvidos na F3.0/F3.1/F3.2** — corpus; `thread_id → shard` via **ADR-018** (turnos fora); `schema_version` por-run; importer idempotente; **sync real validado** (backup + allowlist `:ro`). Próximos itens (não bloqueantes): **F3.3** resolver folders de workspace; opcional limpar `sync_runs/sync_run_items` de auditoria no dev.
+- **Bloqueadores futuros (Fase 3):** **resolvidos (F3.0→F3.3)** — corpus; `thread_id → shard` via **ADR-018** (turnos fora); `schema_version` por-run; importer idempotente; sync real validado; folders resolvidos (**ADR-020**). Item opcional: limpar `sync_runs/sync_run_items` de auditoria no dev.
 - **Ação de segurança:** dump do RepoA fora do versionamento — protegido no repo de planejamento via `.gitignore`; RepoA tratado como referência/leitura.
-- **Última decisão tomada:** **F3.3 concluída (2026-06-17)** — `Sync::ResolveWorkspaceFolders` resolveu `workspace_maps.folder` a partir de `raw/.../workspace.json` (exceção controlada ao ADR-008, read-only; usuário redigido `<USER>`): órfãos 86→3. *(commit/push pendentes de revisão.)* Antes: F3.2/F3.2.1 (sync real de metadados; `bd0a9ce`).
-- **Próxima decisão necessária:** (a) opcional **ADR-020** formalizando a exceção ao ADR-008; (b) **migração/validação de dados reais do domínio** para fechar o **M2 pleno**; ou (c) **Fase 4** (vínculo conversa↔tarefa).
+- **Última decisão tomada:** **M2 concluído com migração de dados de domínio = N/A (2026-06-17)** — RepoA inativo, domínio vazio na origem; usuários do snapshot não migrados. Antes: F3.3 (folders; `58f317c`), F3.2/F3.2.1 (sync real de metadados).
+- **Próxima decisão necessária:** escolher o próximo foco — (a) **tela read-only de Conversas/Sync** (validação visual dos 1635 registros) ou (b) **Fase 4** (vínculo conversa↔tarefa).
 
 ## Semáforo por área
 | Área | Status | Observação |
@@ -19,7 +19,7 @@
 | Arquitetura | 🟢 Verde | ADRs aceitos; baseline congelado |
 | Rails Foundation | 🟢 Verde | App Rails 8.1.3 operacional; 15 testes verdes; CI local verde |
 | Banco de dados | 🟢 Verde | Postgres 16 (omni_db) + migration de `users` aplicada; domínio na F2 |
-| Migração Repo A | 🟡 Amarelo | Domínio CRUD completo (Client+Contact+Project+Task+Demand+ConvertDemand+**TimeEntry**); **migração/validação de dados reais pendente** (M2 pleno) |
+| Migração Repo A | 🟢 Verde | **M2 concluído** — domínio CRUD completo (Client+Contact+Project+Task+Demand+ConvertDemand+TimeEntry); **migração de dados reais = N/A** (RepoA inativo, domínio vazio na origem) |
 | Pipeline Repo B | 🟢 Verde | Externo, estável, intocado |
 | Importação de conversas | 🟡 Amarelo | **F3.0→F3.3** (sync real de metadados: 1635 conversas; `source_nil=0`/`workspace_hash_nil=13`/`title_nil=1067`). **F3.3** resolveu folders (`orphan` 86→3; usuário redigido). **Turnos/UI/vínculo FORA** (ADR-018; F4/F5). M3 parcial (metadados+folders) |
 | Vínculo conversa/tarefa | ⬜ Cinza | Modelado; não iniciado |
@@ -37,8 +37,8 @@
 - [x] Corpus de teste definido (criação pendente — pré-F3).
 - [x] Estratégia de sync aprovada.
 - [x] Rails Foundation iniciada. **(M1 concluído — 2026-06-16)**
-- [ ] Domínio migrado. *(CRUD completo em 2026-06-17; migração/validação de dados reais pendente — M2 pleno em aberto.)*
-- [ ] Conversas importadas.
+- [x] Domínio migrado. *(M2 concluído: CRUD completo; migração de dados reais **N/A** — RepoA inativo, domínio vazio na origem.)*
+- [x] Conversas importadas. *(Metadados, F3: 1635 conversas; turnos/UI fora.)*
 - [ ] Vínculos implementados.
 - [ ] UI unificada validada.
 - [ ] Testes mínimos concluídos.

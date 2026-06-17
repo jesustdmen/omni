@@ -9,6 +9,29 @@
 
 ## Entradas
 
+## 2026-06-17 — [Fase 2 · M2] Domínio concluído — migração de dados reais N/A
+### Resumo
+Encerramento do **M2**: o domínio de trabalho está **completo por modelagem/CRUD** (WD-01..07) e a **migração de dados reais de domínio é N/A**, porque a aplicação de origem (RepoA) estava **inativa** e o snapshot real não tem massa histórica.
+### Evidência (leitura de prontidão do M2)
+Restauração **read-only** do único snapshot real conhecido (`_origem/_repoa/postgres-volume-snapshot-20260328.tgz`, volume **Postgres 16**, DB `app_v2`) em container **descartável** (já removido; `_origem` intocado). Contagens verificadas na origem:
+- `clients=0`, `contacts=0`, `projects=0`, `tasks=0`, `demands=0`, `time_entries=0` (domínio **vazio**);
+- `users=2` (contas de teste de app inativa).
+### Decisão
+- **M2 concluído** pela modelagem/CRUD (clients/contacts/projects/tasks/demands/time_entries + ConvertDemand + `/tasks/:id`, com testes).
+- **Migração histórica de domínio = N/A** (origem vazia / app inativo). Não há `contagens origem×destino` a validar.
+- **Usuários do snapshot (2) não migrados** — contas de teste/inativas; o app já possui o usuário `demo`.
+- Não houve migração real de dados de domínio. Os **dados reais efetivamente disponíveis** no projeto hoje são os **metadados de conversas** importados na F3 (1635 conversas).
+### Alterações realizadas (repo app/)
+Somente documentação: `PROJECT_STATUS.md` (M2 concluído; semáforo Repo A 🟢; checklist), `ROADMAP.md` (Fase 2 ✅ / marco M2 ✅, dados N/A), `FEATURE_MATRIX.md` (nota WD), `MIGRATION_PLAN.md` (matriz de domínio N/A), este log. **Sem código/migrations/schema/banco; sem import; sem migração de usuários.**
+### Testes/validações
+N/A (somente docs). Banco dev inalterado.
+### Pendências
+Nenhuma para o M2. Próximo foco (a decidir): tela read-only de Conversas/Sync (validação visual) ou **Fase 4** (vínculo conversa↔tarefa).
+### Riscos
+Nenhum. O plano de migração permanece como referência caso surjam dados de domínio no futuro.
+### Próximo passo
+Escolher entre tela read-only de Conversas/Sync e Fase 4.
+
 ## 2026-06-17 — [Fase 3 · F3.3] Resolução de folders de workspace — CONCLUÍDA (development)
 ### Resumo
 Resolveu `workspace_maps.folder` a partir dos `workspace.json` reais do RepoB. **Exceção controlada ao ADR-008**: lê **somente** o mapa `workspace_hash → folder` da área `raw/.../workspaceStorage/<hash>/workspace.json` em **modo leitura (`:ro`)** — **não** lê conversas/turnos/`sessions.jsonl`/shards e **não** executa o pipeline.
