@@ -1,17 +1,36 @@
 <% content_for :title, @project.name %>
-<h1><%= @project.name %></h1>
 
-<dl>
-  <dt>Cliente</dt><dd><%= link_to @project.client.name, @project.client %></dd>
-  <dt>Status</dt><dd><%= @project.status %></dd>
-  <dt>Descrição</dt><dd><%= @project.description.presence || "—" %></dd>
-  <dt>Início</dt><dd><%= @project.start_date || "—" %></dd>
-  <dt>Término</dt><dd><%= @project.end_date || "—" %></dd>
-  <dt>Orçamento</dt><dd><%= @project.budget.presence || "—" %></dd>
-</dl>
+<nav class="breadcrumb">
+  <%= link_to "Projetos", projects_path %>
+  <span class="sep">/</span>
+  <span><%= @project.name %></span>
+</nav>
 
-<p>
-  <%= link_to "Editar", edit_project_path(@project) %> ·
-  <%= link_to "Excluir", @project, data: { turbo_method: :delete, turbo_confirm: "Excluir este projeto?" } %>
-</p>
-<p><%= link_to "Voltar", projects_path %></p>
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1><%= @project.name %></h1>
+    <div class="badge-row">
+      <%= status_badge(@project.status) %>
+      <span class="muted"><%= @project.client.name %></span>
+    </div>
+  </div>
+  <div class="page-head__actions">
+    <%= link_to "Editar", edit_project_path(@project), class: "btn btn--outline btn--sm" %>
+    <%= link_to "Excluir", @project,
+          data: { turbo_method: :delete, turbo_confirm: "Excluir este projeto?" },
+          class: "btn btn--ghost btn--sm" %>
+  </div>
+</div>
+
+<div class="card">
+  <dl>
+    <dt>Cliente</dt><dd><%= link_to @project.client.name, @project.client %></dd>
+    <dt>Status</dt><dd><%= @project.status %></dd>
+    <dt>Descrição</dt><dd><%= @project.description.presence || "—" %></dd>
+    <dt>Início</dt><dd><%= @project.start_date || "—" %></dd>
+    <dt>Término</dt><dd><%= @project.end_date || "—" %></dd>
+    <dt>Orçamento</dt><dd><%= @project.budget.presence || "—" %></dd>
+  </dl>
+</div>
+
+<%= link_to "Voltar", projects_path, class: "back-link" %>

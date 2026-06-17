@@ -1,37 +1,61 @@
 <% content_for :title, @client.name %>
-<h1><%= @client.name %></h1>
 
-<dl>
-  <dt>Nome fantasia</dt><dd><%= @client.trade_name || "—" %></dd>
-  <dt>CNPJ</dt><dd><%= @client.cnpj || "—" %></dd>
-  <dt>Telefone</dt><dd><%= @client.phone || "—" %></dd>
-  <dt>Endereço</dt><dd><%= @client.address || "—" %></dd>
-  <dt>Status</dt><dd><%= @client.status %></dd>
-  <dt>Workspace paths</dt><dd><%= @client.workspace_paths.join(", ").presence || "—" %></dd>
-</dl>
+<nav class="breadcrumb">
+  <%= link_to "Clientes", clients_path %>
+  <span class="sep">/</span>
+  <span><%= @client.name %></span>
+</nav>
 
-<p>
-  <%= link_to "Editar", edit_client_path(@client) %> ·
-  <%= link_to "Excluir", @client, data: { turbo_method: :delete, turbo_confirm: "Excluir este cliente?" } %>
-</p>
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1><%= @client.name %></h1>
+    <div class="badge-row"><%= status_badge(@client.status) %></div>
+  </div>
+  <div class="page-head__actions">
+    <%= link_to "Editar", edit_client_path(@client), class: "btn btn--outline btn--sm" %>
+    <%= link_to "Excluir", @client,
+          data: { turbo_method: :delete, turbo_confirm: "Excluir este cliente?" },
+          class: "btn btn--ghost btn--sm" %>
+  </div>
+</div>
 
-<h2>Contatos</h2>
-<p><%= link_to "Novo contato", new_client_contact_path(@client) %></p>
+<div class="card">
+  <dl>
+    <dt>Nome fantasia</dt><dd><%= @client.trade_name || "—" %></dd>
+    <dt>CNPJ</dt><dd><%= @client.cnpj || "—" %></dd>
+    <dt>Telefone</dt><dd><%= @client.phone || "—" %></dd>
+    <dt>Endereço</dt><dd><%= @client.address || "—" %></dd>
+    <dt>Status</dt><dd><%= @client.status %></dd>
+    <dt>Workspace paths</dt><dd><%= @client.workspace_paths.join(", ").presence || "—" %></dd>
+  </dl>
+</div>
+
+<div class="subhead">
+  <h2>Contatos</h2>
+  <%= link_to "Novo contato", new_client_contact_path(@client), class: "btn btn--outline btn--sm" %>
+</div>
 
 <% if @client.contacts.any? %>
-  <ul>
+  <ul class="contacts">
     <% @client.contacts.order(:name).each do |contact| %>
       <li>
-        <%= contact.name %> &lt;<%= contact.email %>&gt;
-        <%= "★ primário" if contact.is_primary %> ·
-        <%= link_to "Editar", edit_client_contact_path(@client, contact) %> ·
-        <%= link_to "Excluir", client_contact_path(@client, contact),
-              data: { turbo_method: :delete, turbo_confirm: "Excluir contato?" } %>
+        <strong><%= contact.name %></strong>
+        <span class="muted">&lt;<%= contact.email %>&gt;</span>
+        <% if contact.is_primary %><span class="badge badge--info">★ primário</span><% end %>
+        <span class="contact-actions actions">
+          <%= link_to "Editar", edit_client_contact_path(@client, contact) %>
+          <span class="sep">·</span>
+          <%= link_to "Excluir", client_contact_path(@client, contact),
+                data: { turbo_method: :delete, turbo_confirm: "Excluir contato?" } %>
+        </span>
       </li>
     <% end %>
   </ul>
 <% else %>
-  <p>Nenhum contato.</p>
+  <div class="empty">
+    <p>Nenhum contato.</p>
+    <%= link_to "Novo contato", new_client_contact_path(@client), class: "btn btn--outline btn--sm" %>
+  </div>
 <% end %>
 
-<p><%= link_to "Voltar", clients_path %></p>
+<%= link_to "Voltar", clients_path, class: "back-link" %>

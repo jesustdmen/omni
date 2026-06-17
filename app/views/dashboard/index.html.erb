@@ -1,5 +1,74 @@
 <% content_for :title, "Dashboard" %>
-<h1>Dashboard</h1>
-<p>Bem-vindo, <%= current_user.username %>.</p>
-<p>Fundação Rails (Fase 1) operacional. Módulos de domínio chegam na Fase 2+.</p>
-<%= button_to "Sair", destroy_user_session_path, method: :delete %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Dashboard</h1>
+    <p class="page-head__sub">Bem-vindo, <%= current_user.username %>. Visão geral do domínio de trabalho.</p>
+  </div>
+</div>
+
+<%# Callout de triagem — PLACEHOLDER visual. Não há conversas/triagem no domínio
+    ainda (chega na Fase 4/5); nenhum número real é exibido aqui. %>
+<div class="callout">
+  <span class="callout__icon" aria-hidden="true">⚠</span>
+  <div class="callout__text">
+    <strong>Triagem de conversas</strong> aparecerá aqui quando o sync de conversas estiver ativo.
+    <span class="ph-tag">placeholder · Fase 5</span>
+  </div>
+</div>
+
+<div class="metric-grid">
+  <div class="metric">
+    <p class="metric__label">Clientes</p>
+    <div class="metric__value"><%= @clients_count %></div>
+    <p class="metric__foot"><%= link_to "Ver clientes", clients_path %></p>
+  </div>
+  <div class="metric">
+    <p class="metric__label">Projetos</p>
+    <div class="metric__value"><%= @projects_count %></div>
+    <p class="metric__foot"><%= link_to "Ver projetos", projects_path %></p>
+  </div>
+  <div class="metric">
+    <p class="metric__label">Tarefas</p>
+    <div class="metric__value"><%= @tasks_count %></div>
+    <p class="metric__foot"><%= link_to "Ver tarefas", tasks_path %></p>
+  </div>
+  <div class="metric">
+    <p class="metric__label">Demandas abertas</p>
+    <div class="metric__value"><%= @pending_demands_count %></div>
+    <p class="metric__foot"><%= @demands_count %> no total · <%= link_to "ver", demands_path %></p>
+  </div>
+  <div class="metric metric--placeholder">
+    <p class="metric__label">Conversas hoje</p>
+    <div class="metric__value muted">—</div>
+    <p class="metric__foot"><span class="ph-tag">placeholder · Fase 5</span></p>
+  </div>
+</div>
+
+<div class="dash-cols">
+  <section class="card">
+    <h2 class="card__title">Tarefas recentes</h2>
+    <% if @recent_tasks.any? %>
+      <ul class="list-tight">
+        <% @recent_tasks.each do |task| %>
+          <li>
+            <%= status_badge(task.status) %>
+            <span class="grow"><%= link_to task.title, task %></span>
+            <span class="muted"><%= task.client.name %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="muted">Nenhuma tarefa ainda. <%= link_to "Criar a primeira", new_task_path %>.</p>
+    <% end %>
+  </section>
+
+  <section class="card">
+    <h2 class="card__title">Conversas — hoje</h2>
+    <%# PLACEHOLDER visual: sem backend de conversas nesta fase. %>
+    <div class="empty">
+      <p>O feed de conversas vinculadas aparecerá aqui.</p>
+      <p><span class="ph-tag">placeholder · Fase 5</span></p>
+    </div>
+  </section>
+</div>

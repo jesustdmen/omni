@@ -1,4 +1,7 @@
 <% content_for :title, "Editar tarefa" %>
-<h1>Editar tarefa</h1>
-<%= render "form", task: @task %>
-<p><%= link_to "Voltar", @task %></p>
+
+<div class="page-head"><div class="page-head__titles"><h1>Editar tarefa</h1></div></div>
+
+<div class="card form-card"><%= render "form", task: @task %></div>
+
+<%= link_to "Voltar", @task, class: "back-link" %>

@@ -1,4 +1,15 @@
 <% content_for :title, "Novo contato" %>
-<h1>Novo contato — <%= @client.name %></h1>
-<%= render "form", client: @client, contact: @contact %>
-<p><%= link_to "Voltar", @client %></p>
+
+<nav class="breadcrumb">
+  <%= link_to "Clientes", clients_path %>
+  <span class="sep">/</span>
+  <%= link_to @client.name, @client %>
+  <span class="sep">/</span>
+  <span>Novo contato</span>
+</nav>
+
+<div class="page-head"><div class="page-head__titles"><h1>Novo contato — <%= @client.name %></h1></div></div>
+
+<div class="card form-card"><%= render "form", client: @client, contact: @contact %></div>
+
+<%= link_to "Voltar", @client, class: "back-link" %>

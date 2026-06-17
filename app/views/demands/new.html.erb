@@ -1,4 +1,7 @@
 <% content_for :title, "Nova demanda" %>
-<h1>Nova demanda</h1>
-<%= render "form", demand: @demand %>
-<p><%= link_to "Voltar", demands_path %></p>
+
+<div class="page-head"><div class="page-head__titles"><h1>Nova demanda</h1></div></div>
+
+<div class="card form-card"><%= render "form", demand: @demand %></div>
+
+<%= link_to "Voltar", demands_path, class: "back-link" %>

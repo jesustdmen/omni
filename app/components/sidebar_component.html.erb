@@ -1,6 +1,10 @@
-<nav class="sidebar">
-  <div class="sidebar__brand">Omni · Continuity</div>
-  <% items.each do |item| %>
-    <%= link_to item.label, item.path, class: ("is-active" if active?(item)) %>
+<nav class="sidebar__nav">
+  <% groups.each do |group| %>
+    <div class="nav-group">
+      <span class="nav-group__title"><%= group.title %></span>
+      <% group.items.each do |item| %>
+        <%= link_to item.label, item.path, class: ("is-active" if active?(item)) %>
+      <% end %>
+    </div>
   <% end %>
 </nav>

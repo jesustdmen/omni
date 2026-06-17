@@ -1,28 +1,47 @@
 <% content_for :title, @demand.title %>
-<h1><%= @demand.title %></h1>
 
-<dl>
-  <dt>Origem</dt><dd><%= @demand.origin %></dd>
-  <dt>Prioridade</dt><dd><%= @demand.priority %></dd>
-  <dt>Cliente</dt><dd><%= @demand.client ? link_to(@demand.client.name, @demand.client) : "—" %></dd>
-  <dt>Status</dt><dd><%= @demand.status %></dd>
-  <dt>Descrição</dt><dd><%= @demand.description.presence || "—" %></dd>
-  <dt>Observações</dt><dd><%= @demand.observations.presence || "—" %></dd>
-  <% if @demand.converted? %>
-    <dt>Convertida em</dt><dd><%= @demand.converted_at %></dd>
-  <% end %>
-</dl>
+<nav class="breadcrumb">
+  <%= link_to "Demandas", demands_path %>
+  <span class="sep">/</span>
+  <span><%= @demand.title %></span>
+</nav>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1><%= @demand.title %></h1>
+    <div class="badge-row">
+      <%= status_badge(@demand.status) %>
+      <%= status_badge(@demand.priority) %>
+    </div>
+  </div>
+  <div class="page-head__actions">
+    <%= link_to "Editar", edit_demand_path(@demand), class: "btn btn--outline btn--sm" %>
+    <%= link_to "Excluir", @demand,
+          data: { turbo_method: :delete, turbo_confirm: "Excluir demanda?" },
+          class: "btn btn--ghost btn--sm" %>
+  </div>
+</div>
+
+<div class="card">
+  <dl>
+    <dt>Origem</dt><dd><%= @demand.origin&.humanize || "—" %></dd>
+    <dt>Prioridade</dt><dd><%= @demand.priority %></dd>
+    <dt>Cliente</dt><dd><%= @demand.client ? link_to(@demand.client.name, @demand.client) : "—" %></dd>
+    <dt>Status</dt><dd><%= @demand.status %></dd>
+    <dt>Descrição</dt><dd><%= @demand.description.presence || "—" %></dd>
+    <dt>Observações</dt><dd><%= @demand.observations.presence || "—" %></dd>
+    <% if @demand.converted? %>
+      <dt>Convertida em</dt><dd><%= @demand.converted_at %></dd>
+    <% end %>
+  </dl>
+</div>
 
 <% if @demand.pending? %>
   <div class="convert">
     <%= button_to "Converter em tarefa", convert_demand_path(@demand), method: :post %>
   </div>
 <% else %>
-  <p class="converted-state"><em>Demanda já convertida.</em></p>
+  <p class="converted-state"><span aria-hidden="true">✓</span> Demanda já convertida.</p>
 <% end %>
 
-<p>
-  <%= link_to "Editar", edit_demand_path(@demand) %> ·
-  <%= link_to "Excluir", @demand, data: { turbo_method: :delete, turbo_confirm: "Excluir demanda?" } %> ·
-  <%= link_to "Voltar", demands_path %>
-</p>
+<%= link_to "Voltar", demands_path, class: "back-link" %>

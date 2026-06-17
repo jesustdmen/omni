@@ -1,12 +1,30 @@
 <% content_for :title, @task.title %>
 
-<div class="row between itc">
-  <h1><%= @task.title %></h1>
-  <span><%= link_to "Editar", edit_task_path(@task) %> ·
-    <%= link_to "Excluir", @task, data: { turbo_method: :delete, turbo_confirm: "Excluir tarefa?" } %></span>
+<nav class="breadcrumb">
+  <%= link_to "Tarefas", tasks_path %>
+  <span class="sep">/</span>
+  <span><%= @task.title %></span>
+</nav>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1><%= @task.title %></h1>
+    <div class="badge-row">
+      <%= status_badge(@task.status) %>
+      <%= status_badge(@task.type) %>
+      <span class="muted"><%= @task.client.name %></span>
+    </div>
+  </div>
+  <div class="page-head__actions">
+    <%= link_to "Editar", edit_task_path(@task), class: "btn btn--outline btn--sm" %>
+    <%= link_to "Excluir", @task,
+          data: { turbo_method: :delete, turbo_confirm: "Excluir tarefa?" },
+          class: "btn btn--ghost btn--sm" %>
+  </div>
 </div>
 
-<%# Navegação de abas — apenas "Detalhes" tem conteúdo real nesta fase (F2.3). %>
+<%# Navegação de abas — apenas "Detalhes" tem conteúdo real nesta fase (F2.3).
+    As demais permanecem como placeholders (ocultas por CSS até a Fase 5+). %>
 <nav class="tabs">
   <span class="tab active">Detalhes</span>
   <span class="tab">Conversas</span>
@@ -16,16 +34,18 @@
 </nav>
 
 <section class="tab-panel" id="tab-detalhes">
-  <dl>
-    <dt>Título</dt><dd><%= @task.title %></dd>
-    <dt>Tipo</dt><dd><%= @task.type %></dd>
-    <dt>Status</dt><dd><%= @task.status %></dd>
-    <dt>Cliente</dt><dd><%= link_to @task.client.name, @task.client %></dd>
-    <dt>Projeto</dt><dd><%= @task.project ? link_to(@task.project.name, @task.project) : "—" %></dd>
-    <dt>Descrição</dt><dd><%= @task.description.presence || "—" %></dd>
-    <dt>Conversas (contador)</dt><dd><%= @task.conversation_count %></dd>
-    <dt>Última conversa</dt><dd><%= @task.last_conversation_at || "—" %></dd>
-  </dl>
+  <div class="card">
+    <dl>
+      <dt>Título</dt><dd><%= @task.title %></dd>
+      <dt>Tipo</dt><dd><%= @task.type %></dd>
+      <dt>Status</dt><dd><%= @task.status %></dd>
+      <dt>Cliente</dt><dd><%= link_to @task.client.name, @task.client %></dd>
+      <dt>Projeto</dt><dd><%= @task.project ? link_to(@task.project.name, @task.project) : "—" %></dd>
+      <dt>Descrição</dt><dd><%= @task.description.presence || "—" %></dd>
+      <dt>Conversas (contador)</dt><dd><%= @task.conversation_count %></dd>
+      <dt>Última conversa</dt><dd><%= @task.last_conversation_at || "—" %></dd>
+    </dl>
+  </div>
 </section>
 
 <section class="tab-panel placeholder" id="tab-conversas">
@@ -41,4 +61,4 @@
   <p><em>Demanda — em breve (fase futura).</em></p>
 </section>
 
-<p><%= link_to "Voltar", tasks_path %></p>
+<p><%= link_to "Voltar", tasks_path, class: "back-link" %></p>

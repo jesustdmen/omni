@@ -1,4 +1,7 @@
 <% content_for :title, "Novo projeto" %>
-<h1>Novo projeto</h1>
-<%= render "form", project: @project %>
-<p><%= link_to "Voltar", projects_path %></p>
+
+<div class="page-head"><div class="page-head__titles"><h1>Novo projeto</h1></div></div>
+
+<div class="card form-card"><%= render "form", project: @project %></div>
+
+<%= link_to "Voltar", projects_path, class: "back-link" %>

@@ -19,32 +19,46 @@
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
   <body>
-    <style>
-      .app-shell { display: flex; min-height: 100vh; font-family: system-ui, sans-serif; }
-      .sidebar { width: 220px; background: #1a1a1a; color: #eee; padding: 16px; }
-      .sidebar__brand { font-weight: 700; margin-bottom: 16px; }
-      .sidebar a { display: block; color: #ccc; text-decoration: none; padding: 6px 8px; border-radius: 4px; }
-      .sidebar a.is-active, .sidebar a:hover { background: #333; color: #fff; }
-      .app-main { flex: 1; padding: 24px; }
-      .flash { padding: 8px 12px; border-radius: 4px; margin-bottom: 12px; }
-      .flash--notice { background: #e6f4ea; }
-      .flash--alert { background: #fde8e8; }
-    </style>
     <div class="app-shell">
       <% if user_signed_in? %>
-        <%= render(SidebarComponent.new(current_path: request.path)) %>
+        <aside class="sidebar">
+          <div class="sidebar__brand">
+            <span class="brand-mark">O</span>
+            <span>Omni<span class="brand-sub">Continuity</span></span>
+          </div>
+          <%= render(SidebarComponent.new(current_path: request.path)) %>
+          <div class="sidebar__footer">
+            <span class="sidebar__user"><%= current_user.username %></span>
+            <%= button_to "Sair", destroy_user_session_path, method: :delete, form_class: "sidebar__logout" %>
+          </div>
+        </aside>
       <% end %>
-      <main class="app-main">
-        <% flash.each do |type, message| %>
-          <div class="flash flash--<%= type %>"><%= message %></div>
+
+      <div class="app-body">
+        <% if user_signed_in? %>
+          <header class="topbar">
+            <%# Busca apenas visual nesta fase — sem backend de busca (placeholder). %>
+            <div class="topbar__search">
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input type="text" placeholder="Buscar… (em breve)" aria-label="Buscar" autocomplete="off">
+            </div>
+            <div class="topbar__spacer"></div>
+            <span class="topbar__hint">Baseline visual</span>
+          </header>
         <% end %>
-        <%= yield %>
-      </main>
+
+        <main class="app-main">
+          <% flash.each do |type, message| %>
+            <div class="flash flash--<%= type %>"><%= message %></div>
+          <% end %>
+          <%= yield %>
+        </main>
+      </div>
     </div>
   </body>
 </html>

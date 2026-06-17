@@ -1,25 +1,33 @@
 <% content_for :title, "Tarefas" %>
-<h1>Tarefas</h1>
-<p><%= link_to "Nova tarefa", new_task_path %></p>
 
-<table>
-  <thead>
-    <tr><th>Título</th><th>Cliente</th><th>Projeto</th><th>Tipo</th><th>Status</th><th>Ações</th></tr>
-  </thead>
-  <tbody>
-    <% @tasks.each do |task| %>
-      <tr>
-        <td><%= link_to task.title, task %></td>
-        <td><%= task.client.name %></td>
-        <td><%= task.project&.name || "—" %></td>
-        <td><%= task.type %></td>
-        <td><%= task.status %></td>
-        <td><%= link_to "Editar", edit_task_path(task) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<div class="page-head">
+  <div class="page-head__titles"><h1>Tarefas</h1></div>
+  <div class="page-head__actions">
+    <%= link_to "Nova tarefa", new_task_path, class: "btn btn--primary" %>
+  </div>
+</div>
 
-<% if @tasks.empty? %>
-  <p>Nenhuma tarefa ainda.</p>
+<% if @tasks.any? %>
+  <table>
+    <thead>
+      <tr><th>Título</th><th>Cliente</th><th>Projeto</th><th>Tipo</th><th>Status</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% @tasks.each do |task| %>
+        <tr>
+          <td><%= link_to task.title, task %></td>
+          <td><%= task.client.name %></td>
+          <td><%= task.project&.name || "—" %></td>
+          <td><%= status_badge(task.type) %></td>
+          <td><%= status_badge(task.status) %></td>
+          <td><%= link_to "Editar", edit_task_path(task), class: "btn btn--ghost btn--sm" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty">
+    <p>Nenhuma tarefa ainda.</p>
+    <%= link_to "Nova tarefa", new_task_path, class: "btn btn--primary" %>
+  </div>
 <% end %>

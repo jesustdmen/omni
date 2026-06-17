@@ -1,25 +1,33 @@
 <% content_for :title, "Demandas" %>
-<h1>Demandas</h1>
-<p><%= link_to "Nova demanda", new_demand_path %></p>
 
-<table>
-  <thead>
-    <tr><th>Título</th><th>Cliente</th><th>Origem</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr>
-  </thead>
-  <tbody>
-    <% @demands.each do |demand| %>
-      <tr>
-        <td><%= link_to demand.title, demand %></td>
-        <td><%= demand.client&.name || "—" %></td>
-        <td><%= demand.origin %></td>
-        <td><%= demand.priority %></td>
-        <td><%= demand.status %></td>
-        <td><%= link_to "Editar", edit_demand_path(demand) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<div class="page-head">
+  <div class="page-head__titles"><h1>Demandas</h1></div>
+  <div class="page-head__actions">
+    <%= link_to "Nova demanda", new_demand_path, class: "btn btn--primary" %>
+  </div>
+</div>
 
-<% if @demands.empty? %>
-  <p>Nenhuma demanda ainda.</p>
+<% if @demands.any? %>
+  <table>
+    <thead>
+      <tr><th>Título</th><th>Cliente</th><th>Origem</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% @demands.each do |demand| %>
+        <tr>
+          <td><%= link_to demand.title, demand %></td>
+          <td><%= demand.client&.name || "—" %></td>
+          <td><%= demand.origin&.humanize || "—" %></td>
+          <td><%= status_badge(demand.priority) %></td>
+          <td><%= status_badge(demand.status) %></td>
+          <td><%= link_to "Editar", edit_demand_path(demand), class: "btn btn--ghost btn--sm" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty">
+    <p>Nenhuma demanda ainda.</p>
+    <%= link_to "Nova demanda", new_demand_path, class: "btn btn--primary" %>
+  </div>
 <% end %>

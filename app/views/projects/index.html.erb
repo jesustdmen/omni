@@ -1,24 +1,32 @@
 <% content_for :title, "Projetos" %>
-<h1>Projetos</h1>
-<p><%= link_to "Novo projeto", new_project_path %></p>
 
-<table>
-  <thead>
-    <tr><th>Nome</th><th>Cliente</th><th>Status</th><th>Período</th><th>Ações</th></tr>
-  </thead>
-  <tbody>
-    <% @projects.each do |project| %>
-      <tr>
-        <td><%= link_to project.name, project %></td>
-        <td><%= project.client.name %></td>
-        <td><%= project.status %></td>
-        <td><%= [project.start_date, project.end_date].compact.join(" → ").presence || "—" %></td>
-        <td><%= link_to "Editar", edit_project_path(project) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<div class="page-head">
+  <div class="page-head__titles"><h1>Projetos</h1></div>
+  <div class="page-head__actions">
+    <%= link_to "Novo projeto", new_project_path, class: "btn btn--primary" %>
+  </div>
+</div>
 
-<% if @projects.empty? %>
-  <p>Nenhum projeto ainda.</p>
+<% if @projects.any? %>
+  <table>
+    <thead>
+      <tr><th>Nome</th><th>Cliente</th><th>Status</th><th>Período</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% @projects.each do |project| %>
+        <tr>
+          <td><%= link_to project.name, project %></td>
+          <td><%= project.client.name %></td>
+          <td><%= status_badge(project.status) %></td>
+          <td><%= [project.start_date, project.end_date].compact.join(" → ").presence || "—" %></td>
+          <td><%= link_to "Editar", edit_project_path(project), class: "btn btn--ghost btn--sm" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty">
+    <p>Nenhum projeto ainda.</p>
+    <%= link_to "Novo projeto", new_project_path, class: "btn btn--primary" %>
+  </div>
 <% end %>
