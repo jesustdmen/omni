@@ -18,5 +18,6 @@ Rails.application.routes.draw do
   resources :demands do
     post :convert, on: :member
   end
+  resources :time_entries
   get "settings", to: "pages#placeholder", as: :settings
 end

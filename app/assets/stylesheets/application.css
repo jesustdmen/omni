@@ -442,9 +442,13 @@ dl dt:last-of-type, dl dd:last-of-type { border-bottom: none; }
 }
 .tab.active { color: var(--text); border-bottom-color: var(--accent); }
 
-/* Apenas a aba "Detalhes" tem conteúdo nesta fase; as demais são
-   placeholders e ficam ocultas até serem implementadas (Fase 5+). */
+/* Abas sem conteúdo nesta fase (Conversas/Histórico/Demanda) ficam ocultas
+   como placeholders até serem implementadas (Fase 5+). */
 .tab-panel.placeholder { display: none; }
+
+/* linha de total (soma de duração) na aba Time entries da task */
+.te-total { margin-top: 14px; font-size: .95rem; color: var(--text-muted); }
+.te-total strong { color: var(--text); }
 
 /* ------------------------------------------------------------------ */
 /* Dashboard                                                          */

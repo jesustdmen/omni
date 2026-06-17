@@ -61,6 +61,17 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_select ".tab", /Demanda/
   end
 
+  test "aba Time entries mostra lista read-only e total de duração" do
+    task = @client.tasks.create!(title: "Bug X", type: "support")
+    task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 30)
+    task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 12)
+    get task_path(task)
+    assert_response :success
+    assert_select "#tab-time table"
+    assert_select "#tab-time", /Total de duração/
+    assert_select "#tab-time", /42/
+  end
+
   test "edit e update" do
     task = @client.tasks.create!(title: "Bug X", type: "support")
     get edit_task_path(task)

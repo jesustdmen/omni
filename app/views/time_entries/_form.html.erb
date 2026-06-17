@@ -1,0 +1,33 @@
+<%= form_with model: time_entry do |f| %>
+  <% if time_entry.errors.any? %>
+    <div class="errors">
+      <p><%= pluralize(time_entry.errors.count, "erro") %> impediram salvar:</p>
+      <ul>
+        <% time_entry.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :task_id, "Tarefa" %><br>
+    <%= f.select :task_id,
+          options_for_select(
+            Task.includes(:client).order(:title).map { |t| ["#{t.title} (#{t.client.name})", t.id] },
+            time_entry.task_id
+          ),
+          prompt: "Selecione a tarefa" %>
+  </div>
+  <div><%= f.label :date, "Data" %><br><%= f.date_field :date %></div>
+  <div><%= f.label :start_time, "Início" %><br><%= f.datetime_local_field :start_time %></div>
+  <div><%= f.label :end_time, "Término (opcional)" %><br><%= f.datetime_local_field :end_time %></div>
+  <div>
+    <%= f.label :duration, "Duração (inteiro — paridade com o RepoA)" %><br>
+    <%= f.number_field :duration, min: 0, step: 1 %>
+  </div>
+  <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
+  <div><%= f.label :is_running, "Em execução" %> <%= f.check_box :is_running %></div>
+
+  <div><%= f.submit %></div>
+<% end %>

@@ -1,0 +1,7 @@
+<% content_for :title, "Editar apontamento" %>
+
+<div class="page-head"><div class="page-head__titles"><h1>Editar apontamento</h1></div></div>
+
+<div class="card form-card"><%= render "form", time_entry: @time_entry %></div>
+
+<%= link_to "Voltar", @time_entry, class: "back-link" %>

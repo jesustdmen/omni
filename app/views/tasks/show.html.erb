@@ -51,8 +51,39 @@
 <section class="tab-panel placeholder" id="tab-conversas">
   <p><em>Conversas — em breve (Fase 5).</em></p>
 </section>
-<section class="tab-panel placeholder" id="tab-time">
-  <p><em>Time entries — em breve (fase futura).</em></p>
+<%# Aba "Time entries" — conteúdo real read-only (F2.5). Sem timer/edição inline;
+    CRUD completo vive em /time_entries. %>
+<section class="tab-panel" id="tab-time">
+  <div class="subhead">
+    <h2>Time entries</h2>
+    <%= link_to "Novo apontamento", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+  </div>
+
+  <% entries = @task.time_entries.order(start_time: :desc) %>
+  <% if entries.any? %>
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Início</th><th>Duração</th><th>Descrição</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        <% entries.each do |entry| %>
+          <tr>
+            <td><%= entry.date %></td>
+            <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
+            <td><%= entry.duration %></td>
+            <td><%= entry.description.presence || "—" %></td>
+            <td><%= link_to "Ver", entry, class: "btn btn--ghost btn--sm" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p class="te-total">Total de duração: <strong><%= @task.total_duration %></strong></p>
+  <% else %>
+    <div class="empty">
+      <p>Nenhum apontamento nesta tarefa.</p>
+      <%= link_to "Novo apontamento", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+    </div>
+  <% end %>
 </section>
 <section class="tab-panel placeholder" id="tab-historico">
   <p><em>Histórico — em breve (fase futura).</em></p>

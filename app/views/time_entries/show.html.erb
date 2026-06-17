@@ -1,0 +1,36 @@
+<% content_for :title, "Apontamento" %>
+
+<nav class="breadcrumb">
+  <%= link_to "Time entries", time_entries_path %>
+  <span class="sep">/</span>
+  <%= link_to @time_entry.task.title, @time_entry.task %>
+</nav>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Apontamento</h1>
+    <div class="badge-row">
+      <%= @time_entry.is_running ? tag.span("Em execução", class: "badge badge--info") : tag.span("Parado", class: "badge badge--neutral") %>
+    </div>
+  </div>
+  <div class="page-head__actions">
+    <%= link_to "Editar", edit_time_entry_path(@time_entry), class: "btn btn--outline btn--sm" %>
+    <%= link_to "Excluir", @time_entry,
+          data: { turbo_method: :delete, turbo_confirm: "Excluir apontamento?" },
+          class: "btn btn--ghost btn--sm" %>
+  </div>
+</div>
+
+<div class="card">
+  <dl>
+    <dt>Tarefa</dt><dd><%= link_to @time_entry.task.title, @time_entry.task %></dd>
+    <dt>Data</dt><dd><%= @time_entry.date %></dd>
+    <dt>Início</dt><dd><%= @time_entry.start_time&.strftime("%d/%m/%Y %H:%M") %></dd>
+    <dt>Término</dt><dd><%= @time_entry.end_time&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
+    <dt>Duração</dt><dd><%= @time_entry.duration %></dd>
+    <dt>Em execução</dt><dd><%= @time_entry.is_running ? "Sim" : "Não" %></dd>
+    <dt>Descrição</dt><dd><%= @time_entry.description.presence || "—" %></dd>
+  </dl>
+</div>
+
+<%= link_to "Voltar", time_entries_path, class: "back-link" %>

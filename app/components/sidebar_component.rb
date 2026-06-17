@@ -17,7 +17,8 @@ class SidebarComponent < ViewComponent::Base
         Item.new("Clientes", "/clients"),
         Item.new("Projetos", "/projects"),
         Item.new("Tarefas", "/tasks"),
-        Item.new("Demandas", "/demands")
+        Item.new("Demandas", "/demands"),
+        Item.new("Time entries", "/time_entries")
       ]),
       Group.new("Sistema", [
         Item.new("Configurações", "/settings")

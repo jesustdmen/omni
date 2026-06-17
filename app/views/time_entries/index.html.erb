@@ -1,0 +1,33 @@
+<% content_for :title, "Time entries" %>
+
+<div class="page-head">
+  <div class="page-head__titles"><h1>Time entries</h1></div>
+  <div class="page-head__actions">
+    <%= link_to "Novo apontamento", new_time_entry_path, class: "btn btn--primary" %>
+  </div>
+</div>
+
+<% if @time_entries.any? %>
+  <table>
+    <thead>
+      <tr><th>Tarefa</th><th>Data</th><th>Início</th><th>Duração</th><th>Execução</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% @time_entries.each do |entry| %>
+        <tr>
+          <td><%= link_to entry.task.title, entry.task %></td>
+          <td><%= entry.date %></td>
+          <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
+          <td><%= entry.duration %></td>
+          <td><%= entry.is_running ? tag.span("Em execução", class: "badge badge--info") : tag.span("Parado", class: "badge badge--neutral") %></td>
+          <td><%= link_to "Editar", edit_time_entry_path(entry), class: "btn btn--ghost btn--sm" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty">
+    <p>Nenhum apontamento ainda.</p>
+    <%= link_to "Novo apontamento", new_time_entry_path, class: "btn btn--primary" %>
+  </div>
+<% end %>

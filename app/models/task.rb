@@ -7,6 +7,7 @@ class Task < ApplicationRecord
 
   belongs_to :client
   belongs_to :project, optional: true
+  has_many :time_entries, dependent: :destroy
 
   # status string + Rails enum (default todo); CHECK no banco garante os valores.
   enum :status, {
@@ -21,6 +22,11 @@ class Task < ApplicationRecord
   validates :type, presence: true, inclusion: { in: TYPES }
   validates :status, presence: true
   validate :project_belongs_to_same_client
+
+  # Soma read-only das durações dos apontamentos desta tarefa (F2.5).
+  def total_duration
+    time_entries.sum(:duration)
+  end
 
   private
 
