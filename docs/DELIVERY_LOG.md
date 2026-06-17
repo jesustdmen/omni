@@ -9,6 +9,27 @@
 
 ## Entradas
 
+## 2026-06-17 — [Fase 3 · F3.1] Migrations + importer idempotente de summaries — CONCLUÍDA e PUBLICADA
+### Resumo
+Primeiro código da Fase 3: **metadados de conversa** a partir da saída normalizada do RepoB (ADR-008), **idempotente por `thread_id`** e em **streaming**. **Apenas summaries/metadados** — turnos/`sessions.jsonl`/shards continuam fora (ADR-018). Publicado em `origin/main` no commit **`fe291d9`** (`fe291d99b3d614458b08d409a85cc9b0d8c4b51b`).
+### Features entregues
+- **Tabelas:** `conversations`, `workspace_maps`, `sync_runs`, `sync_run_items` (todas uuid PK).
+- **Serviço:** `Sync::ImportSummaries` (streaming linha-a-linha; `JSON.parse` defensivo; merge determinístico por `thread_id` — min `first_ts`/max `last_ts`/max contadores/união ordenada de `files_changed`/`source`+`workspace_hash`+título-fallback da linha de maior `last_ts`; título canônico de `session_titles.json` sobrescreve; upsert idempotente; `sync_run` + `sync_run_items` só para linhas problemáticas).
+- **Rake:** `bin/rails 'sync:summaries[path]'` (entrada operacional simples; sem job/agendamento).
+- **Fontes consumidas:** `summaries.jsonl`, `session_titles.json`, `workspace_maps.json`. **`sessions.jsonl`/shards/turnos NÃO** (ADR-018).
+- **`workspace_maps`:** órfão = `folder IS NULL` (scope `WorkspaceMap.orphan`).
+- **`conversations.user_id` = `bigint`** (segue `users.id`, que é bigint/Devise), FK local `ON DELETE SET NULL`, nullable, sem enforcement (prep ADR-013/014); **não é ID externo** do RepoA/RepoB. `personal boolean default false` (prep).
+### Alterações realizadas (repo app/, commit fe291d9)
+4 migrations (`create_conversations`/`create_workspace_maps`/`create_sync_runs`/`create_sync_run_items`); models `Conversation`/`WorkspaceMap`/`SyncRun`/`SyncRunItem`; `app/services/sync/import_summaries.rb`; `lib/tasks/sync.rake`; testes model + serviço; `db/schema.rb`; nota em `docs/F3_CONTRACT_DECISIONS.md` (§5, `user_id` bigint). **Sem UI/controller/rota; sem FK conversa↔task/time_entry; sem scorer/link.**
+### Testes/validações
+`bin/rails test`: 158 runs, 522 assertions, 0 falhas/erros/skips. rubocop 0 ofensas (99 arquivos); brakeman 0 avisos; bundler-audit 0 vulnerabilidades. **Smoke da rake apenas com o corpus sintético** (`test/fixtures/normalized_corpus/`): 1ª execução `imported=2`; 2ª `imported=0/updated=2` (idempotência); `conversations=2`, `workspace_maps=2` (órfãos=1), status `partial` (1 linha malformada → `error_lines=1`). **Nenhum dado real importado.**
+### Pendências
+**F3.2** (sync real de `summaries.jsonl` do `output/normalized/`, com backup/`pg_dump` e allowlist de caminho — ADR-011) **aguarda autorização**. Banco de **desenvolvimento** contém registros **sintéticos** do smoke (`conversations=2`, `workspace_maps=2`, `sync_runs=2`, `sync_run_items=2`) — **a limpar antes da F3.2**. Turnos lazy (decisão antes da F5). **M3 NÃO concluído** (falta sync real/validação com dados reais). F4/F5 não iniciadas.
+### Riscos
+Nenhum novo.
+### Próximo passo
+Limpeza do banco de dev + leitura de prontidão da **F3.2** (ambas sob autorização).
+
 ## 2026-06-17 — [Fase 3 · F3.0] Pré-requisitos, contrato e corpus — CONCLUÍDA (preparação, sem implementação)
 ### Resumo
 Etapa de **preparação** da Fase 3 (sync de conversas), **somente governança/contrato/corpus** — **sem código**: nenhuma migration/model/importer/sync, nenhum dado real importado. Endereça os três pré-requisitos bloqueantes da F3. Contexto: o projeto foi consolidado em **repositório único** (`app/`, ADR-019) e publicado em `origin/main` (`https://github.com/jesustdmen/omni.git`); governança agora vive em `app/docs/`.

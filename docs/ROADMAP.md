@@ -41,8 +41,10 @@
 - **NÃO fazer:** sync/conversas/scorer; campos de Task de v1.
 - **Marco:** M2.
 
-### Fase 3 — Sync de conversas normalizadas — ⬜ Não iniciada · 🔒 com pré-requisitos
-- **F3.0 (2026-06-17) — apenas preparação/contrato/corpus** (ADR-018, `F3_CONTRACT_DECISIONS.md`, corpus sintético): **sem código**. **F3.1 NÃO iniciada; M3 NÃO concluído.** Turnos (`sessions.jsonl`) fora da F3 (ADR-018).
+### Fase 3 — Sync de conversas normalizadas — 🟡 Em progresso (F3.0+F3.1 entregues; M3 ainda não)
+- **F3.0 (2026-06-17) — preparação/contrato/corpus** (ADR-018, `F3_CONTRACT_DECISIONS.md`, corpus sintético).
+- **F3.1 (2026-06-17, commit `fe291d9`) — CONCLUÍDA e PUBLICADA:** tabelas `conversations`/`workspace_maps`/`sync_runs`/`sync_run_items` + serviço `Sync::ImportSummaries` + rake `sync:summaries`, **idempotente por `thread_id`**, **só summaries/metadados** (turnos/`sessions.jsonl`/shards fora — ADR-018). **Validado só com corpus sintético.**
+- **F3.2 (pendente, requer autorização):** sync real de `summaries.jsonl` (`output/normalized/`) com backup/`pg_dump` + allowlist de caminho (ADR-011). **M3 só fecha com o sync real validado.** F4/F5 não iniciadas.
 - **Entregáveis:** `conversations` (metadados), `workspace_maps`, `sync_runs`/`sync_run_items`; turnos lazy; streaming + upsert por `thread_id`; resiliência a linha malformada.
 - **Critérios de aceite:** re-sync não duplica; 240 MB sem OOM; linha inválida → `partial`.
 - **Dependências BLOQUEANTES da Fase 3:**
@@ -79,7 +81,7 @@
 | M0 | Decisões arquiteturais aprovadas | 0 | ✅ Concluído (2026-06-16) |
 | M1 | Rails base operacional | 1 | ✅ Concluído (2026-06-16) |
 | M2 | Domínio de trabalho migrado | 2 | 🟡 Em progresso (WD-01..07 entregues — CRUD completo; M2 pleno pendente de dados reais / contagens origem×destino) |
-| M3 | Importação de conversas idempotente | 3 | ⬜ Não iniciado (com pré-requisitos) |
+| M3 | Importação de conversas idempotente | 3 | 🟡 Em progresso (F3.0+F3.1 entregues: importer idempotente de summaries, commit `fe291d9`; M3 pleno pendente de sync real/validação — F3.2) |
 | M4 | Vínculo conversa/tarefa operacional | 4 | ⬜ Não iniciado |
 | M5 | UI principal unificada | 5 | ⬜ Não iniciado |
 | M6 | Triagem, diário e sync operacional | 6 | ⬜ Não iniciado |
