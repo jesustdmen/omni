@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_17_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_17_130004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -41,6 +41,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_120001) do
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_contacts_on_client_id"
     t.index ["email"], name: "index_contacts_on_email"
+  end
+
+  create_table "conversations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "assistant_turns", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.jsonb "files_changed", default: [], null: false
+    t.timestamptz "first_ts"
+    t.timestamptz "last_ts"
+    t.integer "message_count", default: 0, null: false
+    t.boolean "personal", default: false, null: false
+    t.text "session_id"
+    t.text "source"
+    t.text "thread_id", null: false
+    t.text "title"
+    t.integer "tool_calls", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.integer "user_turns", default: 0, null: false
+    t.text "workspace_hash"
+    t.index ["last_ts"], name: "index_conversations_on_last_ts"
+    t.index ["thread_id"], name: "index_conversations_on_thread_id", unique: true
+    t.index ["user_id"], name: "index_conversations_on_user_id"
+    t.index ["workspace_hash"], name: "index_conversations_on_workspace_hash"
+    t.check_constraint "message_count >= 0 AND user_turns >= 0 AND assistant_turns >= 0 AND tool_calls >= 0", name: "conversations_counts_non_negative"
   end
 
   create_table "demands", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -197,6 +221,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_120001) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "sync_run_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "line_number"
+    t.text "raw_excerpt"
+    t.text "reason"
+    t.text "status"
+    t.uuid "sync_run_id", null: false
+    t.text "thread_id"
+    t.datetime "updated_at", null: false
+    t.index ["sync_run_id"], name: "index_sync_run_items_on_sync_run_id"
+    t.check_constraint "status = ANY (ARRAY['error'::text, 'skipped'::text])", name: "sync_run_items_status_check"
+  end
+
+  create_table "sync_runs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "error_lines", default: 0, null: false
+    t.timestamptz "finished_at"
+    t.integer "imported", default: 0, null: false
+    t.integer "lines_processed", default: 0, null: false
+    t.text "schema_version"
+    t.integer "skipped", default: 0, null: false
+    t.text "source_file"
+    t.text "source_label"
+    t.timestamptz "source_mtime"
+    t.timestamptz "started_at"
+    t.text "status", default: "ok", null: false
+    t.integer "updated", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.check_constraint "lines_processed >= 0 AND imported >= 0 AND updated >= 0 AND skipped >= 0 AND error_lines >= 0", name: "sync_runs_counts_non_negative"
+    t.check_constraint "status = ANY (ARRAY['ok'::text, 'partial'::text, 'error'::text])", name: "sync_runs_status_check"
+  end
+
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "client_id", null: false
     t.integer "conversation_count", default: 0, null: false
@@ -252,7 +308,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_120001) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
+  create_table "workspace_maps", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "folder"
+    t.datetime "updated_at", null: false
+    t.text "workspace_hash", null: false
+    t.index ["workspace_hash"], name: "index_workspace_maps_on_workspace_hash", unique: true
+  end
+
   add_foreign_key "contacts", "clients", on_delete: :cascade
+  add_foreign_key "conversations", "users", on_delete: :nullify
   add_foreign_key "demands", "clients", on_delete: :nullify
   add_foreign_key "projects", "clients", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -261,6 +326,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_120001) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "sync_run_items", "sync_runs", on_delete: :cascade
   add_foreign_key "tasks", "clients", on_delete: :cascade
   add_foreign_key "tasks", "projects", on_delete: :nullify
   add_foreign_key "time_entries", "tasks", on_delete: :cascade

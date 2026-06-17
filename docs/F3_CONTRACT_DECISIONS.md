@@ -51,11 +51,20 @@ Aplicada no upsert (idempotente; `summaries.jsonl` tem múltiplas linhas por `th
 ## 5. `user_id` / `personal` (ADR-013/014)
 - O contrato normalizado **não traz `user_id`** (histórico local, monousuário de fato); domínio
   compartilhado no MVP (ADR-014).
-- **Decisão (preparação futura, sem enforcement agora):** a migration da F3.1 incluirá
-  `conversations.user_id` **nullable** (FK→users) e `personal` **boolean default false**,
+- **Decisão (preparação futura, sem enforcement agora):** `conversations.user_id` **nullable**
+  (FK→`users`, `ON DELETE SET NULL`) e `personal` **boolean default false**,
   **sem lógica/escopo Pundit nesta fase**. O comportamento de conversas pessoais (ADR-013) entra na **F5**.
 - Consistente com o padrão já usado (`time_entries.conversation_id`, counters de `tasks`): coluna
   presente, sem comportamento.
+- **Tipo de `user_id` = `bigint` (não `uuid`).** Confirmado no schema (F3.1): a tabela local `users`
+  usa **PK `bigint`** (gerador do Devise; `create_table "users"` sem `id: :uuid`). Como `user_id` é
+  **FK para `users.id`**, ele **deve seguir o tipo real da PK** — um FK `uuid → bigint` é inválido
+  (`PG::DatatypeMismatch`). A leitura de prontidão sugeria `uuid`; **corrigido para `bigint`** na
+  implementação. (Observação: as tabelas de domínio do produto usam `uuid`, mas `users` permaneceu
+  `bigint` desde a Fundação/M1.)
+- **`user_id` NÃO representa ID externo** do RepoA/RepoB. Se um dia for preciso preservar identidade
+  de usuário de origem, isso deve ser **outra coluna** dedicada (ex.: `source_user_id text` /
+  `external_user_id text`), **não** este FK local.
 
 ---
 
