@@ -22,6 +22,10 @@ class ConversationsController < ApplicationController
     @conversation = Conversation.find(params[:id])
     authorize @conversation
     @folder = WorkspaceMap.find_by(workspace_hash: @conversation.workspace_hash)&.folder
+    # F4 — vínculos da conversa + tarefas disponíveis para o form de vínculo manual.
+    @links = @conversation.conversation_links.includes(:created_by, task: :client).order(:created_at)
+    @has_primary = @links.any? { |l| l.link_type == "primary" }
+    @tasks = Task.includes(:client).order(:title)
   end
 
   private

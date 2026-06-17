@@ -9,6 +9,26 @@
 
 ## Entradas
 
+## 2026-06-17 — [Fase 4 · MVP] Vínculo manual conversa↔tarefa — CONCLUÍDO
+### Resumo
+MVP do vínculo conversa↔tarefa: uma conversa vira **evidência vinculada** a uma tarefa, de forma **manual, reversível e auditável**, com counters em Task. **Sem scorer, sem `conversation_suggestions`, sem auto-link** (adiados para a fatia v1). Sem turnos/conteúdo/F5.
+### Features entregues (LK-01/02/03/07/08)
+- **Tabela `conversation_links`** (uuid; FK `conversation`/`task` cascade; `link_type` ∈ {primary,mention}; `origin` ∈ {manual,auto,suggestion}; `confidence` 0..1 nullable; `created_by_id` **bigint** FK→users nullify; **unique parcial ≤1 primário por conversa**; unique triplo (conversation,task,link_type); CHECKs).
+- **Model `ConversationLink`** (validações; primário exclusivo; counters **transacionais** em `after_create`/`after_destroy`).
+- **Counters em Task** (`conversation_count`/`last_conversation_at`) recomputados a partir de vínculos **primary** de conversas **não-personal** (ADR-013) + rake **`tasks:recount_conversations`**.
+- **Rotas aninhadas** `conversations/:conversation_id/links` (create/destroy) + `ConversationLinkPolicy` (ADR-014).
+- **UI:** bloco "Vínculos" + form em `/conversations/:id` (com guarda de primário existente); aba "Conversas" **read-only** em `/tasks/:id` (lista vinculadas, sem turnos/conteúdo).
+### Alterações realizadas (repo app/)
+Migration `create_conversation_links`; `models/conversation_link.rb` + assoc/counters em `task.rb`/`conversation.rb`; `policies/conversation_link_policy.rb`; `controllers/conversation_links_controller.rb` (+ loads em `conversations`/`tasks` controllers); rotas; views (`conversations/show`, `tasks/show` aba); `lib/tasks/conversations.rake`; testes (model/policy/integration); `db/schema.rb`; docs. **Sem alterar importers; sem sync; sem ler sessions/shards/turnos.**
+### Testes/validações
+`bin/rails test`: 193 runs, 666 assertions, 0 falhas/erros/skips (+21). rubocop 0 ofensas (115 arquivos); brakeman 0; bundler-audit 0. Cobertura: primário exclusivo, mention permitido, duplicata triple bloqueada, validações, cascade, **counters** (create/remove/mention/personal), policy (auth/anon), integração (vincular/remover/aparecer nos dois lados), sem turnos/sessions/shards, sem rotas de suggestions/scorer. Backup pré-migration: `app/tmp/dev_backup_pre_f4_20260617_192531.sql`. Smoke dev (net-zero): counters 0→1→0; telas 200; `conversation_links=0` ao final.
+### Pendências
+**F4 v1:** `conversation_suggestions` + **scorer** (metadados; ≥0.85; aceite explícito; nunca auto-link sem aceite) + **auto-link** (LK-04/05) — quando houver tarefas reais; `time_entry_id` no link; render de conteúdo/turnos = F5. **Avaliar ADR** para auto-link/scorer na fatia v1 (não criado agora).
+### Riscos
+Nenhum novo. Domínio com poucas tarefas (dev) limita validação visual; counters protegidos por recompute + rake.
+### Próximo passo
+Decidir entre **F4 v1** (scorer/sugestões) e **Fase 5** (UI rica de conversa).
+
 ## 2026-06-17 — [Fase 3 · F3.UI.1] Console read-only de validação — CONCLUÍDA
 ### Resumo
 UI **mínima e somente leitura** para validar visualmente os dados da Fase 3 (1635 conversas + sync runs). **É um console de validação, não a UI final da Fase 5.** Não renderiza turnos, não lê `sessions.jsonl`/shards, não cria vínculo conversa↔tarefa, não executa sync e não altera dados.

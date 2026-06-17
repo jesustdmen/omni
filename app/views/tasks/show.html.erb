@@ -27,7 +27,7 @@
     intencionais (sinalizadas "em breve") até a Fase 5+. Sem troca dinâmica nesta fase. %>
 <nav class="tabs">
   <span class="tab active">Detalhes</span>
-  <span class="tab soon">Conversas<span class="soon-flag">em breve</span></span>
+  <span class="tab">Conversas</span>
   <span class="tab">Time entries</span>
   <span class="tab soon">Histórico<span class="soon-flag">em breve</span></span>
   <span class="tab soon">Demanda<span class="soon-flag">em breve</span></span>
@@ -82,8 +82,31 @@
   <% end %>
 </section>
 
-<section class="tab-panel placeholder" id="tab-conversas">
-  Conversas vinculadas aparecerão aqui em fase futura.
+<%# F4 — conversas vinculadas (read-only). Sem turnos/conteúdo/markdown. %>
+<section class="tab-panel" id="tab-conversas">
+  <h2>Conversas vinculadas</h2>
+  <% if @linked_conversations.any? %>
+    <table>
+      <thead>
+        <tr><th>Conversa</th><th>Source</th><th>Vínculo</th><th>Origem</th><th>Última atividade</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% @linked_conversations.each do |link| %>
+          <% conv = link.conversation %>
+          <tr>
+            <td><%= conv.title.presence || tag.span("— sem título —", class: "muted") %></td>
+            <td><%= status_badge(conv.source) %></td>
+            <td><%= tag.span(link.link_type, class: "badge badge--#{link.link_type == 'primary' ? 'info' : 'neutral'}") %></td>
+            <td><%= link.origin %></td>
+            <td><%= conv.last_ts&.strftime("%d/%m/%Y %H:%M") || "—" %></td>
+            <td><%= link_to "Ver", conversation_path(conv), class: "btn btn--ghost btn--sm" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="muted">Nenhuma conversa vinculada a esta tarefa.</p>
+  <% end %>
 </section>
 <section class="tab-panel placeholder" id="tab-historico">
   Histórico operacional será exibido aqui em fase futura.

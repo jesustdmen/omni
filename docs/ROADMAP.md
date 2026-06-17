@@ -58,10 +58,12 @@
 - **NÃO fazer:** import de turnos em massa; tocar no pipeline; scorer.
 - **Marco:** M3.
 
-### Fase 4 — Vínculo conversa ↔ tarefa — ⬜ Não iniciada
+### Fase 4 — Vínculo conversa ↔ tarefa — 🟡 Em progresso (MVP manual entregue; scorer/auto-link pendentes)
 - **Entregáveis:** `conversation_links` (partial-unique primário), `conversation_suggestions`, scorer, auto-link ≥0.85 auditado/reversível, counter cache.
-- **Critérios de aceite:** ≤1 primário por conversa (constraint); auto-link logado/reversível.
-- **Marco:** M4.
+- **F4 MVP (2026-06-17) — CONCLUÍDO:** `conversation_links` (uuid; FK conversa/tarefa cascade; `link_type` primary/mention; `origin`; `confidence`; `created_by` bigint; **partial-unique ≤1 primário**; unique triplo); **vínculo manual** (form em `/conversations/:id`, aninhado `conversations/:id/links` create/destroy), **reversível** (undo) e **auditável** (origin/created_by); **counters em Task** (`conversation_count`/`last_conversation_at`) mantidos **transacionalmente** (só `primary`, ignora `personal`) + rake `tasks:recount_conversations`; aba "Conversas" da task lista vinculadas (read-only). **LK-01/02/03/07/08.** Detalhes em [`F4_CONTRACT_DECISIONS.md`](F4_CONTRACT_DECISIONS.md).
+- **Ainda FORA (fatia v1):** `conversation_suggestions`, **scorer**, **auto-link ≥0.85** (LK-04/05); `time_entry_id` no link; render de turnos/conteúdo (F5).
+- **Critérios de aceite:** ≤1 primário por conversa (constraint) ✔; auto-link logado/reversível (pendente — v1).
+- **Marco:** M4 (parcial).
 
 ### Fase 5 — UI unificada — ⬜ Não iniciada
 - **Entregáveis:** aba Conversas; lista+detalhe de conversa (markdown sanitizado); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
@@ -86,7 +88,7 @@
 | M1 | Rails base operacional | 1 | ✅ Concluído (2026-06-16) |
 | M2 | Domínio de trabalho migrado | 2 | ✅ Concluído (2026-06-17) — WD-01..07 CRUD completo; **migração de dados reais N/A** (RepoA inativo / domínio vazio na origem) |
 | M3 | Importação de conversas idempotente | 3 | 🟡 Em progresso (sync real de **metadados** entregue: 1635 conversas, idempotente, `bd0a9ce`; **módulo completo** de conversas — turnos/UI/vínculo — ainda fora) |
-| M4 | Vínculo conversa/tarefa operacional | 4 | ⬜ Não iniciado |
+| M4 | Vínculo conversa/tarefa operacional | 4 | 🟡 Em progresso (MVP manual entregue: `conversation_links`, vínculo reversível/auditável + counters; scorer/auto-link/sugestões pendentes — v1) |
 | M5 | UI principal unificada | 5 | ⬜ Não iniciado |
 | M6 | Triagem, diário e sync operacional | 6 | ⬜ Não iniciado |
 | M7 | Projeto estabilizado e documentado | 7 | ⬜ Não iniciado |

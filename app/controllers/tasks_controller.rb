@@ -5,7 +5,10 @@ class TasksController < ApplicationController
     @tasks = policy_scope(Task).includes(:client, :project).order(created_at: :desc)
   end
 
-  def show; end
+  def show
+    # F4 — conversas vinculadas (read-only) para a aba "Conversas".
+    @linked_conversations = @task.conversation_links.includes(:conversation).order(:created_at)
+  end
 
   def new
     @task = Task.new

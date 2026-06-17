@@ -10,8 +10,8 @@
 - **Bloqueadores da Fase 2:** Nenhum, exceto autorização explícita do usuário.
 - **Bloqueadores futuros (Fase 3):** **resolvidos (F3.0→F3.3)** — corpus; `thread_id → shard` via **ADR-018** (turnos fora); `schema_version` por-run; importer idempotente; sync real validado; folders resolvidos (**ADR-020**). Item opcional: limpar `sync_runs/sync_run_items` de auditoria no dev.
 - **Ação de segurança:** dump do RepoA fora do versionamento — protegido no repo de planejamento via `.gitignore`; RepoA tratado como referência/leitura.
-- **Última decisão tomada:** **F3.UI.1 — console read-only de validação (2026-06-17)**: telas `/conversations` e `/sync_runs` (só metadados; não é a UI da Fase 5). Antes: M2 concluído (dados N/A); F3.3 (folders); F3.2/F3.2.1 (sync real). *(commit/push pendentes de revisão.)*
-- **Próxima decisão necessária:** próximo foco — **Fase 4** (vínculo conversa↔tarefa) ou refinamentos do console.
+- **Última decisão tomada:** **Fase 4 MVP — vínculo manual conversa↔tarefa (2026-06-17)**: `conversation_links` (≤1 primário, reversível, auditável) + counters em Task + UI (form em `/conversations/:id`, aba "Conversas" read-only em `/tasks/:id`). **Scorer/auto-link/sugestões adiados (v1).** Contrato em `F4_CONTRACT_DECISIONS.md`. *(commit/push pendentes de revisão.)*
+- **Próxima decisão necessária:** próximo foco — **F4 v1** (scorer/sugestões/auto-link, quando houver tarefas reais) ou **Fase 5** (UI de conversa com turnos/markdown).
 
 ## Semáforo por área
 | Área | Status | Observação |
@@ -22,8 +22,8 @@
 | Migração Repo A | 🟢 Verde | **M2 concluído** — domínio CRUD completo (Client+Contact+Project+Task+Demand+ConvertDemand+TimeEntry); **migração de dados reais = N/A** (RepoA inativo, domínio vazio na origem) |
 | Pipeline Repo B | 🟢 Verde | Externo, estável, intocado |
 | Importação de conversas | 🟡 Amarelo | **F3.0→F3.3** (sync real de metadados: 1635 conversas; `source_nil=0`/`workspace_hash_nil=13`/`title_nil=1067`). **F3.3** resolveu folders (`orphan` 86→3; usuário redigido). **Turnos/UI/vínculo FORA** (ADR-018; F4/F5). M3 parcial (metadados+folders) |
-| Vínculo conversa/tarefa | ⬜ Cinza | Modelado; não iniciado |
-| UI | 🟡 Amarelo | **F2.UI** (baseline visual provisório) + **F3.UI.1** (console **read-only** de validação: `/conversations` e `/sync_runs`, só metadados — sem turnos/conteúdo/vínculo/sync). **Não é a UI final** — UI unificada real fica na Fase 5 |
+| Vínculo conversa/tarefa | 🟡 Amarelo | **F4 MVP**: vínculo manual `conversation_links` (≤1 primário, reversível, auditável) + counters em Task. **scorer/auto-link/sugestões pendentes (v1)** |
+| UI | 🟡 Amarelo | **F2.UI** (baseline visual provisório) + **F3.UI.1** (console read-only `/conversations`,`/sync_runs`) + **F4** (bloco "Vínculos" em `/conversations/:id`; aba "Conversas" read-only em `/tasks/:id`). **Não é a UI final** (turnos/markdown = Fase 5) |
 | Testes | 🟡 Amarelo | Fundação coberta (auth/authz/CSRF/rate-limit/job); corpus de parser pendente (F3) |
 | Segurança | 🟢 Verde | Devise + Pundit + CSRF nativo + rack-attack; dump fora do versionamento |
 | Documentação | 🟢 Verde | Baseline + M1 registrados |
@@ -39,7 +39,7 @@
 - [x] Rails Foundation iniciada. **(M1 concluído — 2026-06-16)**
 - [x] Domínio migrado. *(M2 concluído: CRUD completo; migração de dados reais **N/A** — RepoA inativo, domínio vazio na origem.)*
 - [x] Conversas importadas. *(Metadados, F3: 1635 conversas; turnos/UI fora.)*
-- [ ] Vínculos implementados.
+- [ ] Vínculos implementados. *(F4 MVP manual entregue 2026-06-17: `conversation_links` reversível/auditável + counters; scorer/auto-link/sugestões = v1.)*
 - [ ] UI unificada validada.
 - [ ] Testes mínimos concluídos.
 - [ ] Documentação finalizada.

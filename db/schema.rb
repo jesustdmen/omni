@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_17_130004) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_17_140001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -41,6 +41,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_130004) do
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_contacts_on_client_id"
     t.index ["email"], name: "index_contacts_on_email"
+  end
+
+  create_table "conversation_links", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.decimal "confidence", precision: 5, scale: 4
+    t.uuid "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "link_type", default: "primary", null: false
+    t.text "origin", default: "manual", null: false
+    t.uuid "task_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "task_id", "link_type"], name: "idx_conv_links_unique_triple", unique: true
+    t.index ["conversation_id"], name: "idx_conv_links_one_primary_per_conversation", unique: true, where: "(link_type = 'primary'::text)"
+    t.index ["conversation_id"], name: "index_conversation_links_on_conversation_id"
+    t.index ["created_by_id"], name: "index_conversation_links_on_created_by_id"
+    t.index ["task_id"], name: "index_conversation_links_on_task_id"
+    t.check_constraint "confidence IS NULL OR confidence >= 0::numeric AND confidence <= 1::numeric", name: "conversation_links_confidence_check"
+    t.check_constraint "link_type = ANY (ARRAY['primary'::text, 'mention'::text])", name: "conversation_links_link_type_check"
+    t.check_constraint "origin = ANY (ARRAY['manual'::text, 'auto'::text, 'suggestion'::text])", name: "conversation_links_origin_check"
   end
 
   create_table "conversations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -317,6 +336,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_130004) do
   end
 
   add_foreign_key "contacts", "clients", on_delete: :cascade
+  add_foreign_key "conversation_links", "conversations", on_delete: :cascade
+  add_foreign_key "conversation_links", "tasks", on_delete: :cascade
+  add_foreign_key "conversation_links", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "conversations", "users", on_delete: :nullify
   add_foreign_key "demands", "clients", on_delete: :nullify
   add_foreign_key "projects", "clients", on_delete: :cascade

@@ -51,14 +51,14 @@
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
-| LK-01 | Vincular conversa↔tarefa | Mockup | 4 | MVP | Não iniciado | CV-01,WD-04 | link transacional |
-| LK-02 | Vínculo primário (exclusivo) | Mockup | 4 | MVP | Não iniciado | LK-01 | partial-unique ≤1 |
-| LK-03 | Vínculo por menção | Mockup | 4 | MVP | Não iniciado | LK-01 | não conta em contadores |
-| LK-04 | Auto-link (≥0.85) | Mockup | 4 | v1 | Não iniciado | LK-02, WS-map | auditado/reversível |
-| LK-05 | Sugestões de vínculo (scorer) | Mockup | 4 | v1 | Não iniciado | CV-01,WD-04 | faixas 0.55/0.85 |
+| LK-01 | Vincular conversa↔tarefa | Mockup | 4 | MVP | ✅ Entregue (F4 MVP) | CV-01,WD-04 | link transacional |
+| LK-02 | Vínculo primário (exclusivo) | Mockup | 4 | MVP | ✅ Entregue (F4 MVP — partial-unique) | LK-01 | partial-unique ≤1 |
+| LK-03 | Vínculo por menção | Mockup | 4 | MVP | ✅ Entregue (F4 MVP — não conta) | LK-01 | não conta em contadores |
+| LK-04 | Auto-link (≥0.85) | Mockup | 4 | v1 | Não iniciado (v1) | LK-02, WS-map | auditado/reversível |
+| LK-05 | Sugestões de vínculo (scorer) | Mockup | 4 | v1 | Não iniciado (v1) | CV-01,WD-04 | faixas 0.55/0.85 |
 | LK-06 | Aceitar sugestão (lote) | Mockup | 6 | v1 | Não iniciado | LK-05 | lote atômico/item |
-| LK-07 | Desfazer vínculo | Mockup | 4/5 | MVP | Não iniciado | LK-01 | reversível + counter |
-| LK-08 | Auditoria de vínculo | Mockup | 4 | MVP | Não iniciado | LK-01 | log origin/created_by |
+| LK-07 | Desfazer vínculo | Mockup | 4/5 | MVP | ✅ Entregue (F4 MVP — undo + counter) | LK-01 | reversível + counter |
+| LK-08 | Auditoria de vínculo | Mockup | 4 | MVP | ✅ Entregue (F4 MVP — origin/created_by) | LK-01 | log origin/created_by |
 
 ## UI unificada
 

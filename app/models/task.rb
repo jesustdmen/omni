@@ -8,6 +8,9 @@ class Task < ApplicationRecord
   belongs_to :client
   belongs_to :project, optional: true
   has_many :time_entries, dependent: :destroy
+  # delete_all: a tarefa some → não há por que recomputar counters dela (sem callbacks).
+  has_many :conversation_links, dependent: :delete_all
+  has_many :conversations, through: :conversation_links
 
   # status string + Rails enum (default todo); CHECK no banco garante os valores.
   enum :status, {
@@ -26,6 +29,17 @@ class Task < ApplicationRecord
   # Soma read-only das durações dos apontamentos desta tarefa (F2.5).
   def total_duration
     time_entries.sum(:duration)
+  end
+
+  # F4: recomputa os counters de conversa a partir dos vínculos PRIMARY de
+  # conversas NÃO-personal (ADR-013). Idempotente; usa update_columns (sem callbacks/validações).
+  def recompute_conversation_counters!
+    primary = conversation_links.where(link_type: "primary")
+                                .joins(:conversation).where(conversations: { personal: false })
+    update_columns(
+      conversation_count: primary.count,
+      last_conversation_at: primary.maximum("conversations.last_ts")
+    )
   end
 
   private

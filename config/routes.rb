@@ -21,7 +21,10 @@ Rails.application.routes.draw do
   resources :time_entries
 
   # F3.UI.1 — console read-only de validação da Fase 3 (somente leitura).
-  resources :conversations, only: %i[index show]
+  # F4 — vínculo manual conversa↔tarefa (links aninhados; create/destroy).
+  resources :conversations, only: %i[index show] do
+    resources :links, controller: "conversation_links", only: %i[create destroy]
+  end
   resources :sync_runs, only: %i[index show]
 
   get "settings", to: "pages#placeholder", as: :settings

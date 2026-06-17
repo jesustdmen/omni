@@ -38,4 +38,52 @@
   </dl>
 </div>
 
+<%# F4 — Vínculos da conversa (manual). Sem conteúdo/turnos. %>
+<div class="subhead">
+  <h2>Vínculos</h2>
+</div>
+
+<% if @links.any? %>
+  <table>
+    <thead>
+      <tr><th>Tarefa</th><th>Tipo</th><th>Origem</th><th>Por</th><th>Quando</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @links.each do |link| %>
+        <tr>
+          <td><%= link_to link.task.title, link.task %> <span class="muted">(<%= link.task.client.name %>)</span></td>
+          <td><%= tag.span(link.link_type, class: "badge badge--#{link.link_type == 'primary' ? 'info' : 'neutral'}") %></td>
+          <td><%= link.origin %></td>
+          <td><%= link.created_by&.username || "—" %></td>
+          <td><%= link.created_at&.strftime("%d/%m/%Y %H:%M") %></td>
+          <td><%= button_to "Remover", conversation_link_path(@conversation, link), method: :delete,
+                    form_class: "inline", class: "btn btn--ghost btn--sm",
+                    data: { turbo_confirm: "Remover este vínculo?" } %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="muted">Nenhuma tarefa vinculada a esta conversa ainda.</p>
+<% end %>
+
+<div class="card form-card">
+  <%= form_with url: conversation_links_path(@conversation), method: :post do |f| %>
+    <div>
+      <%= label_tag :task_id, "Tarefa" %><br>
+      <%= select_tag :task_id,
+            options_for_select(@tasks.map { |t| [ "#{t.title} (#{t.client.name})", t.id ] }),
+            prompt: "Selecione a tarefa" %>
+    </div>
+    <div>
+      <%= label_tag :link_type, "Tipo de vínculo" %><br>
+      <%= select_tag :link_type, options_for_select([ [ "Primário", "primary" ], [ "Menção", "mention" ] ], "primary") %>
+    </div>
+    <% if @has_primary %>
+      <p class="muted">Já existe um vínculo <strong>primário</strong> nesta conversa — use “Menção” ou remova o primário atual antes.</p>
+    <% end %>
+    <div><%= submit_tag "Vincular tarefa", class: "btn btn--primary" %></div>
+  <% end %>
+</div>
+
 <%= link_to "Voltar", conversations_path, class: "back-link" %>
