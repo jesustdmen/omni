@@ -1,0 +1,28 @@
+<% content_for :title, @demand.title %>
+<h1><%= @demand.title %></h1>
+
+<dl>
+  <dt>Origem</dt><dd><%= @demand.origin %></dd>
+  <dt>Prioridade</dt><dd><%= @demand.priority %></dd>
+  <dt>Cliente</dt><dd><%= @demand.client ? link_to(@demand.client.name, @demand.client) : "—" %></dd>
+  <dt>Status</dt><dd><%= @demand.status %></dd>
+  <dt>Descrição</dt><dd><%= @demand.description.presence || "—" %></dd>
+  <dt>Observações</dt><dd><%= @demand.observations.presence || "—" %></dd>
+  <% if @demand.converted? %>
+    <dt>Convertida em</dt><dd><%= @demand.converted_at %></dd>
+  <% end %>
+</dl>
+
+<% if @demand.pending? %>
+  <div class="convert">
+    <%= button_to "Converter em tarefa", convert_demand_path(@demand), method: :post %>
+  </div>
+<% else %>
+  <p class="converted-state"><em>Demanda já convertida.</em></p>
+<% end %>
+
+<p>
+  <%= link_to "Editar", edit_demand_path(@demand) %> ·
+  <%= link_to "Excluir", @demand, data: { turbo_method: :delete, turbo_confirm: "Excluir demanda?" } %> ·
+  <%= link_to "Voltar", demands_path %>
+</p>

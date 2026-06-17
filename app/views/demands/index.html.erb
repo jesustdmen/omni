@@ -1,0 +1,25 @@
+<% content_for :title, "Demandas" %>
+<h1>Demandas</h1>
+<p><%= link_to "Nova demanda", new_demand_path %></p>
+
+<table>
+  <thead>
+    <tr><th>Título</th><th>Cliente</th><th>Origem</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr>
+  </thead>
+  <tbody>
+    <% @demands.each do |demand| %>
+      <tr>
+        <td><%= link_to demand.title, demand %></td>
+        <td><%= demand.client&.name || "—" %></td>
+        <td><%= demand.origin %></td>
+        <td><%= demand.priority %></td>
+        <td><%= demand.status %></td>
+        <td><%= link_to "Editar", edit_demand_path(demand) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @demands.empty? %>
+  <p>Nenhuma demanda ainda.</p>
+<% end %>

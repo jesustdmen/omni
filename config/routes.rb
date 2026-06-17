@@ -15,6 +15,8 @@ Rails.application.routes.draw do
   end
   resources :projects
   resources :tasks
-  get "demands",  to: "pages#placeholder", as: :demands
+  resources :demands do
+    post :convert, on: :member
+  end
   get "settings", to: "pages#placeholder", as: :settings
 end

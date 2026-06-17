@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_16_213001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_16_214001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -41,6 +41,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_213001) do
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_contacts_on_client_id"
     t.index ["email"], name: "index_contacts_on_email"
+  end
+
+  create_table "demands", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "client_id"
+    t.datetime "converted_at"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "observations"
+    t.string "origin", null: false
+    t.string "priority", null: false
+    t.string "status", default: "pending", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_demands_on_client_id"
+    t.index ["created_at"], name: "index_demands_on_created_at"
+    t.index ["priority"], name: "index_demands_on_priority"
+    t.index ["status"], name: "index_demands_on_status"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'converted'::character varying]::text[])", name: "demands_status_check"
   end
 
   create_table "projects", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -217,6 +235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_213001) do
   end
 
   add_foreign_key "contacts", "clients", on_delete: :cascade
+  add_foreign_key "demands", "clients", on_delete: :nullify
   add_foreign_key "projects", "clients", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

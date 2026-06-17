@@ -2,6 +2,7 @@ class Client < ApplicationRecord
   has_many :contacts, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :tasks, dependent: :destroy
+  has_many :demands, dependent: :nullify
 
   before_validation :normalize_cnpj
 
