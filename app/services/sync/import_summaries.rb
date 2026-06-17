@@ -101,24 +101,41 @@ module Sync
     # --- regra de merge determinística (F3_CONTRACT_DECISIONS §3) ----------
     def blank_acc
       { first_ts: nil, last_ts: nil, message_count: 0, user_turns: 0, assistant_turns: 0,
-        tool_calls: 0, files_changed: [], session_id: nil, source: nil, workspace_hash: nil, title: nil }
+        tool_calls: 0, files_changed: [], session_id: nil, source: nil, workspace_hash: nil,
+        title: nil, seeded: false }
     end
 
     def fold(acc, rec)
-      newer = newer_ts?(rec[:last_ts], acc[:last_ts])
+      # Linha "vencedora" dos escalares (source/workspace_hash/title/session_id), conforme
+      # F3_CONTRACT_DECISIONS.md §3: maior last_ts; em empate, ordem de leitura; se todos
+      # last_ts forem nil, a primeira linha observada vence. `acc[:last_ts]` (antes do update)
+      # representa o last_ts do vencedor atual.
+      win = !acc[:seeded] || newer_ts?(rec[:last_ts], acc[:last_ts])
+
       acc[:first_ts]        = min_ts(acc[:first_ts], rec[:first_ts])
       acc[:message_count]   = [ acc[:message_count], rec[:message_count] ].max
       acc[:user_turns]      = [ acc[:user_turns], rec[:user_turns] ].max
       acc[:assistant_turns] = [ acc[:assistant_turns], rec[:assistant_turns] ].max
       acc[:tool_calls]      = [ acc[:tool_calls], rec[:tool_calls] ].max
       acc[:files_changed]   = (acc[:files_changed] | rec[:files_changed]).sort
-      if newer
-        acc[:session_id]     = rec[:session_id]
-        acc[:source]         = rec[:source]
-        acc[:workspace_hash] = rec[:workspace_hash]
-        acc[:title]          = rec[:title]
+
+      if win
+        # vencedor: prioriza o valor da linha, sem sobrescrever um valor presente por nil.
+        acc[:session_id]     = rec[:session_id]     || acc[:session_id]
+        acc[:source]         = rec[:source]         || acc[:source]
+        acc[:workspace_hash] = rec[:workspace_hash] || acc[:workspace_hash]
+        acc[:title]          = rec[:title]          || acc[:title]
+      else
+        # não-vencedor: preenche apenas escalares ainda vazios (backfill — ex.: registro
+        # existente com escalares nil porque as linhas tinham last_ts nulo).
+        acc[:session_id]     ||= rec[:session_id]
+        acc[:source]         ||= rec[:source]
+        acc[:workspace_hash] ||= rec[:workspace_hash]
+        acc[:title]          ||= rec[:title]
       end
+
       acc[:last_ts] = max_ts(acc[:last_ts], rec[:last_ts])
+      acc[:seeded] = true
       acc
     end
 
@@ -137,11 +154,15 @@ module Sync
     end
 
     def acc_from(conversation)
+      # Estado já persistido = vencedor estabelecido (seeded: true). Novas linhas só
+      # sobrescrevem escalares se forem estritamente mais novas; senão, fazem backfill
+      # de escalares ainda vazios.
       { first_ts: conversation.first_ts, last_ts: conversation.last_ts,
         message_count: conversation.message_count, user_turns: conversation.user_turns,
         assistant_turns: conversation.assistant_turns, tool_calls: conversation.tool_calls,
         files_changed: Array(conversation.files_changed), session_id: conversation.session_id,
-        source: conversation.source, workspace_hash: conversation.workspace_hash, title: conversation.title }
+        source: conversation.source, workspace_hash: conversation.workspace_hash,
+        title: conversation.title, seeded: true }
     end
 
     def assign(conversation, merged, canonical_title)

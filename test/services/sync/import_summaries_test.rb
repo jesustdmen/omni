@@ -1,4 +1,5 @@
 require "test_helper"
+require "tempfile"
 
 module Sync
   class ImportSummariesTest < ActiveSupport::TestCase
@@ -14,6 +15,15 @@ module Sync
         titles_path: CORPUS.join("session_titles.json"),
         workspace_maps_path: CORPUS.join("workspace_maps.json")
       )
+    end
+
+    # Importa linhas sintéticas (sem tocar no corpus): grava um summaries.jsonl temporário.
+    def import_lines(rows)
+      Tempfile.create([ "summ", ".jsonl" ]) do |file|
+        rows.each { |row| file.puts(JSON.generate(row)) }
+        file.flush
+        return Sync::ImportSummaries.call(summaries_path: file.path)
+      end
     end
 
     test "importa o corpus: 2 conversas e run partial com contadores" do
@@ -92,6 +102,66 @@ module Sync
         :tool_calls, :files_changed, :source, :workspace_hash, :title
       )
       assert_equal first, second, "valores finais idênticos após reimport"
+    end
+
+    # F3.2.1 — regressão do bug de merge com last_ts nulo.
+    test "todas as linhas com last_ts nil: primeira linha vence escalares (ordem de leitura)" do
+      rows = [
+        { thread_id: "tn-1", source: "codex_session", workspace_hash: "wsA", title: "Primeiro título",
+          message_count: 2, user_turns: 1, assistant_turns: 1, tool_calls: 0, files_changed: [ "a.rb" ],
+          first_ts: nil, last_ts: nil },
+        { thread_id: "tn-1", source: "claude_code_session", workspace_hash: "wsB", title: "Segundo título",
+          message_count: 5, user_turns: 3, assistant_turns: 2, tool_calls: 1, files_changed: [ "b.rb" ],
+          first_ts: nil, last_ts: nil }
+      ]
+      import_lines(rows)
+      c = Conversation.find_by!(thread_id: "tn-1")
+
+      assert_equal "codex_session", c.source, "escalares da primeira linha (ordem de leitura)"
+      assert_equal "wsA", c.workspace_hash
+      assert_equal "Primeiro título", c.title
+      assert_equal 5, c.message_count, "contadores = maior valor"
+      assert_equal 3, c.user_turns
+      assert_equal [ "a.rb", "b.rb" ], c.files_changed, "união distinta ordenada"
+      assert_nil c.last_ts
+
+      # idempotência: reimportar não duplica nem altera os escalares
+      run2 = import_lines(rows)
+      assert_equal 0, run2.imported
+      assert_equal 1, Conversation.where(thread_id: "tn-1").count
+      assert_equal "codex_session", Conversation.find_by!(thread_id: "tn-1").source
+    end
+
+    test "linha com last_ts real vence escalares sobre linha anterior com last_ts nil" do
+      rows = [
+        { thread_id: "tm-1", source: "codex_session", workspace_hash: "wsNIL", title: "Título nil-ts",
+          message_count: 1, files_changed: [], first_ts: nil, last_ts: nil },
+        { thread_id: "tm-1", source: "claude_code_session", workspace_hash: "wsREAL", title: "Título real",
+          message_count: 3, files_changed: [], first_ts: "2026-03-01T10:00:00+00:00", last_ts: "2026-03-01T11:00:00+00:00" }
+      ]
+      import_lines(rows)
+      c = Conversation.find_by!(thread_id: "tm-1")
+
+      assert_equal "claude_code_session", c.source, "linha com last_ts real vence"
+      assert_equal "wsREAL", c.workspace_hash
+      assert_equal "Título real", c.title
+      assert_equal Time.utc(2026, 3, 1, 11, 0, 0).to_i, c.last_ts.to_i
+    end
+
+    test "backfill: registro existente com escalares nil é preenchido no reimport" do
+      nil_row = { thread_id: "bf-1", source: nil, workspace_hash: nil, title: nil,
+                  message_count: 1, files_changed: [], first_ts: nil, last_ts: nil }
+      # 1ª importação: sem source/ws (simula o estado defeituoso anterior)
+      import_lines([ nil_row ])
+      assert_nil Conversation.find_by!(thread_id: "bf-1").source
+
+      # 2ª importação: agora a linha traz source/ws (last_ts ainda nil) → backfill
+      import_lines([ nil_row.merge(source: "codex_session", workspace_hash: "wsBF", title: "Título BF") ])
+      c = Conversation.find_by!(thread_id: "bf-1")
+      assert_equal "codex_session", c.source, "backfill de escalar antes nulo"
+      assert_equal "wsBF", c.workspace_hash
+      assert_equal "Título BF", c.title
+      assert_equal 1, Conversation.where(thread_id: "bf-1").count
     end
   end
 end
