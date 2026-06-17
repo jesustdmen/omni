@@ -9,6 +9,30 @@
 
 ## Entradas
 
+## 2026-06-17 — [Fase 3 · F3.2 + F3.2.1] Primeiro sync real de summaries + correção do merge — CONCLUÍDAS e PUBLICADAS
+### Resumo
+Primeiro **sync real controlado** de `summaries.jsonl` (metadados de conversa) em `development`, e a correção **F3.2.1** de um bug de merge exposto pelo dado real. Publicado até o commit **`bd0a9ce`**. **Só metadados** — turnos/`sessions.jsonl`/shards/UI/vínculo continuam fora (ADR-018).
+### Execução (F3.2)
+- Ambiente **`development`**; origem montada **read-only/allowlist**: apenas `summaries.jsonl` + `session_titles.json` expostos ao container (`sessions.jsonl`/shards/`tags.json` **fisicamente fora**; pipeline do RepoB **não** executado).
+- **Backup** prévio: `app/tmp/dev_sync_backup_pre_f32_20260617_151436.sql` (não versionado).
+- **1ª execução:** `lines_processed=2399, imported=1635, updated=0, skipped=1, error_lines=0, status=partial`. O `partial` é **esperado** e explicado por **1 linha sem `thread_id`** (auditável em `sync_run_items`).
+- **2ª execução (idempotência):** `imported=0, updated=1635, Conversation.count=1635`.
+- **Domínio preservado:** clients/projects/tasks/demands/time_entries/users inalterados.
+### Achado e correção (F3.2.1, commit `bd0a9ce`)
+- **Achado:** 1069/1635 conversas ficaram com `source`/`workspace_hash`/`title` nulos — porque muitos registros reais (`chat_editing_state`, `agent_sessions`) têm `last_ts = nil`, e o `fold` só atribuía escalares na linha estritamente mais nova → divergia da regra documentada (empate → ordem de leitura; todos nulos → 1ª linha vence).
+- **Correção (apenas `import_summaries.rb` + teste):** 1ª linha vence quando não há vencedor; **backfill** (`fill-if-empty`) de escalares nulos em registros existentes; não sobrescrever valor presente por nil. Regra do contrato **não mudou** — só a implementação passou a respeitá-la. +3 testes de regressão (`last_ts` nulo; misto; backfill).
+- **Re-sync pós-patch (idempotente):** `Conversation.count=1635`, **`source_nil` 1069→0**, **`workspace_hash_nil`=13** (legítimos do dado), **`title_nil`=1067** (limitação do dado de origem — **não é bug**), `WorkspaceMap=86` (**todos órfãos**; resolução de `folder` → F3.3).
+### Alterações realizadas (repo app/)
+F3.2 = execução operacional (sem código). F3.2.1 (`bd0a9ce`): `app/services/sync/import_summaries.rb` + `test/services/sync/import_summaries_test.rb`. **Sem migrations/schema/models/UI/docs no commit do fix.**
+### Testes/validações
+`bin/rails test`: 161 runs, 541 assertions, 0 falhas/erros/skips. rubocop 0 ofensas; brakeman 0; bundler-audit 0.
+### Pendências
+**M3 parcial:** sync real de **metadados** entregue; **módulo completo de conversas (turnos, UI, vínculo conversa↔tarefa, triagem) fora** (F4/F5). **F3.3** (resolver `workspace_maps.folder` a partir de `raw/.../workspace.json`) pendente. Banco dev mantém `sync_runs=4`/`sync_run_items=4` como evidência de auditoria.
+### Riscos
+Nenhum novo. `title_nil=1067` é característica do dado de origem (registros sem título), não defeito.
+### Próximo passo
+Registrado (esta entrada). Depois: autorizar **F3.3** ou a migração de dados reais do domínio (M2 pleno).
+
 ## 2026-06-17 — [Fase 3 · F3.1] Migrations + importer idempotente de summaries — CONCLUÍDA e PUBLICADA
 ### Resumo
 Primeiro código da Fase 3: **metadados de conversa** a partir da saída normalizada do RepoB (ADR-008), **idempotente por `thread_id`** e em **streaming**. **Apenas summaries/metadados** — turnos/`sessions.jsonl`/shards continuam fora (ADR-018). Publicado em `origin/main` no commit **`fe291d9`** (`fe291d99b3d614458b08d409a85cc9b0d8c4b51b`).

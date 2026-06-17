@@ -42,6 +42,20 @@ Aplicada no upsert (idempotente; `summaries.jsonl` tem múltiplas linhas por `th
 - **Métricas:** registrar `lines_processed`, `imported`, `updated`, `skipped`, `error_lines`
   **separados** de `Conversation.count` (linhas ≠ conversas; ex.: 2399 linhas → ~1635 conversas).
 
+> **Correção F3.2.1 (2026-06-17, `bd0a9ce`):** o primeiro sync real expôs que a implementação
+> original só atribuía escalares (`source`/`workspace_hash`/`title`) na linha **estritamente mais
+> nova** — então threads com **todas** as linhas de `last_ts` nulo (no dado real: `chat_editing_state`,
+> `agent_sessions`) ficavam com escalares nulos, divergindo da regra acima (**empate → ordem de
+> leitura**; todos nulos → primeira linha vence). O `fold` foi corrigido para: (a) primeira linha
+> observada vencer quando ainda não há vencedor; (b) **backfill** (`fill-if-empty`) de escalares
+> ainda nulos em registros existentes; (c) não sobrescrever valor presente por nil. A regra desta
+> seção não mudou — só a implementação passou a respeitá-la.
+
+## Resultado do primeiro sync real (F3.2 / F3.2.1 — `development`)
+- Fonte: `summaries.jsonl` (2399 linhas) + `session_titles.json`; **`sessions.jsonl`/shards/tags fora** (ADR-018); origem montada **`:ro`**; backup `app/tmp/dev_sync_backup_pre_f32_20260617_151436.sql`.
+- 1ª execução: `lines_processed=2399, imported=1635, updated=0, skipped=1, error_lines=0, status=partial` (1 linha sem `thread_id`). Re-sync: `imported=0, updated=1635` (idempotente).
+- Pós-F3.2.1: **`Conversation.count=1635`**, `source_nil=0`, `workspace_hash_nil=13`, `title_nil=1067` (limitação do dado — não bug), `WorkspaceMap=86` (**todos órfãos**; resolução de `folder` → F3.3). Domínio inalterado.
+
 ## 4. Turnos fora da F3 (ver ADR-018)
 - A regra `thread_id → shards/messages/<sha1>` foi **refutada**; shard = `sha1("v4:<file_type>:<source_path>")`.
 - **F3 não importa turnos.** `sessions.jsonl` e `shards/messages/` ficam fora.

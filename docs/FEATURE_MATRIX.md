@@ -32,11 +32,11 @@
 
 ## Conversas
 
-> **Nota (F3.0 + F3.1, 2026-06-17 · commit `fe291d9`):** **F3.0** (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`) e **F3.1** (código) **concluídas e publicadas**. F3.1 entregou tabelas `conversations`/`workspace_maps`/`sync_runs`/`sync_run_items` + serviço `Sync::ImportSummaries` + rake `sync:summaries`, **idempotente por `thread_id`**, consumindo **apenas** `summaries.jsonl`/`session_titles.json`/`workspace_maps.json`. **Validado só com corpus sintético — nenhum dado real importado.** **Turnos (`sessions.jsonl`/shards) ficam fora da F3** (ADR-018); **sem UI; sem FK conversa↔task/time_entry**. **F3.2 (sync real, com backup + allowlist) pendente; M3 não concluído.**
+> **Nota (F3.0→F3.2.1, 2026-06-17 · commit `bd0a9ce`):** Sync de **metadados de conversa** entregue e publicado. F3.0 (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`); F3.1 (tabelas + `Sync::ImportSummaries` + rake `sync:summaries`, idempotente); **F3.2 = primeiro sync real controlado** de `summaries.jsonl` (1635 conversas; backup + allowlist `:ro`); **F3.2.1 = correção do merge** de escalares com `last_ts` nulo (`source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 por limitação do dado). **Turnos (`sessions.jsonl`/shards), UI, vínculo conversa↔tarefa e triagem ficam FORA** (ADR-018; F4/F5). **M3 parcial** (metadados sim; módulo completo de conversas não).
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
-| CV-01 | Import `summaries.jsonl` | Repo B/Mockup | 3 | MVP | 🔵 Em desenvolvimento (importer idempotente F3.1; sync real = F3.2) | M2 + corpus + validação shard | linhas válidas == count |
+| CV-01 | Import `summaries.jsonl` | Repo B/Mockup | 3 | MVP | ✅ Entregue (F3.2 — sync real idempotente; 1635 conversas) | M2 + corpus + validação shard | linhas válidas == count |
 | CV-02 | Import `sessions.jsonl` (turnos, lazy) | Repo B | 3/5 | MVP | Não iniciado | CV-01 | turnos == turn_count |
 | CV-03 | Títulos de sessão | Repo B | 3 | MVP | Não iniciado | CV-01 | títulos esperados |
 | CV-04 | Lista de conversas | Mockup/Viewer | 5 | MVP | Não iniciado | CV-01 | filtros funcionam |
