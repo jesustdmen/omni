@@ -9,6 +9,22 @@
 
 ## Entradas
 
+## 2026-06-17 — [Fase 3 · F3.0] Pré-requisitos, contrato e corpus — CONCLUÍDA (preparação, sem implementação)
+### Resumo
+Etapa de **preparação** da Fase 3 (sync de conversas), **somente governança/contrato/corpus** — **sem código**: nenhuma migration/model/importer/sync, nenhum dado real importado. Endereça os três pré-requisitos bloqueantes da F3. Contexto: o projeto foi consolidado em **repositório único** (`app/`, ADR-019) e publicado em `origin/main` (`https://github.com/jesustdmen/omni.git`); governança agora vive em `app/docs/`.
+### Features entregues
+Nenhuma feature de software. Artefatos: **ADR-018** (addendum ao ADR-009 — a regra `thread_id → shards/messages/<sha1>` foi **refutada**; shard = `sha1("v4:<file_type>:<source_path>")`; turnos e `sessions.jsonl` **fora da F3**; lazy-load decidido antes da F5). **`docs/F3_CONTRACT_DECISIONS.md`** (decisões: `schema_version` por-run no Rails + parsing defensivo; `thread_id` text+unique; **regra determinística de merge** por `thread_id`; turnos fora da F3; `user_id` nullable + `personal` default false como preparação futura, sem enforcement). **Corpus sintético** em `test/fixtures/normalized_corpus/` (3 válidas + 1 malformada + 2 com mesmo `thread_id`; UUID e sha1/40-hex; título canônico via `session_titles.json` e fallback; workspace conhecido + órfão; `tags.json`; `sessions.jsonl` documental).
+### Alterações realizadas (repo app/)
+Criados: `docs/adr/ADR-018-addendum-adr-009-shards-turnos-lazy.md`, `docs/F3_CONTRACT_DECISIONS.md`, `test/fixtures/normalized_corpus/{README.md,summaries.jsonl,session_titles.json,workspace_maps.json,tags.json,sessions.jsonl}`. Atualizados: `docs/ARCHITECTURE_DECISIONS_INDEX.md` (ADR-018 antes da ADR-019), `docs/PROJECT_STATUS.md`, `docs/FEATURE_MATRIX.md`, `docs/DELIVERY_LOG.md`. **ADR-019 não renumerada nem alterada.**
+### Testes/validações
+`bin/rails test`: 137 runs, 0 falhas. rubocop 0 ofensas; brakeman 0 avisos; bundler-audit 0 vulnerabilidades. (Artefatos de F3.0 são docs/fixtures; sem novos testes de código — a suíte da F3.1 usará o corpus.)
+### Pendências
+**F3.1** (migrations `conversations`/`workspace_maps`/`sync_runs`/`sync_run_items` + importer idempotente de `summaries.jsonl`) **aguarda autorização**. Turnos (F5). Migração de dados reais (M2 pleno) pendente.
+### Riscos
+Nenhum novo. `_SHARD_SCHEMA_VERSION` do RepoB pode mudar (hoje "4") — tratado como versão de contrato por-run.
+### Próximo passo
+Autorização para **F3.1**.
+
 ## 2026-06-17 — [Fase 2 · F2.5] TimeEntry (+conversation_id) — CONCLUÍDA
 ### Resumo
 Quinto e último recorte do domínio de trabalho: `TimeEntry` (WD-07), do zero em Rails, conforme docs oficiais e a leitura de prontidão aprovada. **Fecha o CRUD do domínio da Fase 2.** Sem cronômetro/start-stop/cálculo automático; conversas/vínculo/sync/scorer fora do recorte.

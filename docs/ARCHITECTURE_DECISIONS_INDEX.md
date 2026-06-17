@@ -12,7 +12,7 @@
 | ADR-006 | PostgreSQL 16 | ✅ Aceito | 2026-06-16 | 1 | Alto | 005,009 | — |
 | ADR-007 | Pipeline Python externo (MVP) | ✅ Aceito | 2026-06-16 | 3 | Alto | 008 | — |
 | ADR-008 | Consumo `output/normalized/` | ✅ Aceito | 2026-06-16 | 3 | Alto | 007,009 | — |
-| ADR-009 | Turnos lazy/sob demanda | ✅ Aceito | 2026-06-16 | 3 | Alto | 008,010 | validar `thread_id → shards/messages/<sha1>` antes da F3 |
+| ADR-009 | Turnos lazy/sob demanda | ✅ Aceito | 2026-06-16 | 3 | Alto | 008,010 | mapeamento `thread_id → shards/messages/<sha1>` **refutado** → ver addendum **ADR-018** |
 | ADR-010 | Diário por view sob demanda | ✅ Aceito | 2026-06-16 | 6 | Médio | 009 | — |
 | ADR-011 | Agendador externo roda; Rails lê | ✅ Aceito | 2026-06-16 | 3/6 | Médio | 005 | disparo do pipeline pelo Rails só com allowlist+timeout+path fixo |
 | ADR-012 | Sanitização server-side de markdown | ✅ Aceito | 2026-06-16 | 5 | Alto (XSS) | — | teste de payload malicioso (F5) |
@@ -21,6 +21,7 @@
 | ADR-015 | Dropar runtime-switch de ambiente | ✅ Aceito | 2026-06-16 | 1/2 | Médio | 006 | homologação = ambiente separado; clone = rake task segura |
 | ADR-016 | Task MVP = paridade + counters | ✅ Aceito | 2026-06-16 | 2 | Médio | — | tags/assignee/due_date/estimated_hours/checklist/código → v1 |
 | ADR-017 | CNPJ nullable + partial unique | ✅ Aceito | 2026-06-16 | 2 | Baixo | — | normalizar `''`→NULL na migração |
+| ADR-018 | Addendum ao ADR-009 — shards por arquivo-fonte; turnos lazy fora da F3 | ✅ Aceito | 2026-06-17 | 3 | Médio | 009,008 | decidir índice `thread_id→offset/shard` antes da F5 |
 | ADR-019 | Consolidação em repositório único (`app/`) + docs em `app/docs/` | ✅ Aceito | 2026-06-17 | 3 | Médio | — | configurar remoto único e primeiro push |
 
 ## Manutenção

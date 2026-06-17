@@ -34,13 +34,15 @@
 - **NÃO fazer:** conversas; domínio além de `users`; importar dados.
 - **Marco:** M1.
 
-### Fase 2 — Migração do domínio de trabalho — 🟡 Em progresso (M2 ainda não concluído)
+### Fase 2 — Migração do domínio de trabalho — 🟡 Em progresso (CRUD completo; M2 pleno pendente de dados reais)
 - **Entregáveis:** clients (+`workspace_paths`, cnpj nullable + partial unique)/contacts/projects/tasks (+`conversation_count`/`last_conversation_at`)/demands/time_entries (+`conversation_id` null); ConvertDemand transacional; `/tasks/:id` página (abas Detalhes/Time/Histórico/Demanda); migração de dados; auditoria.
+- **Status:** **WD-01..WD-07 entregues (2026-06-17) — domínio/CRUD completo** (Client/Contact, Project, Task + `/tasks/:id`, Demand + ConvertDemand, TimeEntry). Falta apenas a **migração/validação de dados reais** (contagens origem×destino) para o **M2 pleno**.
 - **Critérios de aceite:** contagens origem×destino batem; convert atômico; paridade CRUD.
 - **NÃO fazer:** sync/conversas/scorer; campos de Task de v1.
 - **Marco:** M2.
 
 ### Fase 3 — Sync de conversas normalizadas — ⬜ Não iniciada · 🔒 com pré-requisitos
+- **F3.0 (2026-06-17) — apenas preparação/contrato/corpus** (ADR-018, `F3_CONTRACT_DECISIONS.md`, corpus sintético): **sem código**. **F3.1 NÃO iniciada; M3 NÃO concluído.** Turnos (`sessions.jsonl`) fora da F3 (ADR-018).
 - **Entregáveis:** `conversations` (metadados), `workspace_maps`, `sync_runs`/`sync_run_items`; turnos lazy; streaming + upsert por `thread_id`; resiliência a linha malformada.
 - **Critérios de aceite:** re-sync não duplica; 240 MB sem OOM; linha inválida → `partial`.
 - **Dependências BLOQUEANTES da Fase 3:**
@@ -76,7 +78,7 @@
 |---|---|---|---|
 | M0 | Decisões arquiteturais aprovadas | 0 | ✅ Concluído (2026-06-16) |
 | M1 | Rails base operacional | 1 | ✅ Concluído (2026-06-16) |
-| M2 | Domínio de trabalho migrado | 2 | 🟡 Em progresso (WD-01..04 entregues; M2 não concluído) |
+| M2 | Domínio de trabalho migrado | 2 | 🟡 Em progresso (WD-01..07 entregues — CRUD completo; M2 pleno pendente de dados reais / contagens origem×destino) |
 | M3 | Importação de conversas idempotente | 3 | ⬜ Não iniciado (com pré-requisitos) |
 | M4 | Vínculo conversa/tarefa operacional | 4 | ⬜ Não iniciado |
 | M5 | UI principal unificada | 5 | ⬜ Não iniciado |

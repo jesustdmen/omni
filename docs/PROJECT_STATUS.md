@@ -4,14 +4,14 @@
 
 ## Status geral
 - **Fase atual:** Fase 2 — **domínio CRUD COMPLETO (2026-06-17)**: F2.1–F2.4 (Client+Contact, Project, Task base + `/tasks/:id`, Demand + ConvertDemand) + **F2.5 TimeEntry (WD-07) concluída**. M1 fechado. **F2.UI — baseline visual hi-fi provisório aprovado (2026-06-17)** (apresentação apenas; não é a UI final, que cabe à Fase 5; sem features novas). **M2 pleno (contagens origem×destino) ainda pendente de migração/validação de dados reais — não declarar M2 100% fechado.**
-- **Próxima fase:** Fase 3 — sync de conversas normalizadas — **🔒 com pré-requisitos** (corpus, validação shard, `schema_version`). Alternativa: planejar a migração de dados reais (autorização + backup) para fechar o **M2 pleno**.
-- **Status geral:** Domínio de trabalho CRUD completo (todas as entidades + ConvertDemand + TimeEntry). M2 pleno pendente de dados reais. 137 testes verdes; lint/brakeman/bundler-audit verdes. Sem importação de dados reais.
+- **Próxima fase:** Fase 3 — sync de conversas normalizadas. **F3.0 concluída (2026-06-17): preparação/contrato** (ADR-018, decisões de contrato, corpus sintético) — **sem código**. **F3.1 (migrations + importer de `summaries.jsonl`) aguarda autorização.** Alternativa paralela: migração de dados reais (autorização + backup) para fechar o **M2 pleno**.
+- **Status geral:** Domínio CRUD completo (F2). **F3.0 = preparação de contrato concluída**; F3 (implementação) ainda não iniciada. M2 pleno pendente de dados reais. 137 testes verdes; lint/brakeman/bundler-audit verdes. Sem importação de dados reais.
 - **Stack provisionada:** Rails 8.1.3 + PostgreSQL 16 via Docker (sem instalar nada no host; `_origem/` intocado).
 - **Bloqueadores da Fase 2:** Nenhum, exceto autorização explícita do usuário.
-- **Bloqueadores futuros (Fase 3):** corpus de caracterização; validação `thread_id → shard`; `schema_version` no JSONL.
+- **Bloqueadores futuros (Fase 3):** **endereçados na F3.0** — corpus sintético criado (`test/fixtures/normalized_corpus/`); `thread_id → shard` resolvido via **ADR-018** (mapeamento refutado; turnos fora da F3); `schema_version` decidido (por-run no Rails, ver `F3_CONTRACT_DECISIONS.md`). Resta a **autorização** para a F3.1 (código).
 - **Ação de segurança:** dump do RepoA fora do versionamento — protegido no repo de planejamento via `.gitignore`; RepoA tratado como referência/leitura.
-- **Última decisão tomada:** **Consolidação em repositório único (ADR-019, 2026-06-17)** — `app/` é o repo principal e a governança passou a viver em `app/docs/`; F2.5 TimeEntry concluída (domínio CRUD completo); F2.UI = baseline visual provisório; ADRs 001–017 aceitos (2026-06-16).
-- **Próxima decisão necessária:** autorizar a Fase 3 (sync de conversas, com pré-requisitos) **ou** a migração/validação de dados reais para fechar o M2 pleno.
+- **Última decisão tomada:** **F3.0 — contrato/decisões/corpus (2026-06-17)**: ADR-018 (addendum ao ADR-009), `F3_CONTRACT_DECISIONS.md` e corpus sintético; repo único publicado em `origin/main` (ADR-019).
+- **Próxima decisão necessária:** autorizar a **F3.1** (migrations + importer idempotente de `summaries.jsonl`) **ou** a migração/validação de dados reais para fechar o M2 pleno.
 
 ## Semáforo por área
 | Área | Status | Observação |
@@ -21,7 +21,7 @@
 | Banco de dados | 🟢 Verde | Postgres 16 (omni_db) + migration de `users` aplicada; domínio na F2 |
 | Migração Repo A | 🟡 Amarelo | Domínio CRUD completo (Client+Contact+Project+Task+Demand+ConvertDemand+**TimeEntry**); **migração/validação de dados reais pendente** (M2 pleno) |
 | Pipeline Repo B | 🟢 Verde | Externo, estável, intocado |
-| Importação de conversas | ⬜ Cinza | Plano definido; pré-requisitos pendentes (F3) |
+| Importação de conversas | 🟡 Amarelo | **F3.0 (contrato/decisões/corpus) concluída**; F3.1 (migrations + importer de `summaries.jsonl`) aguarda autorização. Turnos fora da F3 (ADR-018) |
 | Vínculo conversa/tarefa | ⬜ Cinza | Modelado; não iniciado |
 | UI | 🟡 Amarelo | **F2.UI**: baseline visual hi-fi provisório nas telas existentes (shell/sidebar/topbar, dashboard, listas, detalhes, forms). Não é a UI final — UI unificada real fica na Fase 5 |
 | Testes | 🟡 Amarelo | Fundação coberta (auth/authz/CSRF/rate-limit/job); corpus de parser pendente (F3) |

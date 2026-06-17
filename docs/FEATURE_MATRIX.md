@@ -32,6 +32,8 @@
 
 ## Conversas
 
+> **Nota (F3.0, 2026-06-17):** **preparação de contrato concluída** (ADR-018, `F3_CONTRACT_DECISIONS.md`, corpus sintético em `test/fixtures/normalized_corpus/`) — **sem código**. As features CV-* seguem **Não iniciado**; a **F3.1** (migrations + importer de `summaries.jsonl`/`session_titles.json`/`workspace_maps`) aguarda autorização. **Turnos (`sessions.jsonl`) ficam fora da F3** (ADR-018).
+
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
 | CV-01 | Import `summaries.jsonl` | Repo B/Mockup | 3 | MVP | Não iniciado | M2 + corpus + validação shard | linhas válidas == count |
