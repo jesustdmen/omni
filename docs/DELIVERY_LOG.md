@@ -9,6 +9,20 @@
 
 ## Entradas
 
+## 2026-06-18 — [Fase 5 · F5.1.4] Limpeza controlada dos resíduos sintéticos do DB dev — CONCLUÍDO (DB-only)
+### Resumo
+Remoção **cirúrgica e transacional** dos artefatos sintéticos criados por `rails runner` durante auditorias adversariais no DB de **desenvolvimento** (não havia poluição em test/prod). **DB-only:** nenhum arquivo de código/teste/schema alterado, sem migration, sem commit/push. Backup completo gerado antes.
+### Operação
+- **Backup:** `tmp/dev_backup_pre_f514_20260618_095619.sql` (31.000.634 bytes) — preservado e **gitignored**.
+- **Transação guardada:** `BEGIN` → DELETEs por **IDs exatos** → verificação de contagens (`RAISE EXCEPTION`→`ROLLBACK` se divergisse) → `COMMIT` só com o alvo exato.
+- **Removido:** `conversation_turn_refs` 9 · `turn_sources` 3 (`/tmp/s*.jsonl`) · `conversations` 3 (`tXSS/tXSS2/tXSS3`, `source='x'`) · `sync_runs` 3 (`/tmp`, `status=ok`, 03:59).
+### Contagens (antes → depois)
+`conversations` 1638→**1635** · `turn_sources` 4→**1** · `conversation_turn_refs` 129491→**129482** · `sync_runs` 8→**5** · `conversation_links` **1** (inalterado) · refs órfãs **0**.
+### Validações
+Conversa "Planejamento MedPlus" preservada: loader **`:ok`**, `total=177`, `mismatched=0`, refs=message_count=**177**; `/conversations/:id` renderiza **50 turnos** na pág.1, sem `:stale`. `/sync_runs` **sem** fontes `/tmp` (5 runs reais: 4× `summaries.jsonl /data` + 1× `sessions.jsonl /normalized`). turn_source real `/normalized/sessions.jsonl` (240.091.231 bytes, 129.482 refs) e link real (`cd086107` ↔ task `b497171d`) preservados. `git status --porcelain` permaneceu **vazio** durante a limpeza. Checks pós-registro: `bin/rails test` 225/811/0; rubocop 125/0; brakeman 0; bundler-audit 0.
+### Fora de escopo (cumprido)
+Sem alterar código/testes/schema; sem migration; sem markdown/scorer/triagem/chat; sem tocar loader/builder/importers nem `_origem/`/`_mockup/`. Backup não removido.
+
 ## 2026-06-18 — [Fase 5 · F5.1.3] Ocultar `source_file` em sync runs — CONCLUÍDO
 ### Resumo
 Remove a exposição de caminho/host na tela de sync (`/sync_runs/:id`), sem tocar sync/import/loader/banco. Era a última exibição de `source_file` cru apontada no checkpoint.
