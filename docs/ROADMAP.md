@@ -53,7 +53,7 @@
 - **Ainda FORA da Fase 3:** turnos (`sessions.jsonl`/shards lazy — antes da F5), render de mensagens, vínculo conversa↔tarefa (F4), UI rica/triagem (F5/F6).
 - **Entregáveis:** `conversations` (metadados), `workspace_maps`, `sync_runs`/`sync_run_items`; turnos lazy; streaming + upsert por `thread_id`; resiliência a linha malformada.
 - **Critérios de aceite:** re-sync não duplica; 240 MB sem OOM; linha inválida → `partial`.
-- **Dependências BLOQUEANTES da Fase 3:**
+- **Dependências originalmente bloqueantes — resolvidas na F3.0→F3.3:**
   1. Corpus de caracterização do parser definido e criado.
   2. Validação técnica `thread_id → shards/messages/<sha1>` confirmada.
   3. Decisão `schema_version` no JSONL aplicada.
@@ -66,7 +66,7 @@
 - **MVP manual FECHADO (readiness pós-F5.1.4):** vínculo conversa↔tarefa entregue — `primary`/`mention`, reversível (undo), auditável (origin/created_by), counters transacionais; partial-unique + CHECKs; validação dupla (DB + modelo). LK-01/02/03/07/08.
 - **Pendências → v1/roadmap:** `conversation_suggestions` + **scorer** (LK-05), **auto-link ≥0.85** auditável/reversível (LK-04, possível ADR), **aceite em lote** (LK-06), `time_entry_id` no link; aba Conversas com render (depende de F5).
 - **Critérios de aceite:** ≤1 primário por conversa (constraint) ✔; auto-link logado/reversível (pendente — v1).
-- **Marco:** M4 (parcial).
+- **Marco:** M4 — MVP manual concluído; v1/scorer em roadmap.
 
 ### Fase 5 — UI unificada — 🟡 Em progresso (F5.1 entregue)
 - **Decisão pré-F5 (2026-06-17):** lazy-load de turnos definido no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; sem importar turnos para o banco). Fronteira inicial em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).

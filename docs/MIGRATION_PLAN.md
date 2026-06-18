@@ -1,6 +1,6 @@
 # Omni — Plano de Migração
 
-> **Baseline aprovado em 2026-06-16.** Reflete ADRs 001–017 (Aceito). Complementa o ROADMAP.
+> **Baseline aprovado em 2026-06-16.** Reflete ADRs 001–017 (Aceito) no baseline; **ADR-018–021 acrescentados em F3/F5** — ver [ARCHITECTURE_DECISIONS_INDEX.md](ARCHITECTURE_DECISIONS_INDEX.md) para a lista atual. Complementa o ROADMAP.
 
 ## Escopo da migração
 

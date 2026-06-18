@@ -9,11 +9,11 @@
 | ID | Item | Tipo | Status |
 |---|---|---|---|
 | GOV-00 | Diagnóstico técnico | Documentação | ✅ Entregue (aprovado) |
-| GOV-01 | ADRs 001–017 | Decisão | ✅ Aprovado (Aceito) |
+| GOV-01 | ADRs 001–021 (todos Aceito; ver [ARCHITECTURE_DECISIONS_INDEX.md](ARCHITECTURE_DECISIONS_INDEX.md)) | Decisão | ✅ Aprovado |
 | GOV-02 | Modelo de dados + DDL de revisão | Documentação | ✅ Aprovado (planejado, não executado) |
 | GOV-03 | Estratégia de import | Documentação | ✅ Aprovado |
 | GOV-04 | 6 documentos de controle | Documentação | ✅ Aprovado (baseline) |
-| GOV-05 | Corpus de caracterização | Documentação/plano | 🟡 Definido; criação pendente (pré-F3) |
+| GOV-05 | Corpus de caracterização | Documentação/plano | ✅ Entregue (corpus sintético em `test/fixtures/normalized_corpus/`; usado nos testes de import/turnos) |
 | GOV-06 | Fronteiras do projeto documentadas | Documentação | ✅ Aprovado |
 
 ## Domínio de trabalho
@@ -32,7 +32,7 @@
 
 ## Conversas
 
-> **Nota (turnos lazy, pré-F5, 2026-06-17 · ADR-021):** a estratégia para localizar/abrir turnos sob demanda foi **decidida** no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Isso destrava o caminho de **CV-02/CV-05/CV-06/CV-07/CV-08** (que seguem **Não iniciado**), com render/sanitização na F5 (ADR-012). Fronteira em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
+> **Nota (turnos lazy, pré-F5, 2026-06-17 · ADR-021):** a estratégia para localizar/abrir turnos sob demanda foi **decidida** no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Isso destravou (ver status atual na tabela): **CV-02** (infra de índice/loader lazy entregue), **CV-05/CV-06** (parciais via F5.1 read-only), **CV-08** (entregue — `tool_input` em `<pre>`); **CV-07** (markdown sanitizado) segue para **F5.2** (ADR-012). Fronteira em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
 >
 > **Nota (F3.0→F3.2.1, 2026-06-17 · commit `bd0a9ce`):** Sync de **metadados de conversa** entregue e publicado. F3.0 (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`); F3.1 (tabelas + `Sync::ImportSummaries` + rake `sync:summaries`, idempotente); **F3.2 = primeiro sync real controlado** de `summaries.jsonl` (1635 conversas; backup + allowlist `:ro`); **F3.2.1 = correção do merge** de escalares com `last_ts` nulo (`source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 por limitação do dado). **Turnos (`sessions.jsonl`/shards), UI, vínculo conversa↔tarefa e triagem ficam FORA** (ADR-018; F4/F5).
 >
@@ -50,6 +50,7 @@
 | CV-08 | Tool calls (tool_input escapado) | Repo B/Mockup | 5 | MVP | ✅ Entregue (F5.1 — `tool_input` em `<pre>` escapado) | CV-05 | tool_input nunca HTML |
 | CV-09 | Arquivos alterados | Repo B | 5 | v1 | Não iniciado | CV-05 | lista correta |
 | CV-10 | Tags (conversa) | Repo B/Mockup | 3/5 | MVP | Não iniciado | CV-01 | filtro por tag |
+| CV-11 | Resolução de workspaces (`folder`) | Repo B | 3 | MVP | ✅ Entregue (F3.3 — `ResolveWorkspaceFolders`; órfãos 86→3; usuário `<USER>`; ADR-020) | CV-01 | `folder` resolvido; PII redigida |
 
 ## Vínculos
 
@@ -58,7 +59,7 @@
 | LK-01 | Vincular conversa↔tarefa | Mockup | 4 | MVP | ✅ Entregue (F4 MVP) | CV-01,WD-04 | link transacional |
 | LK-02 | Vínculo primário (exclusivo) | Mockup | 4 | MVP | ✅ Entregue (F4 MVP — partial-unique) | LK-01 | partial-unique ≤1 |
 | LK-03 | Vínculo por menção | Mockup | 4 | MVP | ✅ Entregue (F4 MVP — não conta) | LK-01 | não conta em contadores |
-| LK-04 | Auto-link (≥0.85) | Mockup | 4 | v1 | Não iniciado (v1) | LK-02, WS-map | auditado/reversível |
+| LK-04 | Auto-link (≥0.85) | Mockup | 4 | v1 | Não iniciado (v1) | LK-02, CV-11 | auditado/reversível |
 | LK-05 | Sugestões de vínculo (scorer) | Mockup | 4 | v1 | Não iniciado (v1) | CV-01,WD-04 | faixas 0.55/0.85 |
 | LK-06 | Aceitar sugestão (lote) | Mockup | 6 | v1 | Não iniciado | LK-05 | lote atômico/item |
 | LK-07 | Desfazer vínculo | Mockup | 4/5 | MVP | ✅ Entregue (F4 MVP — undo + counter) | LK-01 | reversível + counter |
@@ -72,13 +73,13 @@
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
 | UI-01 | Dashboard | Mockup/Repo A | 5 | MVP | Não iniciado | WD-04,CV-01 | zonas renderizam |
-| UI-02 | Lista de tarefas | Repo A | 2 | MVP | Não iniciado | WD-04 | paridade Repo A |
-| UI-03 | Página `/tasks/:id` | Mockup | 2/5 | MVP | Não iniciado | WD-04 | abas navegáveis |
+| UI-02 | Lista de tarefas | Repo A | 2 | MVP | 🟡 Base entregue (`/tasks`, WD-04/F2); UI **unificada final** = F5 | WD-04 | paridade Repo A |
+| UI-03 | Página `/tasks/:id` | Mockup | 2/5 | MVP | 🟡 Base entregue (F2.3 abas + aba "Conversas" F4); UI **unificada final** = F5 | WD-04 | abas navegáveis |
 | UI-04 | Aba Conversas | Mockup | 5 | MVP | Não iniciado | LK-01 | lista por kind |
 | UI-05 | Inbox de triagem | Mockup | 6 | v1 | Não iniciado | LK-05 | lote + atalhos |
 | UI-06 | Diário (view sob demanda) | Mockup/Viewer | 6 | v1 | Não iniciado | LK-01 | `?day=` mix |
 | UI-07 | Settings de sync | Mockup | 6 | v1 | Não iniciado | OP-03 | parcial/erro visíveis |
-| UI-08 | Workspaces órfãos | Mockup | 6 | v1 | Não iniciado | WS-map | órfão listável |
+| UI-08 | Workspaces órfãos | Mockup | 6 | v1 | Não iniciado | CV-11 | órfão listável |
 | UI-09 | Modal de vínculo (Ctrl+L) | Mockup | 5 | MVP | Não iniciado | LK-01 | Turbo modal |
 | UI-10 | Criar tarefa de conversa | Mockup | 5 | MVP | Não iniciado | LK-01 | transação testada |
 | UI-11 | Handoff IA externa | Mockup | 6 | v1 | Não iniciado | UI-03 | contexto correto |
@@ -92,7 +93,7 @@
 | OP-03 | Histórico de sync | Mockup | 3 | MVP→roadmap | Não iniciado (roadmap; `sync_runs`/`sync_run_items` gravados; UI de histórico pendente) | CV-01 | parcial/erro registrados |
 | OP-04 | Logs (redação de conteúdo) | Repo A/Novo | 1 | MVP | ✅ Entregue (M1) | M1 | filter_parameter_logging (passw/secret/token/email/…) |
 | OP-05 | Retenção (>30d) | Mockup | 6 | v1 | Não iniciado | CV-01 | vinculadas preservadas |
-| OP-06 | Backup (pg_dump pré-carga) | Novo | 2/7 | MVP | Não iniciado | M1 | backup antes de import |
+| OP-06 | Backup (pg_dump pré-carga) | Novo | 2/7 | MVP | 🟡 Parcial (`pg_dump` manual usado pré-carga em F3.2/F4/F5/F5.1.4; automação + backup de produção = F7) | M1 | backup antes de import |
 | OP-07 | Rollback | Novo | 7 | MVP | Não iniciado | OP-06 | reverter validado |
 | OP-08 | Testes + corpus | Novo | 1–7 | MVP | 🟡 Em andamento (suíte verde 225/811/0; corpus sintético em `test/fixtures/normalized_corpus`; sem SimpleCov) | M0 | suíte verde |
 | OP-09 | CI | Repo A/Novo | 1 | MVP | ✅ Entregue (M1) | M1 | 4 jobs (scan_ruby/scan_js/lint/test) verdes localmente |

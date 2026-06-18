@@ -9,6 +9,28 @@
 
 ## Entradas
 
+## 2026-06-18 — [P0.1] Saneamento documental + índice de documentação — CONCLUÍDO (docs-only)
+### Resumo
+Correção de incoerências remanescentes pós-P0 e criação de um **índice oficial** da documentação para reduzir drift. Somente documentação; sem código/teste/banco/migration/deploy.
+### Criado
+- **`docs/INDEX.md`**: visão geral, lista dos docs oficiais + função, **fonte de verdade por assunto**, ordem/gatilhos de atualização, regra **histórico vs estado atual**, regra **anti-drift**, topologia de repositórios e links relativos.
+### Corrigido em `FEATURE_MATRIX.md`
+- **GOV-01:** "ADRs 001–017" → **001–021** (21 ADRs aceitos; confirmado por `app/docs/adr/*.md`).
+- **GOV-05:** corpus "criação pendente" → **✅ Entregue** (`test/fixtures/normalized_corpus/`).
+- **Nota da seção Conversas:** reescrita (não dizia mais "CV-02/05/06/07/08 Não iniciado" — agora reflete CV-02 infra/CV-05-06 parcial/CV-08 entregue/CV-07 F5.2).
+- **OP-06 backup:** "Não iniciado" → **🟡 Parcial** (`pg_dump` manual pré-carga usado; automação/prod = F7).
+- **UI-02/UI-03:** esclarecida ambiguidade vs WD-04 → **🟡 base entregue (CRUD/F2/F4); UI unificada final = F5**.
+- **CV-11 (novo):** "Resolução de workspaces (`folder`)" ✅ Entregue (F3.3/ADR-020) — remove a dependência fantasma `WS-map` (LK-04 e UI-08 agora dependem de **CV-11**).
+### Ajustado em outros docs
+- `PROJECT_STATUS.md`: semáforo Testes (corpus criado; 225/811; lacunas PII/log/SimpleCov) e checklist "Corpus … criado".
+- `MIGRATION_PLAN.md`: nota de que ADR-018–021 vieram após o baseline (ponteiro ao índice de ADRs).
+### Preservado como histórico (não reescrito)
+Entradas antigas do `DELIVERY_LOG` (incl. métricas "221/776" de entregas passadas e "ADRs 001–017 aceitos" da Fase 0) e os entregáveis da **Fase 0** no `ROADMAP` (001–017) — snapshots fiéis ao momento.
+### Validações
+`bin/rails test` 225/811/0; rubocop 125/0; brakeman 0; bundler-audit 0 (docs-only).
+### Risco residual de doc
+Cópia **legada** de `docs/` na raiz `c:\Sandbox\_omni` (pré-consolidação) pode estar desatualizada — fonte de verdade é `app/docs/` (registrado no `INDEX.md`/`CONSTRAINTS`).
+
 ## 2026-06-18 — [P0] Fechamento documental de F3/F4 (MVP) + consolidação de readiness de produção — CONCLUÍDO (docs-only)
 ### Resumo
 Atualização **somente documental** refletindo o diagnóstico de readiness pós-F5.1.4: **F3 e F4 fechadas como MVP**, **F5 mantida aberta**, métricas de teste sincronizadas e **bloqueadores de produção (F7) consolidados**. Sem alterar código/testes/banco/containers; sem migration.
