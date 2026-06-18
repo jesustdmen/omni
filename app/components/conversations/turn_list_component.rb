@@ -8,6 +8,8 @@ module Conversations
   # truncado por teto de bytes. NÃO usa html_safe/raw/markdown/auto-link.
   class TurnListComponent < ViewComponent::Base
     ALLOWED_ROLES = %w[user assistant system tool].freeze
+    # Tom do badge por role (apenas apresentação; valores fixos — sem injeção).
+    ROLE_TONES = { "user" => "info", "assistant" => "violet", "tool" => "neutral", "system" => "warning" }.freeze
     TEXT_LIMIT = 20_000        # bytes máx de texto por turno (anti-DoS de render)
     TOOL_INPUT_LIMIT = 4_000   # bytes máx de tool_input por turno
 
@@ -41,6 +43,11 @@ module Conversations
 
     def role_label(role)
       role_class(role).humanize
+    end
+
+    # Tom do badge (allowlist via role_class → valor fixo do mapa).
+    def role_tone(role)
+      ROLE_TONES.fetch(role_class(role), "neutral")
     end
 
     def timestamp_label(value)

@@ -1,6 +1,6 @@
 <div class="subhead" id="conversa"><h2>Conversa</h2></div>
 
-<%# READ-ONLY. Conteúdo NÃO confiável: apenas auto-escape do ERB (<%= %>). %>
+<%# READ-ONLY. Conteudo NAO confiavel: renderizado apenas com auto-escape do ERB. %>
 <%# Proibido aqui: html_safe, raw, simple_format, sanitize, markdown, auto-link. %>
 <% case status %>
 <% when :ok %>
@@ -14,7 +14,7 @@
       <% turns.each do |turn| %>
         <li class="turn turn--<%= role_class(turn.role) %>">
           <div class="turn__head">
-            <span class="badge badge--neutral turn__role"><%= role_label(turn.role) %></span>
+            <span class="badge badge--<%= role_tone(turn.role) %> turn__role"><%= role_label(turn.role) %></span>
             <span class="muted turn__meta"><%= timestamp_label(turn.ts) %> · linha <%= turn.line_no %></span>
           </div>
           <% if turn.text.present? %>
