@@ -30,6 +30,19 @@ class SyncRunsTest < ActionDispatch::IntegrationTest
     assert_select "td", /sem thread_id/
   end
 
+  test "show oculta o caminho bruto do source_file (só o nome do arquivo)" do
+    run = SyncRun.create!(source_label: "sessions.jsonl",
+                          source_file: "/home/jesus/output/normalized/sessions.jsonl",
+                          schema_version: "4", status: "ok",
+                          started_at: Time.current, finished_at: Time.current)
+    get sync_run_path(run)
+    assert_response :success
+    assert_select "dd", /sessions\.jsonl/            # label seguro (basename) presente
+    assert_no_match(%r{/home/}, response.body)        # path bruto não vaza
+    assert_no_match(%r{/normalized/}, response.body)
+    assert_not_includes response.body, "jesus"        # PII de path não vaza
+  end
+
   test "é somente leitura: sem rotas de escrita" do
     helpers = Rails.application.routes.url_helpers
     assert_not helpers.respond_to?(:new_sync_run_path)

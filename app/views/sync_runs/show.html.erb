@@ -20,7 +20,8 @@
   <dl>
     <dt>Status</dt><dd><%= status_badge(@sync_run.status) %></dd>
     <dt>Fonte</dt><dd><%= @sync_run.source_label || "—" %></dd>
-    <dt>Arquivo</dt><dd class="mono"><%= @sync_run.source_file || "—" %></dd>
+    <%# F5.1.3 — só o nome do arquivo (safe_basename), sem expor path/PII de host. %>
+    <dt>Arquivo</dt><dd class="mono"><%= safe_basename(@sync_run.source_file) %></dd>
     <dt>Schema version</dt><dd><%= @sync_run.schema_version || "—" %></dd>
     <dt>Linhas processadas</dt><dd><%= @sync_run.lines_processed %></dd>
     <dt>Imported</dt><dd><%= @sync_run.imported %></dd>

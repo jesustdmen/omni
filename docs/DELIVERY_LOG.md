@@ -9,6 +9,17 @@
 
 ## Entradas
 
+## 2026-06-18 — [Fase 5 · F5.1.3] Ocultar `source_file` em sync runs — CONCLUÍDO
+### Resumo
+Remove a exposição de caminho/host na tela de sync (`/sync_runs/:id`), sem tocar sync/import/loader/banco. Era a última exibição de `source_file` cru apontada no checkpoint.
+### Entregue
+- **Helper `safe_basename`** (`ApplicationHelper`): retorna só o **nome do arquivo** (basename), tratando separadores `/` e `\` e o esquema `file://`; `blank` → "—". Garante que `/normalized/…`, `/tmp/…`, `/home/…`, `C:\Users\…`, `file:///…` **nunca** apareçam.
+- **`sync_runs/show.html.erb`**: linha "Arquivo" passa a usar `safe_basename(@sync_run.source_file)` (ex.: `sessions.jsonl`) em vez do caminho cru. Demais telas já usavam `source_label` (seguro); turnos de conversa já ocultavam `source_file`.
+### Testes/validações
+`bin/rails test` 225 runs/811 assertions/0 (+4); rubocop 0 (125 arquivos); brakeman 0; bundler-audit 0. Novos testes: `application_helper_test.rb` (basename/PII) + `sync_runs_test.rb` (path bruto não vaza). HTTP: `/sync_runs/:id` real → "Arquivo: sessions.jsonl"; resíduo `/tmp` → só `s…jsonl`; 0 vazamentos de `/normalized`//`/tmp`//`file://`. `/conversations/:id` segue `:ok` (sem stale).
+### Fora de escopo (cumprido)
+Sem markdown/scorer/triagem/chat; sem alterar loader/builder/importers; sem migration; sem limpar banco; sem tocar `_origem/`/`_mockup/`.
+
 ## 2026-06-18 — [Fase 5 · F5.1.2] Consolidação documental + persistência do runtime — CONCLUÍDO
 ### Resumo
 Higiene pós-F5.1.1 e ambiente dev reproduzível, **sem alterar comportamento funcional**: registro da F5.1.1 nos docs, remoção de nota obsoleta, addendum ao ADR-013 (alinhar `personal` boolean + decisão b1), padronização de nome "Omni" e **persistência do mount `/normalized:ro`** no fluxo de subida do `omni_web`.

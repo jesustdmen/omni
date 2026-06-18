@@ -27,6 +27,17 @@ module ApplicationHelper
     tag.span(value.to_s.humanize, class: "badge badge--#{tone}")
   end
 
+  # Nome de arquivo SEGURO para exibir em telas (sem path/PII). Retorna só o
+  # basename, lidando com separadores "/" e "\" e com o esquema "file://".
+  # Garante que caminhos locais (/normalized, /tmp, /home, C:\Users, file:///…)
+  # nunca apareçam na UI — só o nome do arquivo (ex.: "sessions.jsonl").
+  def safe_basename(value)
+    return "—" if value.blank?
+
+    cleaned = value.to_s.sub(%r{\Afile://}i, "")
+    cleaned.split(%r{[/\\]}).last.presence || "—"
+  end
+
   # Formata uma duração inteira (em minutos — unidade a confirmar na carga real,
   # ver F3_CONTRACT_DECISIONS.md) para um rótulo legível: "—", "0 min", "45 min",
   # "1 h", "1 h 30 min".
