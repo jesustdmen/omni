@@ -1,4 +1,4 @@
-# Omni/Continuity — Diário de Entregas
+# Omni — Diário de Entregas
 
 > Append-only. Entradas mais recentes no topo. **Não registrar entrega sem evidência objetiva.**
 
@@ -8,6 +8,23 @@
 - Atualizar `PROJECT_STATUS.md` e `FEATURE_MATRIX.md` na mesma sessão da entrada.
 
 ## Entradas
+
+## 2026-06-17 — [Pré-Fase 5 · Decisão] ADR-021 — lazy-load de turnos via índice de offsets — DOCUMENTADO
+### Resumo
+Documentada (somente documentação; **sem código/migration/tabela/banco**) a estratégia para localizar e abrir turnos de conversa **sob demanda**, sem importar `sessions.jsonl` para o banco. Fecha a pendência prevista no ADR-018 ("decidir índice `thread_id→offset` antes da F5").
+### Decisão (ADR-021 — Aceita)
+- **Lazy-load por índice de offsets**; chave canônica **`thread_id`**; menor unidade indexável = **a linha** do `sessions.jsonl`; índice guarda **ponteiros, não conteúdo**; leitura futura por **`seek(byte_offset)`+`readline`**; **validar `thread_id` da linha lida**; **não assumir faixa única contígua**.
+- Tabela futura sugerida `conversation_turn_refs` (conversation_id, thread_id, line_no, byte_offset, role, timestamp, source_fingerprint, indexed_at) — **conceitual, não criada**.
+- **Fingerprint** do arquivo (size+mtime+hash parcial) para detectar índice obsoleto e reindexar.
+- **Segurança:** conteúdo (`text`/`tool_input`/paths) **não confiável**; render/sanitização na **F5** (ADR-012); `tool_input` nunca HTML; `raw_source_file`/paths com usuário **redigidos `<USER>`**; `personal` respeitado (ADR-013).
+### Base empírica (leitura de prontidão, somente leitura sobre `_origem/_repob`)
+`sessions.jsonl`: NDJSON, UTF-8, ~229 MiB, 129.500 linhas; `thread_id` em toda linha; **cobertura 1635/1635** vs `conversations.thread_id`; relação conversa→turnos **1:N** (ex.: 177 turnos = `message_count`).
+### Alterações realizadas (somente docs)
+**Criados:** `docs/adr/ADR-021-lazy-load-turnos-via-indice-offsets.md`; `docs/F5_CONTRACT_DECISIONS.md` (contrato de fronteira inicial). **Atualizados:** `docs/ARCHITECTURE_DECISIONS_INDEX.md` (linha ADR-021 + refs ADR-009/018); `docs/F3_CONTRACT_DECISIONS.md` (§4 → ADR-021); `docs/ROADMAP.md` (Fase 5); `docs/FEATURE_MATRIX.md` (nota CV-02/05/06/07/08); `docs/PROJECT_STATUS.md`. Padronização de nome **"Omni"** nos cabeçalhos dos docs tocados.
+### Escopo negativo (cumprido)
+Sem `conversation_turn_refs`/`ConversationTurnRef`/`TurnIndexBuilder`/`TurnLoader`; sem rake de indexação; sem controller/view de turnos; sem migration/tabela; sem alterar código; sem alterar banco; sem importar turnos; sem executar sync; sem processar `sessions.jsonl` em massa.
+### Próximo passo
+Sob autorização: preparar a **fatia de implementação** do índice (build streaming + fingerprint + leitura lazy, sem UI), depois a **F5** (render sanitizado).
 
 ## 2026-06-17 — [Fase 4 · MVP] Vínculo manual conversa↔tarefa — CONCLUÍDO
 ### Resumo

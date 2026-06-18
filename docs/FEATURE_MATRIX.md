@@ -1,4 +1,4 @@
-# Omni/Continuity — Matriz de Features
+# Omni — Matriz de Features
 
 > **Baseline 2026-06-16.** Status: Não iniciado · Em análise · Em desenvolvimento · Em validação · Entregue · Bloqueado · Fora de escopo · Pronta p/ iniciar.
 > **Governança aprovada.** WD-01 a WD-07 entregues nos recortes F2.1–F2.5 (Client/Contact, Project, Task base + `/tasks/:id`, Demand + ConvertDemand, **TimeEntry**) — **domínio CRUD completo; M2 concluído (2026-06-17)**. **Migração de dados reais de domínio = N/A**: o RepoA estava **inativo** e o snapshot real (DB `app_v2`) tem o **domínio vazio** (clients/contacts/projects/tasks/demands/time_entries = 0; só 2 usuários de teste, **não migrados**) — não há import histórico de domínio. Demais features conforme o status na tabela.
@@ -32,6 +32,8 @@
 
 ## Conversas
 
+> **Nota (turnos lazy, pré-F5, 2026-06-17 · ADR-021):** a estratégia para localizar/abrir turnos sob demanda foi **decidida** no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Isso destrava o caminho de **CV-02/CV-05/CV-06/CV-07/CV-08** (que seguem **Não iniciado**), com render/sanitização na F5 (ADR-012). Fronteira em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
+>
 > **Nota (F3.0→F3.2.1, 2026-06-17 · commit `bd0a9ce`):** Sync de **metadados de conversa** entregue e publicado. F3.0 (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`); F3.1 (tabelas + `Sync::ImportSummaries` + rake `sync:summaries`, idempotente); **F3.2 = primeiro sync real controlado** de `summaries.jsonl` (1635 conversas; backup + allowlist `:ro`); **F3.2.1 = correção do merge** de escalares com `last_ts` nulo (`source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 por limitação do dado). **Turnos (`sessions.jsonl`/shards), UI, vínculo conversa↔tarefa e triagem ficam FORA** (ADR-018; F4/F5). **M3 parcial** (metadados sim; módulo completo de conversas não).
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |

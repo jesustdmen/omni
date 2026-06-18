@@ -1,4 +1,4 @@
-# Omni/Continuity — Status Consolidado do Projeto
+# Omni — Status Consolidado do Projeto
 
 > Snapshot: **2026-06-17**. Atualizar ao fim de cada sessão de trabalho e em toda decisão/entrega.
 
@@ -10,8 +10,8 @@
 - **Bloqueadores da Fase 2:** Nenhum, exceto autorização explícita do usuário.
 - **Bloqueadores futuros (Fase 3):** **resolvidos (F3.0→F3.3)** — corpus; `thread_id → shard` via **ADR-018** (turnos fora); `schema_version` por-run; importer idempotente; sync real validado; folders resolvidos (**ADR-020**). Item opcional: limpar `sync_runs/sync_run_items` de auditoria no dev.
 - **Ação de segurança:** dump do RepoA fora do versionamento — protegido no repo de planejamento via `.gitignore`; RepoA tratado como referência/leitura.
-- **Última decisão tomada:** **Fase 4 MVP — vínculo manual conversa↔tarefa (2026-06-17)**: `conversation_links` (≤1 primário, reversível, auditável) + counters em Task + UI (form em `/conversations/:id`, aba "Conversas" read-only em `/tasks/:id`). **Scorer/auto-link/sugestões adiados (v1).** Contrato em `F4_CONTRACT_DECISIONS.md`. *(commit/push pendentes de revisão.)*
-- **Próxima decisão necessária:** próximo foco — **F4 v1** (scorer/sugestões/auto-link, quando houver tarefas reais) ou **Fase 5** (UI de conversa com turnos/markdown).
+- **Última decisão tomada:** **ADR-021 — lazy-load de turnos via índice de offsets (2026-06-17)**: turnos localizados sob demanda por **índice `thread_id`→offset** em `sessions.jsonl` (ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Só documentação (ADR-021 + `F5_CONTRACT_DECISIONS.md`); **sem código/tabela/banco**. Fecha a pendência do ADR-018. *(commit/push pendentes de revisão.)* Antes: F4 MVP (vínculo manual conversa↔tarefa, `F4_CONTRACT_DECISIONS.md`).
+- **Próxima decisão necessária:** autorizar a **fatia de implementação do índice** (build streaming + fingerprint + leitura lazy, sem UI) e depois a **Fase 5** (render sanitizado — ADR-012); ou **F4 v1** (scorer/sugestões/auto-link, quando houver tarefas reais).
 
 ## Semáforo por área
 | Área | Status | Observação |

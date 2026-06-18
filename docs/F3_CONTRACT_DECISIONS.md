@@ -1,4 +1,4 @@
-# Omni/Continuity — Decisões de contrato da Fase 3 (F3.0)
+# Omni — Decisões de contrato da Fase 3 (F3.0)
 
 > **F3.0 = preparação/contrato. Não é implementação.** Nenhuma migration/model/importer foi
 > criada; nenhum dado real foi importado. A F3.1 (código) aguarda autorização explícita.
@@ -59,7 +59,8 @@ Aplicada no upsert (idempotente; `summaries.jsonl` tem múltiplas linhas por `th
 ## 4. Turnos fora da F3 (ver ADR-018)
 - A regra `thread_id → shards/messages/<sha1>` foi **refutada**; shard = `sha1("v4:<file_type>:<source_path>")`.
 - **F3 não importa turnos.** `sessions.jsonl` e `shards/messages/` ficam fora.
-- Lazy-load de turnos será **decidido antes da F5** (provável: índice `thread_id → offset/shard`),
+- Lazy-load de turnos **decidido em [ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)**
+  (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`),
   **sem implementação agora**.
 
 ## 5. `user_id` / `personal` (ADR-013/014)

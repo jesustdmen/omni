@@ -1,10 +1,10 @@
-# Omni/Continuity — Roadmap de Migração
+# Omni — Roadmap de Migração
 
 > **Baseline aprovado em 2026-06-16.** Fonte de verdade para fases, marcos e critérios de conclusão. Atualizar ao fim de cada fase e a cada mudança de escopo aprovada.
 
 ## Visão geral
 
-- **Projeto:** Omni/Continuity.
+- **Projeto:** Omni.
 - **Objetivo:** unificar TaskManager (TypeScript) + pipeline de conversas (Python) numa aplicação Rails, tratando conversas de IA como evidência viva do trabalho, vinculáveis a tarefas/projetos/clientes.
 - **Motivação Rails:** domínio CRUD em camadas (mapeia 1:1 para Rails); mockup orientado a navegação + atalhos (sweet spot de Hotwire); uma stack; integridade/auth/testes consolidados.
 - **Unificado:** domínio de trabalho (Repo A) + conversas normalizadas (saída do Repo B) + decisões de produto do mockup (vínculo, triagem, diário, sync).
@@ -66,8 +66,9 @@
 - **Marco:** M4 (parcial).
 
 ### Fase 5 — UI unificada — ⬜ Não iniciada
-- **Entregáveis:** aba Conversas; lista+detalhe de conversa (markdown sanitizado); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
-- **Critérios de aceite:** fluxos MVP; payload XSS neutralizado.
+- **Decisão pré-F5 (2026-06-17):** lazy-load de turnos definido no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; sem importar turnos para o banco). Fronteira inicial em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md). **Pendente:** fatia de implementação do índice (`conversation_turn_refs` + fingerprint), depois a UI.
+- **Entregáveis:** índice de turnos (ADR-021); aba Conversas; lista+detalhe de conversa (markdown sanitizado — ADR-012); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
+- **Critérios de aceite:** abertura lazy sem full-scan; turnos ordenados; fluxos MVP; payload XSS neutralizado; `tool_input` nunca HTML; `personal` respeitado.
 - **Marco:** M5.
 
 ### Fase 6 — Diário, triagem e automações — ⬜ Não iniciada
