@@ -10,8 +10,8 @@
 - **Bloqueadores da Fase 2:** Nenhum, exceto autorização explícita do usuário.
 - **Bloqueadores futuros (Fase 3):** **resolvidos (F3.0→F3.3)** — corpus; `thread_id → shard` via **ADR-018** (turnos fora); `schema_version` por-run; importer idempotente; sync real validado; folders resolvidos (**ADR-020**). Item opcional: limpar `sync_runs/sync_run_items` de auditoria no dev.
 - **Ação de segurança:** dump do RepoA fora do versionamento — protegido no repo de planejamento via `.gitignore`; RepoA tratado como referência/leitura.
-- **Última decisão tomada:** **ADR-021 — lazy-load de turnos via índice de offsets (2026-06-17)**: turnos localizados sob demanda por **índice `thread_id`→offset** em `sessions.jsonl` (ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Só documentação (ADR-021 + `F5_CONTRACT_DECISIONS.md`); **sem código/tabela/banco**. Fecha a pendência do ADR-018. *(commit/push pendentes de revisão.)* Antes: F4 MVP (vínculo manual conversa↔tarefa, `F4_CONTRACT_DECISIONS.md`).
-- **Próxima decisão necessária:** autorizar a **fatia de implementação do índice** (build streaming + fingerprint + leitura lazy, sem UI) e depois a **Fase 5** (render sanitizado — ADR-012); ou **F4 v1** (scorer/sugestões/auto-link, quando houver tarefas reais).
+- **Última decisão/entrega:** **Fatia pré-F5 — índice de turnos + loader lazy (2026-06-17)**: `turn_sources` + `conversation_turn_refs` (só ponteiros), `Sync::BuildConversationTurnRefs`, `ConversationTurns::LazyLoader`, rake `sync:turn_refs`. **Build real:** 129.500 linhas → 129.482 refs; **covered 1635/1635**; sem persistir `text`/`tool_input`; sem UI. Implementa o **ADR-021**. *(commit/push pendentes de revisão.)* Antes: ADR-021 (doc) e F4 MVP (vínculo manual).
+- **Próxima decisão necessária:** **Fase 5** (UI de conversa consumindo o loader, com render sanitizado — ADR-012); ou **F4 v1** (scorer/sugestões/auto-link, quando houver tarefas reais).
 
 ## Semáforo por área
 | Área | Status | Observação |
@@ -21,7 +21,7 @@
 | Banco de dados | 🟢 Verde | Postgres 16 (omni_db) + migration de `users` aplicada; domínio na F2 |
 | Migração Repo A | 🟢 Verde | **M2 concluído** — domínio CRUD completo (Client+Contact+Project+Task+Demand+ConvertDemand+TimeEntry); **migração de dados reais = N/A** (RepoA inativo, domínio vazio na origem) |
 | Pipeline Repo B | 🟢 Verde | Externo, estável, intocado |
-| Importação de conversas | 🟡 Amarelo | **F3.0→F3.3** (sync real de metadados: 1635 conversas; `source_nil=0`/`workspace_hash_nil=13`/`title_nil=1067`). **F3.3** resolveu folders (`orphan` 86→3; usuário redigido). **Turnos/UI/vínculo FORA** (ADR-018; F4/F5). M3 parcial (metadados+folders) |
+| Importação de conversas | 🟡 Amarelo | **F3.0→F3.3** (sync real de metadados: 1635 conversas; `source_nil=0`/`workspace_hash_nil=13`/`title_nil=1067`). **F3.3** resolveu folders (`orphan` 86→3). **Pré-F5:** índice de turnos (offsets) + loader lazy (ADR-021) — 129.482 refs, covered 1635/1635, sem conteúdo no banco. **UI de turnos = F5.** M3 parcial |
 | Vínculo conversa/tarefa | 🟡 Amarelo | **F4 MVP**: vínculo manual `conversation_links` (≤1 primário, reversível, auditável) + counters em Task. **scorer/auto-link/sugestões pendentes (v1)** |
 | UI | 🟡 Amarelo | **F2.UI** (baseline visual provisório) + **F3.UI.1** (console read-only `/conversations`,`/sync_runs`) + **F4** (bloco "Vínculos" em `/conversations/:id`; aba "Conversas" read-only em `/tasks/:id`). **Não é a UI final** (turnos/markdown = Fase 5) |
 | Testes | 🟡 Amarelo | Fundação coberta (auth/authz/CSRF/rate-limit/job); corpus de parser pendente (F3) |

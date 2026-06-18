@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_17_140001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_17_150001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,6 +60,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_140001) do
     t.check_constraint "confidence IS NULL OR confidence >= 0::numeric AND confidence <= 1::numeric", name: "conversation_links_confidence_check"
     t.check_constraint "link_type = ANY (ARRAY['primary'::text, 'mention'::text])", name: "conversation_links_link_type_check"
     t.check_constraint "origin = ANY (ARRAY['manual'::text, 'auto'::text, 'suggestion'::text])", name: "conversation_links_origin_check"
+  end
+
+  create_table "conversation_turn_refs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "byte_offset", null: false
+    t.uuid "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "line_no", null: false
+    t.text "role"
+    t.text "thread_id", null: false
+    t.timestamptz "ts"
+    t.uuid "turn_source_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "line_no"], name: "idx_turn_refs_conversation_line"
+    t.index ["thread_id", "line_no"], name: "idx_turn_refs_thread_line"
+    t.index ["turn_source_id", "conversation_id", "line_no"], name: "idx_turn_refs_unique_source_conv_line", unique: true
+    t.index ["turn_source_id", "line_no"], name: "idx_turn_refs_unique_source_line", unique: true
+    t.index ["turn_source_id"], name: "index_conversation_turn_refs_on_turn_source_id"
+    t.check_constraint "byte_offset >= 0", name: "conversation_turn_refs_byte_offset_check"
+    t.check_constraint "line_no > 0", name: "conversation_turn_refs_line_no_check"
   end
 
   create_table "conversations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -309,6 +328,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_140001) do
     t.check_constraint "duration >= 0", name: "time_entries_duration_check"
   end
 
+  create_table "turn_sources", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "content_hash", null: false
+    t.datetime "created_at", null: false
+    t.timestamptz "indexed_at"
+    t.text "schema_version", null: false
+    t.bigint "size_bytes", null: false
+    t.text "source_file", null: false
+    t.text "source_label", null: false
+    t.timestamptz "source_mtime", null: false
+    t.text "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_file", "size_bytes", "source_mtime", "content_hash", "schema_version"], name: "idx_turn_sources_fingerprint", unique: true
+    t.check_constraint "status = ANY (ARRAY['pending'::text, 'ok'::text, 'partial'::text, 'stale'::text, 'error'::text])", name: "turn_sources_status_check"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
@@ -339,6 +373,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_140001) do
   add_foreign_key "conversation_links", "conversations", on_delete: :cascade
   add_foreign_key "conversation_links", "tasks", on_delete: :cascade
   add_foreign_key "conversation_links", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "conversation_turn_refs", "conversations", on_delete: :cascade
+  add_foreign_key "conversation_turn_refs", "turn_sources", on_delete: :cascade
   add_foreign_key "conversations", "users", on_delete: :nullify
   add_foreign_key "demands", "clients", on_delete: :nullify
   add_foreign_key "projects", "clients", on_delete: :cascade

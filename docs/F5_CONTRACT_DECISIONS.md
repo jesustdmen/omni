@@ -6,6 +6,12 @@
 > de offsets), [ADR-012](adr/ADR-012-markdown-sanitization.md) (sanitização), [ADR-013](adr/ADR-013-personal-conversations.md)
 > (conversas pessoais), [ADR-008](adr/ADR-008-output-normalized-contract.md) (consumo de `output/normalized/`).
 
+> **Atualização (2026-06-17):** a **fatia de infraestrutura** já foi entregue (pré-F5): tabelas
+> `turn_sources` + `conversation_turn_refs` (só ponteiros), `Sync::BuildConversationTurnRefs`,
+> `ConversationTurns::LazyLoader` e rake `sync:turn_refs`. Build real: 129.482 refs, **covered
+> 1635/1635**, sem persistir conteúdo. **A F5 consome o `LazyLoader`** — falta a UI + render
+> sanitizado (ADR-012). Ver `DELIVERY_LOG.md`.
+
 ## Fronteiras da Fase 5
 1. **A F5 depende do ADR-021** — a localização de turnos segue o lazy-load por índice de offsets
    (chave `thread_id`; ponteiros, não conteúdo; `seek` + `readline`; validar `thread_id` da linha lida).

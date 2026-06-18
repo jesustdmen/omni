@@ -66,7 +66,8 @@
 - **Marco:** M4 (parcial).
 
 ### Fase 5 — UI unificada — ⬜ Não iniciada
-- **Decisão pré-F5 (2026-06-17):** lazy-load de turnos definido no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; sem importar turnos para o banco). Fronteira inicial em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md). **Pendente:** fatia de implementação do índice (`conversation_turn_refs` + fingerprint), depois a UI.
+- **Decisão pré-F5 (2026-06-17):** lazy-load de turnos definido no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; sem importar turnos para o banco). Fronteira inicial em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
+- **Fatia pré-F5 ENTREGUE (2026-06-17):** `turn_sources` + `conversation_turn_refs` (só ponteiros), `Sync::BuildConversationTurnRefs` (streaming + fingerprint + idempotente), `ConversationTurns::LazyLoader` (`seek` + valida `thread_id` + sem full-scan), rake `sync:turn_refs`. Build real: 129.482 refs, **covered 1635/1635**. **Falta:** a UI de conversa (render sanitizado).
 - **Entregáveis:** índice de turnos (ADR-021); aba Conversas; lista+detalhe de conversa (markdown sanitizado — ADR-012); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
 - **Critérios de aceite:** abertura lazy sem full-scan; turnos ordenados; fluxos MVP; payload XSS neutralizado; `tool_input` nunca HTML; `personal` respeitado.
 - **Marco:** M5.

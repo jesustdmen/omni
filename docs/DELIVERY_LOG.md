@@ -9,6 +9,26 @@
 
 ## Entradas
 
+## 2026-06-17 — [Pré-Fase 5 · Fatia] Índice de turnos + loader lazy — CONCLUÍDO
+### Resumo
+Implementada a infraestrutura de **índice de offsets** e **leitura lazy** de turnos (ADR-021), **sem importar conteúdo para o banco** e **sem UI**. Abre conversa → offsets → `seek` das linhas do `sessions.jsonl`. **Não persiste `text`/`tool_input`**; **não lê shards**; **não altera importers**; **não executa sync de summaries**.
+### Entregue
+- **Migration `CreateTurnIndex`**: `turn_sources` (fingerprint do arquivo: `size_bytes`/`source_mtime`/`content_hash`/`schema_version`/`status`/`indexed_at`; unique do fingerprint) + `conversation_turn_refs` (ponteiros: `turn_source_id`/`conversation_id`/`thread_id`/`line_no`/`byte_offset`/`role`/`ts`; **sem colunas de conteúdo**; FKs cascade; checks `byte_offset>=0`/`line_no>0`; unique `(turn_source_id,line_no)` e `(turn_source_id,conversation_id,line_no)`; índices `(conversation_id,line_no)`/`(thread_id,line_no)`).
+- **Models** `TurnSource`/`ConversationTurnRef` (validações alinhadas aos checks).
+- **`Sync::BuildConversationTurnRefs`**: streaming binário, captura `byte_offset` antes do `gets`, parse defensivo, extrai só `thread_id`/`role`/`timestamp`, resolve `Conversation` por hash pré-carregado, `insert_all` em lote, fingerprint (size+mtime+hash parcial cabeça/cauda+schema), **idempotente** (no-op se fingerprint igual), **rebuild total** se o arquivo muda (remove versão antiga em cascade); auditoria via `SyncRun` (label `sessions.jsonl`, separado de summaries).
+- **`ConversationTurns::LazyLoader`**: refs por conversa ordenadas por `line_no`, verifica fingerprint (stale ⇒ não lê), `seek(byte_offset)`+`gets`, **valida `thread_id` lido**, `limit`/`offset`, **redige `raw_source_file` (`<USER>`)**, payloads só em memória, **sem full-scan**.
+- **Rake** `sync:turn_refs[path]` (não toca `ImportSummaries`/`ResolveWorkspaceFolders`).
+### Build real (development, `:ro`)
+`sessions.jsonl` (240.091.231 bytes): `lines_processed=129500`, `refs_created=129482`, `skipped_no_thread=18`, `skipped_no_conversation=0`, `malformed_lines=0`, `distinct_threads=1635`, **`covered_conversations=1635/1635 (100%)`**, `status=partial` (18 linhas sem `thread_id`). Backup pré-migration: `tmp/dev_backup_pre_turnrefs_20260617_231035.sql`.
+### Smoke do loader (conversa real)
+Conversa "Planejamento MedPlus" (`thread claude-code:/96856917…`): `message_count=177` == **refs=177** (batem); `loader.status=ok`, `total=177`, `mismatched=0`; colunas das refs sem `text`/`tool_input`/`payload`.
+### Testes/checks
+`bin/rails test`: **209 runs, 715 assertions, 0 falhas/erros/skips** (+16, `test/services/turn_index_test.rb`). rubocop 0 (121 arquivos); brakeman 0; bundler-audit 0.
+### Fora de escopo (cumprido)
+Sem UI de mensagens; sem render/markdown/sanitização visual; sem F5; sem scorer/suggestions/auto-link; sem leitura de shards; sem persistir `text`/`tool_input`; sem alterar importers; sem sync de summaries.
+### Próximo passo
+F5 (UI de conversa) consumindo o loader, com render sanitizado (ADR-012); ou F4 v1 (scorer).
+
 ## 2026-06-17 — [Pré-Fase 5 · Decisão] ADR-021 — lazy-load de turnos via índice de offsets — DOCUMENTADO
 ### Resumo
 Documentada (somente documentação; **sem código/migration/tabela/banco**) a estratégia para localizar e abrir turnos de conversa **sob demanda**, sem importar `sessions.jsonl` para o banco. Fecha a pendência prevista no ADR-018 ("decidir índice `thread_id→offset` antes da F5").

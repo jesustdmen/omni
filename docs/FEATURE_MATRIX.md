@@ -39,7 +39,7 @@
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
 | CV-01 | Import `summaries.jsonl` | Repo B/Mockup | 3 | MVP | ✅ Entregue (F3.2 — sync real idempotente; 1635 conversas) | M2 + corpus + validação shard | linhas válidas == count |
-| CV-02 | Import `sessions.jsonl` (turnos, lazy) | Repo B | 3/5 | MVP | Não iniciado | CV-01 | turnos == turn_count |
+| CV-02 | Import `sessions.jsonl` (turnos, lazy) | Repo B | 3/5 | MVP | 🟡 Infra entregue (pré-F5: índice offsets + loader lazy; ADR-021) | CV-01 | turnos == turn_count |
 | CV-03 | Títulos de sessão | Repo B | 3 | MVP | Não iniciado | CV-01 | títulos esperados |
 | CV-04 | Lista de conversas | Mockup/Viewer | 5 | MVP | Não iniciado | CV-01 | filtros funcionam |
 | CV-05 | Detalhe de conversa | Mockup/Viewer | 5 | MVP | Não iniciado | CV-02 | render ordenado |
