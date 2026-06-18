@@ -42,10 +42,10 @@
 | CV-02 | Import `sessions.jsonl` (turnos, lazy) | Repo B | 3/5 | MVP | 🟡 Infra entregue (pré-F5: índice offsets + loader lazy; ADR-021) | CV-01 | turnos == turn_count |
 | CV-03 | Títulos de sessão | Repo B | 3 | MVP | Não iniciado | CV-01 | títulos esperados |
 | CV-04 | Lista de conversas | Mockup/Viewer | 5 | MVP | Não iniciado | CV-01 | filtros funcionam |
-| CV-05 | Detalhe de conversa | Mockup/Viewer | 5 | MVP | Não iniciado | CV-02 | render ordenado |
-| CV-06 | Turnos ordenados (`seq`) | Repo B | 3/5 | MVP | Não iniciado | CV-02 | UNIQUE(conv,seq) |
-| CV-07 | Markdown sanitizado | Mockup | 5 | MVP | Não iniciado | CV-05 | payload XSS neutralizado |
-| CV-08 | Tool calls (tool_input escapado) | Repo B/Mockup | 5 | MVP | Não iniciado | CV-05 | tool_input nunca HTML |
+| CV-05 | Detalhe de conversa | Mockup/Viewer | 5 | MVP | 🟡 Parcial (F5.1 read-only, sem markdown) | CV-02 | render ordenado |
+| CV-06 | Turnos ordenados (`seq`) | Repo B | 3/5 | MVP | 🟡 Parcial (F5.1 — ordenado por `line_no`) | CV-02 | UNIQUE(conv,seq) |
+| CV-07 | Markdown sanitizado | Mockup | 5 | MVP | Não iniciado (F5.2) | CV-05 | payload XSS neutralizado |
+| CV-08 | Tool calls (tool_input escapado) | Repo B/Mockup | 5 | MVP | ✅ Entregue (F5.1 — `tool_input` em `<pre>` escapado) | CV-05 | tool_input nunca HTML |
 | CV-09 | Arquivos alterados | Repo B | 5 | v1 | Não iniciado | CV-05 | lista correta |
 | CV-10 | Tags (conversa) | Repo B/Mockup | 3/5 | MVP | Não iniciado | CV-01 | filtro por tag |
 

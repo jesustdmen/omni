@@ -12,6 +12,16 @@
 > 1635/1635**, sem persistir conteúdo. **A F5 consome o `LazyLoader`** — falta a UI + render
 > sanitizado (ADR-012). Ver `DELIVERY_LOG.md`.
 
+## F5.1 — render read-only de turnos (ENTREGUE 2026-06-18)
+Fatia mínima entregue (consome o `LazyLoader`; **sem** markdown/scorer/UI rica):
+- **Render read-only** de turnos em `/conversations/:id` (dentro do `show`, **sem rota/controller/policy novos**); `Conversations::TurnListComponent` (ViewComponent).
+- **Paginação** `TURNS_PER_PAGE = 50` via `turn_page`; `limit` **fixo** e `offset` derivado da página (sem `limit/offset` do usuário).
+- Exibe `role` (allowlist), `timestamp`, **texto auto-escapado** (`white-space: pre-wrap`), `tool`/`tool_input` como **texto em `<pre>`** (`JSON.pretty_generate` com `rescue` + truncamento); estados `:ok/:empty/:stale/:not_found` e `mismatched` com aviso.
+- **Decisão `personal` = b1:** se `conversation.personal`, **não chama o loader** e exibe aviso "conversa pessoal — conteúdo oculto nesta fase". **Sem dono/`user_id`; ADR-013 inalterado; ownership não muda nesta fatia.**
+- **Segurança:** somente auto-escape do ERB; **proibidos** `html_safe`/`raw`/`<%==`/`simple_format`/`sanitize` (com grep-guard de teste); **sem markdown** (adiado F5.2); **sem auto-link**; **`source_file` oculto**; **CSP restrita** habilitada (nonce p/ importmap).
+- **Limitação conhecida:** `text`/`tool_input` ainda **não** são redigidos (só `source_file` é, e fica oculto) — ampliar redação de PII = follow-up.
+- **Validação real:** conversa de 177 turnos → loader `:ok`, render 50/página ("Página 1 de 4"), sem `<script>`/`onerror=` crus, sem vazar path/`Users`.
+
 ## Fronteiras da Fase 5
 1. **A F5 depende do ADR-021** — a localização de turnos segue o lazy-load por índice de offsets
    (chave `thread_id`; ponteiros, não conteúdo; `seek` + `readline`; validar `thread_id` da linha lida).

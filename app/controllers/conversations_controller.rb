@@ -1,6 +1,8 @@
 class ConversationsController < ApplicationController
   # F3.UI.1 — console SOMENTE LEITURA de validação da Fase 3.
   PER_PAGE = 50
+  # F5.1 — turnos read-only por página (limite fixo, sem limit/offset do usuário).
+  TURNS_PER_PAGE = 50
 
   def index
     scope = filtered(policy_scope(Conversation))
@@ -26,9 +28,25 @@ class ConversationsController < ApplicationController
     @links = @conversation.conversation_links.includes(:created_by, task: :client).order(:created_at)
     @has_primary = @links.any? { |l| l.link_type == "primary" }
     @tasks = Task.includes(:client).order(:title)
+    load_turns
   end
 
   private
+
+  # F5.1 — leitura lazy read-only dos turnos (ADR-021/ADR-012).
+  # b1: conversa pessoal (ADR-013) não chama o loader — conteúdo oculto nesta fatia.
+  # limit é FIXO (TURNS_PER_PAGE); offset deriva da página (sem limit/offset do usuário).
+  def load_turns
+    @turns_hidden_personal = @conversation.personal
+    return if @turns_hidden_personal
+
+    @turn_page = [ params[:turn_page].to_i, 1 ].max
+    offset = (@turn_page - 1) * TURNS_PER_PAGE
+    @turns = ConversationTurns::LazyLoader.call(
+      conversation_id: @conversation.id, limit: TURNS_PER_PAGE, offset: offset
+    )
+    @turn_total_pages = [ (@turns.total.to_f / TURNS_PER_PAGE).ceil, 1 ].max
+  end
 
   # Conjunto pequeno (≤ total de workspace_maps) de hashes com folder resolvido.
   def resolved_hashes

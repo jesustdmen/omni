@@ -26,14 +26,16 @@ class ConversationsTest < ActionDispatch::IntegrationTest
     assert_select "td", /Alpha conversa/
   end
 
-  test "show renderiza apenas metadados (sem turnos/conteúdo)" do
+  test "show renderiza metadados + seção de turnos read-only" do
     get conversation_path(@alpha)
     assert_response :success
     assert_select "dd", /t-alpha-001/
     assert_select "dd", /codex_session/
-    assert_match "sem turnos", response.body
-    # não há render de turnos/mensagens nem tabela de conteúdo na tela de detalhe
-    assert_select "table", count: 0
+    assert_select "h2", "Conversa"
+    # sem índice de turnos construído para esta conversa → aviso, sem render de conteúdo
+    assert_match "Índice de turnos ainda não construído", response.body
+    # nunca vaza caminho da fonte/shards na UI
+    assert_no_match(/sessions\.jsonl|shards\//, response.body)
   end
 
   test "filtro por source" do

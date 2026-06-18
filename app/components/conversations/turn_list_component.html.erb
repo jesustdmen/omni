@@ -1,0 +1,54 @@
+<div class="subhead" id="conversa"><h2>Conversa</h2></div>
+
+<%# READ-ONLY. Conteúdo NÃO confiável: apenas auto-escape do ERB (<%= %>). %>
+<%# Proibido aqui: html_safe, raw, simple_format, sanitize, markdown, auto-link. %>
+<% case status %>
+<% when :ok %>
+  <% if mismatched.positive? %>
+    <p class="muted">⚠ <%= mismatched %> linha(s) ignorada(s) por divergência de índice (considere reindexar os turnos).</p>
+  <% end %>
+  <% if turns.empty? %>
+    <p class="muted">Nenhum turno nesta página.</p>
+  <% else %>
+    <ol class="turns">
+      <% turns.each do |turn| %>
+        <li class="turn turn--<%= role_class(turn.role) %>">
+          <div class="turn__head">
+            <span class="badge badge--neutral turn__role"><%= role_label(turn.role) %></span>
+            <span class="muted turn__meta"><%= timestamp_label(turn.ts) %> · linha <%= turn.line_no %></span>
+          </div>
+          <% if turn.text.present? %>
+            <div class="turn__body"><%= turn_text(turn) %></div>
+          <% end %>
+          <% if tool_input?(turn) %>
+            <div class="turn__tool">
+              <% if turn.tool.present? %>
+                <span class="muted">tool: <%= turn.tool %></span>
+              <% end %>
+              <pre class="mono turn__pre"><%= tool_input_text(turn) %></pre>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if total_pages > 1 %>
+      <nav class="pager">
+        <% if page > 1 %>
+          <%= link_to "← Anteriores", page_url(page - 1), class: "btn btn--ghost btn--sm" %>
+        <% end %>
+        <span class="muted">Página <%= page %> de <%= total_pages %> · <%= total %> turnos</span>
+        <% if page < total_pages %>
+          <%= link_to "Próximos →", page_url(page + 1), class: "btn btn--ghost btn--sm" %>
+        <% end %>
+      </nav>
+    <% end %>
+  <% end %>
+<% when :stale %>
+  <p class="muted">O índice de turnos desta conversa está <strong>desatualizado</strong> em relação à fonte.
+  Reindexe os turnos para visualizar o conteúdo.</p>
+<% when :empty, :not_found %>
+  <p class="muted">Índice de turnos ainda não construído para esta conversa.</p>
+<% else %>
+  <p class="muted">Turnos indisponíveis no momento.</p>
+<% end %>

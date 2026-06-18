@@ -51,9 +51,11 @@ class ConversationLinksTest < ActionDispatch::IntegrationTest
     assert_equal 0, @task.reload.conversation_count
   end
 
-  test "não renderiza turnos/conteúdo e não lê sessions/shards" do
+  test "mostra seção de conversa sem vazar caminho de sessions/shards" do
     get conversation_path(@conv)
-    assert_match "sem turnos", response.body
+    assert_select "h2", "Conversa"
+    # conversa sem índice de turnos construído → aviso, sem render de conteúdo
+    assert_match "Índice de turnos ainda não construído", response.body
     assert_no_match(/sessions\.jsonl|shards\//, response.body)
   end
 

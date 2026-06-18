@@ -65,10 +65,12 @@
 - **Critérios de aceite:** ≤1 primário por conversa (constraint) ✔; auto-link logado/reversível (pendente — v1).
 - **Marco:** M4 (parcial).
 
-### Fase 5 — UI unificada — ⬜ Não iniciada
+### Fase 5 — UI unificada — 🟡 Em progresso (F5.1 entregue)
 - **Decisão pré-F5 (2026-06-17):** lazy-load de turnos definido no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; sem importar turnos para o banco). Fronteira inicial em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
 - **Fatia pré-F5 ENTREGUE (2026-06-17):** `turn_sources` + `conversation_turn_refs` (só ponteiros), `Sync::BuildConversationTurnRefs` (streaming + fingerprint + idempotente), `ConversationTurns::LazyLoader` (`seek` + valida `thread_id` + sem full-scan), rake `sync:turn_refs`. Build real: 129.482 refs, **covered 1635/1635**. **Falta:** a UI de conversa (render sanitizado).
-- **Entregáveis:** índice de turnos (ADR-021); aba Conversas; lista+detalhe de conversa (markdown sanitizado — ADR-012); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
+- **F5.1 (2026-06-18) — CONCLUÍDA:** render **read-only** de turnos em `/conversations/:id` (dentro do `show`; `Conversations::TurnListComponent`), consumindo o `LazyLoader`; `TURNS_PER_PAGE=50`; `role`/`timestamp`/texto **auto-escapado** + `tool_input` em `<pre>`; estados `:ok/:empty/:stale/:not_found`/`mismatched`; **`personal`=b1** (conteúdo oculto, sem dono); **sem markdown/auto-link/`html_safe`** (grep-guard); **CSP restrita**. 221 testes verdes; validado em conversa real (177 turnos). **CV-05/CV-06/CV-08 parciais.**
+- **Ainda FORA (F5.2+):** markdown sanitizado (CV-07), syntax highlight, busca, virtualização, modal vincular (Ctrl+L), criar tarefa de conversa, dashboard.
+- **Entregáveis:** índice de turnos (ADR-021 ✓); aba Conversas; lista+detalhe de conversa (markdown sanitizado — ADR-012); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
 - **Critérios de aceite:** abertura lazy sem full-scan; turnos ordenados; fluxos MVP; payload XSS neutralizado; `tool_input` nunca HTML; `personal` respeitado.
 - **Marco:** M5.
 
@@ -91,6 +93,6 @@
 | M2 | Domínio de trabalho migrado | 2 | ✅ Concluído (2026-06-17) — WD-01..07 CRUD completo; **migração de dados reais N/A** (RepoA inativo / domínio vazio na origem) |
 | M3 | Importação de conversas idempotente | 3 | 🟡 Em progresso (sync real de **metadados** entregue: 1635 conversas, idempotente, `bd0a9ce`; **módulo completo** de conversas — turnos/UI/vínculo — ainda fora) |
 | M4 | Vínculo conversa/tarefa operacional | 4 | 🟡 Em progresso (MVP manual entregue: `conversation_links`, vínculo reversível/auditável + counters; scorer/auto-link/sugestões pendentes — v1) |
-| M5 | UI principal unificada | 5 | ⬜ Não iniciado |
+| M5 | UI principal unificada | 5 | 🟡 Em progresso (F5.1 entregue: turnos read-only em `/conversations/:id`; markdown/triagem pendentes) |
 | M6 | Triagem, diário e sync operacional | 6 | ⬜ Não iniciado |
 | M7 | Projeto estabilizado e documentado | 7 | ⬜ Não iniciado |

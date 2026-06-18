@@ -11,7 +11,7 @@
     <h1><%= @conversation.title.presence || "— sem título —" %></h1>
     <div class="badge-row">
       <%= status_badge(@conversation.source) %>
-      <span class="muted">read-only · metadados (sem turnos)</span>
+      <span class="muted">read-only</span>
     </div>
   </div>
 </div>
@@ -38,7 +38,16 @@
   </dl>
 </div>
 
-<%# F4 — Vínculos da conversa (manual). Sem conteúdo/turnos. %>
+<%# F5.1 — Conversa (turnos read-only via índice de offsets; ADR-021/ADR-012). %>
+<% if @turns_hidden_personal %>
+  <div class="subhead" id="conversa"><h2>Conversa</h2></div>
+  <p class="muted">Esta conversa é <strong>pessoal</strong>. O conteúdo dos turnos está oculto nesta fase (read-only).</p>
+<% else %>
+  <%= render Conversations::TurnListComponent.new(
+        result: @turns, conversation: @conversation, page: @turn_page, total_pages: @turn_total_pages) %>
+<% end %>
+
+<%# F4 — Vínculos da conversa (manual). %>
 <div class="subhead">
   <h2>Vínculos</h2>
 </div>

@@ -9,6 +9,25 @@
 
 ## Entradas
 
+## 2026-06-18 — [Fase 5 · F5.1] Render read-only de turnos — CONCLUÍDO
+### Resumo
+UI **read-only** de turnos em `/conversations/:id`, consumindo `ConversationTurns::LazyLoader` (ADR-021) com render seguro (ADR-012). **Sem markdown, sem scorer/auto-link, sem chat/edição, sem persistir conteúdo.** Decisão `personal` = **b1** (ocultar conteúdo; sem dono/`user_id`; ADR-013 inalterado).
+### Entregue (CV-05/CV-06/CV-08 parciais)
+- `ConversationsController#show`: carrega turnos via loader; `TURNS_PER_PAGE = 50`; `limit` **fixo** + `offset` por página (`turn_page`); **b1**: conversa `personal` não chama o loader.
+- **ViewComponent** `Conversations::TurnListComponent` (+ template): lista turnos com `role` (allowlist), `timestamp`, **texto auto-escapado** (`pre-wrap`), `tool_input` como **texto em `<pre>`** (`JSON.pretty_generate` com `rescue`+truncamento); trata `:ok/:empty/:stale/:not_found` e `mismatched`; paginação anterior/próxima.
+- View `show`: seção "Conversa" (ou aviso de conversa pessoal); CSS de turnos em `application.css`.
+- **CSP restrita** habilitada (`default_src :self`; `object_src :none`; `script_src/style_src :self`; `frame_ancestors :none`) com **nonce** (importmap).
+- **Segurança:** só auto-escape do ERB; **proibidos** `html_safe`/`raw`/`<%==`/`simple_format`/`sanitize` (grep-guard de teste); **sem markdown** (F5.2); **sem auto-link**; **`source_file` oculto**.
+- Lacuna coberta: **`test/policies/conversation_policy_test.rb`**.
+### Alterações (repo app/)
+`controllers/conversations_controller.rb`; `components/conversations/turn_list_component.{rb,html.erb}` (novos); `views/conversations/show.html.erb`; `assets/stylesheets/application.css`; `config/initializers/content_security_policy.rb`; testes novos (`integration/conversation_turns_test.rb`, `policies/conversation_policy_test.rb`) + atualizados (`integration/conversations_test.rb`, `integration/conversation_links_test.rb`); docs. **Sem migration/schema; sem alterar loader/builder/importers.**
+### Testes/validações
+`bin/rails test`: **221 runs, 776 assertions, 0 falhas/erros/skips** (+12). rubocop 0 (124 arquivos); brakeman 0; bundler-audit 0. Cobertura nova: render, **XSS escapado**, **grep-guard** anti-`html_safe`, paginação (`TURNS_PER_PAGE=50`), stale, sem-refs, **b1 personal oculto**, conteúdo-não-persistido, `source_file`/PII não vazados, `ConversationPolicy`. Validação real: conversa de **177 turnos** → loader `:ok`, render 50/página ("Página 1 de 4 · 177 turnos"), sem `<script>`/`onerror=` crus, sem vazar path/`Users`.
+### Fora de escopo (cumprido)
+Sem markdown/syntax-highlight/busca/virtualização; sem scorer/auto-link/suggestions; sem chat/edição/anotação; **sem persistir `text`/`tool_input`/payload**; loader/builder/importers inalterados; sem migration.
+### Próximo passo
+F5.2 (markdown sanitizado — ADR-012) e/ou ampliação de redação de PII em `text`/`tool_input`; ou F4 v1 (scorer).
+
 ## 2026-06-17 — [Pré-Fase 5 · Fatia] Índice de turnos + loader lazy — CONCLUÍDO
 ### Resumo
 Implementada a infraestrutura de **índice de offsets** e **leitura lazy** de turnos (ADR-021), **sem importar conteúdo para o banco** e **sem UI**. Abre conversa → offsets → `seek` das linhas do `sessions.jsonl`. **Não persiste `text`/`tool_input`**; **não lê shards**; **não altera importers**; **não executa sync de summaries**.

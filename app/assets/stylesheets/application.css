@@ -755,6 +755,27 @@ form input[type="submit"]:hover { background: var(--accent-hover); }
 .back-link { display: inline-block; margin-top: 20px; color: var(--text-muted); font-size: .85rem; }
 
 /* ------------------------------------------------------------------ */
+/* F5.1 — turnos read-only de conversa                                 */
+/* ------------------------------------------------------------------ */
+.turns { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.turn {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 12px 14px;
+}
+.turn--user { border-left: 3px solid var(--tone-info-border); }
+.turn--assistant { border-left: 3px solid var(--tone-violet-border); }
+.turn--tool { border-left: 3px solid var(--tone-neutral-border); }
+.turn--system { border-left: 3px solid var(--tone-warning-border); }
+.turn__head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.turn__meta { font-size: .8rem; }
+.turn__body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.turn__tool { margin-top: 8px; }
+.turn__pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; margin: 4px 0 0; }
+.pager { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+
+/* ------------------------------------------------------------------ */
 /* Telas do Devise (sem shell) — apenas legibilidade                  */
 /* ------------------------------------------------------------------ */
 body > .app-shell > .app-body > .app-main {
