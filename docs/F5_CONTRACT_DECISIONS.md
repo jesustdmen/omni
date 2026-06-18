@@ -21,6 +21,8 @@ Fatia mínima entregue (consome o `LazyLoader`; **sem** markdown/scorer/UI rica)
 - **Segurança:** somente auto-escape do ERB; **proibidos** `html_safe`/`raw`/`<%==`/`simple_format`/`sanitize` (com grep-guard de teste); **sem markdown** (adiado F5.2); **sem auto-link**; **`source_file` oculto**; **CSP restrita** habilitada (nonce p/ importmap).
 - **Limitação conhecida:** `text`/`tool_input` ainda **não** são redigidos (só `source_file` é, e fica oculto) — ampliar redação de PII = follow-up.
 - **Validação real:** conversa de 177 turnos → loader `:ok`, render 50/página ("Página 1 de 4"), sem `<script>`/`onerror=` crus, sem vazar path/`Users`.
+- **F5.1.1 (`a01efbd`):** correção do artefato ERB `). %>` (comentário do componente continha `<%= %>`) + **cor de badge por role** via allowlist (`ROLE_TONES`); render read-only mantido.
+- **F5.1.2:** consolidação documental + **persistência do mount `/normalized:ro`** no `.devstack/up.sh` (runtime reproduzível); addendum ao ADR-013 (`personal` boolean + b1). Sem mudança de comportamento.
 
 ## Fronteiras da Fase 5
 1. **A F5 depende do ADR-021** — a localização de turnos segue o lazy-load por índice de offsets

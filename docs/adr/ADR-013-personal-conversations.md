@@ -30,3 +30,12 @@ Conversa pessoal = conversations.status = 'personal' + user_id dono + Pundit (s�
 
 ## Validação futura
 - Reavaliar cifragem se/quando houver multiusuário real.
+
+## Addendum (F5.1.2, 2026-06-18) — implementação real e decisão b1
+> Nota de alinhamento. **Não altera a decisão original acima**; documenta como ela foi implementada até aqui e a decisão de recorte da F5.1.
+
+- **Mecanismo real:** a tabela `conversations` **não tem coluna `status`**; "pessoal" é carregado por uma **coluna boolean `conversations.personal`** (default `false`, `null: false`). Onde o texto da Decisão diz `status = 'personal'`, leia-se **`personal = true`**.
+- **`user_id`/ownership:** a coluna `conversations.user_id` existe como **preparação** (ADR-013/014), **sem enforcement de escopo** nesta fase; nenhuma regra de "só o dono vê" foi implementada ainda.
+- **Uso atual do flag:** `personal` exclui a conversa dos **contadores** de Task (`Task#recompute_conversation_counters!` conta só `primary` de conversas não-`personal`).
+- **Decisão da F5.1 (b1):** ao renderizar turnos read-only em `/conversations/:id`, se `personal = true` o controller **não chama o loader** e a tela exibe apenas um aviso de "conteúdo oculto" — **sem** expor turnos, **sem** ownership/`user_id`, **sem** alterar `ConversationPolicy`. O critério "só o dono vê" do ADR fica para uma fatia futura (b2).
+- **Pendência:** quando a visibilidade por dono (b2) for implementada, reconciliar formalmente este ADR (ou criar ADR que o substitua) com `personal` boolean + `user_id` + Pundit.

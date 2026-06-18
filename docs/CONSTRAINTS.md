@@ -1,9 +1,9 @@
-# Omni/Continuity — Restrições e Fronteiras do Projeto
+# Omni — Restrições e Fronteiras do Projeto
 
 > **Documento oficial e permanente.** Define quais diretórios são *referência* (somente leitura) e qual é o *produto*. Vale para todas as fases. Em conflito com qualquer outra instrução de implementação, esta fronteira prevalece.
 
 ## Propósito
-Evitar que material de referência (apps legados e mockup) seja tratado como fonte de código do produto. A implementação do Omni/Continuity é **nova, do zero**, em `app/`, respeitando os ADRs aceitos. Referências servem para extrair *requisitos e comportamento*, nunca para copiar *código, assets ou arquivos*.
+Evitar que material de referência (apps legados e mockup) seja tratado como fonte de código do produto. A implementação do Omni é **nova, do zero**, em `app/`, respeitando os ADRs aceitos. Referências servem para extrair *requisitos e comportamento*, nunca para copiar *código, assets ou arquivos*.
 
 ## Regra permanente
 **`_origem/` e `_mockup/` são SOMENTE LEITURA.** Não editar, não formatar, não aplicar patch, não commitar, não criar nem remover arquivos dentro desses diretórios. O produto é construído exclusivamente em `app/`.

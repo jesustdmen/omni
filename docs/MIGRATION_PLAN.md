@@ -1,4 +1,4 @@
-# Omni/Continuity — Plano de Migração
+# Omni — Plano de Migração
 
 > **Baseline aprovado em 2026-06-16.** Reflete ADRs 001–017 (Aceito). Complementa o ROADMAP.
 

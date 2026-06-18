@@ -9,6 +9,34 @@
 
 ## Entradas
 
+## 2026-06-18 — [Fase 5 · F5.1.2] Consolidação documental + persistência do runtime — CONCLUÍDO
+### Resumo
+Higiene pós-F5.1.1 e ambiente dev reproduzível, **sem alterar comportamento funcional**: registro da F5.1.1 nos docs, remoção de nota obsoleta, addendum ao ADR-013 (alinhar `personal` boolean + decisão b1), padronização de nome "Omni" e **persistência do mount `/normalized:ro`** no fluxo de subida do `omni_web`.
+### Entregue (somente docs + toolchain dev)
+- **Script oficial de subida** `.devstack/up.sh` (+ `.devstack/README.md`): recria o `omni_web` com `/app`, volume `omni_bundle`, **`/normalized:ro`**, rede `omni_net`, porta 3000 e `bin/rails server` — idempotente (cria rede se faltar; remove `server.pid` órfão). Paths overridáveis por env. **Não copia/versiona `sessions.jsonl`.**
+- **Docs:** F5.1.1 registrada (DELIVERY_LOG/PROJECT_STATUS/ROADMAP/FEATURE_MATRIX/F5_CONTRACT); removida a nota "commit/push pendentes de revisão" (obsoleta — F5.1/F5.1.1 já publicadas).
+- **ADR-013:** addendum documentando que a implementação usa **coluna boolean `conversations.personal`** (não há `status='personal'`) e a **decisão b1** (ocultar conteúdo de conversa pessoal, sem ownership/`user_id`); **policy inalterada**.
+- **Nomenclatura:** "Omni/Continuity" → **"Omni"** em `README.md`, `CONSTRAINTS.md`, `MIGRATION_PLAN.md`, `F4_CONTRACT_DECISIONS.md`, `UI_COMPLIANCE_AUDIT.md` (apenas nomenclatura ativa; sem alterar decisões históricas).
+### Validações
+`bin/rails test` 221 runs/776 assertions/0; rubocop 124/0; brakeman 0; bundler-audit 0 (sem mudança de código de app). Runtime: `omni_web` recriado pelo `.devstack/up.sh` → `/normalized/sessions.jsonl` visível **read-only**; `/conversations/:id` ("Planejamento MedPlus") renderiza turnos com loader `:ok` (177), **sem `:stale`**.
+### Fora de escopo (cumprido)
+Sem markdown/scorer/auto-link/triagem/chat; sem alterar loader/builder/importers; sem migration; sem limpar banco; sem tocar `_origem/`/`_mockup/`; sem mudar comportamento das telas.
+### Pendências (follow-ups)
+Limpeza dos resíduos sintéticos do DB dev (3 conversas `tXSS*` + 3 turn_sources `/tmp` + 9 refs); redação de `source_file` em `sync_runs/show`; ampliar redação de PII em `text`/`tool_input`; F5.2 (markdown sanitizado).
+
+## 2026-06-18 — [Fase 5 · F5.1.1] Correção de artefato ERB + destaque de role — CONCLUÍDO (`a01efbd`)
+### Resumo
+Correção pequena de render (read-only mantido). **Não** introduz markdown/feature.
+### Entregue
+- **Bug do artefato `). %>`:** o comentário ERB do componente continha a sequência `<%= %>`, cujo primeiro `%>` fechava o comentário cedo e vazava `). %>` como texto. Comentário reescrito (sem `<%= %>` interno) → artefato eliminado.
+- **Visibilidade de role:** badge do turno passa a ter **cor por role** via allowlist (`ROLE_TONES`: user→info, assistant→violet, tool→neutral, system→warning) — valores fixos do mapa (sem injeção). Turnos `user` ficam visíveis/destacados.
+### Alterações
+`app/components/conversations/turn_list_component.rb` (+`ROLE_TONES`/`role_tone`) e `.html.erb` (comentário corrigido + `badge--<%= role_tone(turn.role) %>`). Sem tocar loader/builder/importers/CSS/schema.
+### Validações
+`bin/rails test` 221/776/0; rubocop 124/0; brakeman 0; bundler-audit 0. Browser real (177 turnos): artefato ausente; `user` na pág.1 com badge azul; "Página 1 de 4"; sem stale/PII/XSS.
+### Diagnóstico associado
+O `:stale` observado em browser era **operacional** (o `omni_web` não montava `/normalized`), não bug da F5.1 — resolvido montando o arquivo `:ro` (persistido na F5.1.2).
+
 ## 2026-06-18 — [Fase 5 · F5.1] Render read-only de turnos — CONCLUÍDO
 ### Resumo
 UI **read-only** de turnos em `/conversations/:id`, consumindo `ConversationTurns::LazyLoader` (ADR-021) com render seguro (ADR-012). **Sem markdown, sem scorer/auto-link, sem chat/edição, sem persistir conteúdo.** Decisão `personal` = **b1** (ocultar conteúdo; sem dono/`user_id`; ADR-013 inalterado).

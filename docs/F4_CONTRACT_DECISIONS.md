@@ -1,4 +1,4 @@
-# Omni/Continuity — Decisões de contrato da Fase 4 (vínculo conversa↔tarefa)
+# Omni — Decisões de contrato da Fase 4 (vínculo conversa↔tarefa)
 
 > Documento central das decisões da Fase 4. Complementa (não substitui)
 > ROADMAP/FEATURE_MATRIX/PROJECT_STATUS/DELIVERY_LOG. Referências: ADR-013 (conversas

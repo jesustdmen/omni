@@ -1,4 +1,4 @@
-# Omni / Continuity
+# Omni
 
 Aplicação Rails 8 (produto). Implementada **do zero** em Rails / Hotwire / ViewComponent,
 respeitando os ADRs do projeto. Este é um **repositório próprio**; a governança (ADRs,

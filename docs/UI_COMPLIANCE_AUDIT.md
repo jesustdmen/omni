@@ -1,4 +1,4 @@
-# Omni/Continuity — Régua de conformidade visual (UI)
+# Omni — Régua de conformidade visual (UI)
 
 > Referência curta para manter as telas alinhadas ao hi-fi (`_mockup/uploads/Hi-fi *.png` +
 > `_mockup/spec-hifi.jsx`/`spec-task-tabs.jsx`). Auditoria de 2026-06-17; patch **F2.UI.1**.

@@ -16,7 +16,7 @@
 | ADR-010 | Diário por view sob demanda | ✅ Aceito | 2026-06-16 | 6 | Médio | 009 | — |
 | ADR-011 | Agendador externo roda; Rails lê | ✅ Aceito | 2026-06-16 | 3/6 | Médio | 005 | disparo do pipeline pelo Rails só com allowlist+timeout+path fixo |
 | ADR-012 | Sanitização server-side de markdown | ✅ Aceito | 2026-06-16 | 5 | Alto (XSS) | — | teste de payload malicioso (F5) |
-| ADR-013 | Conversas pessoais (`personal`+`user_id`+Pundit) | ✅ Aceito | 2026-06-16 | 3/5 | Médio | 004,014 | reavaliar cifra se multiusuário real |
+| ADR-013 | Conversas pessoais (`personal`+`user_id`+Pundit) | ✅ Aceito | 2026-06-16 | 3/5 | Médio | 004,014 | impl. usa coluna boolean `personal` (sem `status`) + decisão b1 (ver addendum F5.1.2 no ADR-013); reconciliar ao implementar b2/cifra |
 | ADR-014 | Multiusuário preparado; domínio compartilhado MVP | ✅ Aceito | 2026-06-16 | 1/3 | Médio | 004,013 | tenancy de domínio → roadmap |
 | ADR-015 | Dropar runtime-switch de ambiente | ✅ Aceito | 2026-06-16 | 1/2 | Médio | 006 | homologação = ambiente separado; clone = rake task segura |
 | ADR-016 | Task MVP = paridade + counters | ✅ Aceito | 2026-06-16 | 2 | Médio | — | tags/assignee/due_date/estimated_hours/checklist/código → v1 |
