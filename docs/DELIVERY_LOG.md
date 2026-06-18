@@ -9,6 +9,22 @@
 
 ## Entradas
 
+## 2026-06-18 — [P0] Fechamento documental de F3/F4 (MVP) + consolidação de readiness de produção — CONCLUÍDO (docs-only)
+### Resumo
+Atualização **somente documental** refletindo o diagnóstico de readiness pós-F5.1.4: **F3 e F4 fechadas como MVP**, **F5 mantida aberta**, métricas de teste sincronizadas e **bloqueadores de produção (F7) consolidados**. Sem alterar código/testes/banco/containers; sem migration.
+### Atualizado
+- **F3/M3 → 🟢 MVP de metadados CONCLUÍDO** (sync real idempotente 1635; folders 86→3; `sync_runs`/`turn_sources` íntegros; índice de turnos + loader lazy). Pendências → roadmap: **OP-01, OP-03, CV-03, CV-10**.
+- **F4/M4 → 🟢 MVP manual CONCLUÍDO** (`conversation_links` `primary`/`mention`, reversível/auditável, counters; LK-01/02/03/07/08). Pendências → v1: **scorer/sugestões/auto-link (LK-04/05), aceite em lote (LK-06), `time_entry_id`**.
+- **F5/M5 → 🟡 ABERTA**: F5.1→F5.1.4 entregues (render read-only/paginação/escape/roles/`source_file` oculto/mount persistido/limpeza dev). Pendências F5.2+: **markdown (CV-07)**, code blocks, busca, virtualização, modal Ctrl+L (UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), **redação de PII em `text`/`tool_input`**.
+- **Produção (F7) → 🔴 não exercida**: nova seção "Readiness de produção" no `PROJECT_STATUS.md` + bloco na Fase 7 do `ROADMAP.md` com os bloqueadores (`production.rb` não endurecido; schemas Solid cache/queue/cable; `cable.yml` Redis; Kamal ausente; admin seed; worker de jobs; `/normalized` em prod; pipeline Python; backup/restore/rollback; PII; mailer host). Registrada a entrada órfã `001 NO FILE` e o gap `timezone`/`locale` como não-bloqueantes.
+- **Métricas sincronizadas:** referência de estado atual **221/776 → 225/811** (PROJECT_STATUS); entradas históricas do diário preservadas como snapshots.
+### Arquivos
+`docs/ROADMAP.md`, `docs/PROJECT_STATUS.md`, `docs/FEATURE_MATRIX.md`, `docs/F5_CONTRACT_DECISIONS.md`, `docs/DELIVERY_LOG.md`.
+### Validações
+`bin/rails test` 225/811/0; rubocop 125/0; brakeman 0; bundler-audit 0 (docs-only, sem mudança de código).
+### Fora de escopo (cumprido)
+Sem código/testes/banco/container/migration; sem deploy/credenciais; sem tocar `_origem/`/`_mockup/`; sem corrigir a órfã `001` (só registrada).
+
 ## 2026-06-18 — [Fase 5 · F5.1.4] Limpeza controlada dos resíduos sintéticos do DB dev — CONCLUÍDO (DB-only)
 ### Resumo
 Remoção **cirúrgica e transacional** dos artefatos sintéticos criados por `rails runner` durante auditorias adversariais no DB de **desenvolvimento** (não havia poluição em test/prod). **DB-only:** nenhum arquivo de código/teste/schema alterado, sem migration, sem commit/push. Backup completo gerado antes.

@@ -34,7 +34,9 @@
 
 > **Nota (turnos lazy, pré-F5, 2026-06-17 · ADR-021):** a estratégia para localizar/abrir turnos sob demanda foi **decidida** no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Isso destrava o caminho de **CV-02/CV-05/CV-06/CV-07/CV-08** (que seguem **Não iniciado**), com render/sanitização na F5 (ADR-012). Fronteira em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
 >
-> **Nota (F3.0→F3.2.1, 2026-06-17 · commit `bd0a9ce`):** Sync de **metadados de conversa** entregue e publicado. F3.0 (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`); F3.1 (tabelas + `Sync::ImportSummaries` + rake `sync:summaries`, idempotente); **F3.2 = primeiro sync real controlado** de `summaries.jsonl` (1635 conversas; backup + allowlist `:ro`); **F3.2.1 = correção do merge** de escalares com `last_ts` nulo (`source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 por limitação do dado). **Turnos (`sessions.jsonl`/shards), UI, vínculo conversa↔tarefa e triagem ficam FORA** (ADR-018; F4/F5). **M3 parcial** (metadados sim; módulo completo de conversas não).
+> **Nota (F3.0→F3.2.1, 2026-06-17 · commit `bd0a9ce`):** Sync de **metadados de conversa** entregue e publicado. F3.0 (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`); F3.1 (tabelas + `Sync::ImportSummaries` + rake `sync:summaries`, idempotente); **F3.2 = primeiro sync real controlado** de `summaries.jsonl` (1635 conversas; backup + allowlist `:ro`); **F3.2.1 = correção do merge** de escalares com `last_ts` nulo (`source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 por limitação do dado). **Turnos (`sessions.jsonl`/shards), UI, vínculo conversa↔tarefa e triagem ficam FORA** (ADR-018; F4/F5).
+>
+> **Nota (P0 readiness, 2026-06-18):** **M3 = MVP de metadados CONCLUÍDO** (sync real idempotente + folders + índice de turnos/loader lazy). Pendências do "módulo completo de conversas" movidas para roadmap: **OP-01** (sync manual via UI), **OP-03** (histórico de sync na UI), **CV-03** (títulos de sessão), **CV-10** (tags). **M4 = MVP manual CONCLUÍDO** (LK-01/02/03/07/08); LK-04/05/06 + `time_entry_id` = v1. **Fase 5 ABERTA** (só F5.1 read-only). Suíte: **225 runs/811 assertions/0**. Deploy/produção (F7) **não iniciado** — ver "Readiness de produção" no PROJECT_STATUS.
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
@@ -85,13 +87,13 @@
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
-| OP-01 | Sync manual (lê normalized) | Mockup | 3 | MVP | Não iniciado | CV-01 | lê sem disparar pipeline |
+| OP-01 | Sync manual (lê normalized) | Mockup | 3 | MVP→roadmap | Não iniciado (roadmap pós-MVP F3; hoje sync via rake `sync:summaries`/`sync:turn_refs`) | CV-01 | lê sem disparar pipeline |
 | OP-02 | Sync agendado (agendador externo) | Mockup | 6 | v1 | Não iniciado | OP-01 | agenda dispara + Rails lê |
-| OP-03 | Histórico de sync | Mockup | 3 | MVP | Não iniciado | CV-01 | parcial/erro registrados |
+| OP-03 | Histórico de sync | Mockup | 3 | MVP→roadmap | Não iniciado (roadmap; `sync_runs`/`sync_run_items` gravados; UI de histórico pendente) | CV-01 | parcial/erro registrados |
 | OP-04 | Logs (redação de conteúdo) | Repo A/Novo | 1 | MVP | ✅ Entregue (M1) | M1 | filter_parameter_logging (passw/secret/token/email/…) |
 | OP-05 | Retenção (>30d) | Mockup | 6 | v1 | Não iniciado | CV-01 | vinculadas preservadas |
 | OP-06 | Backup (pg_dump pré-carga) | Novo | 2/7 | MVP | Não iniciado | M1 | backup antes de import |
 | OP-07 | Rollback | Novo | 7 | MVP | Não iniciado | OP-06 | reverter validado |
-| OP-08 | Testes + corpus | Novo | 1–7 | MVP | Em análise (corpus definido) | M0 | suíte verde |
+| OP-08 | Testes + corpus | Novo | 1–7 | MVP | 🟡 Em andamento (suíte verde 225/811/0; corpus sintético em `test/fixtures/normalized_corpus`; sem SimpleCov) | M0 | suíte verde |
 | OP-09 | CI | Repo A/Novo | 1 | MVP | ✅ Entregue (M1) | M1 | 4 jobs (scan_ruby/scan_js/lint/test) verdes localmente |
 | SEC-DUMP | Remover snapshot/dump do VCS + gitignore | Segurança | 1 | MVP | ✅ Entregue | — | planejamento protegido via .gitignore; RepoA = referência/leitura |
