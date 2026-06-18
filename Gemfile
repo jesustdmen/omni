@@ -27,6 +27,11 @@ gem "rack-attack"
 # Componentes de view server-side (ADR-001)
 gem "view_component"
 
+# --- Fase 5 (UI de conversa) — Omni ---
+# Markdown → HTML (GFM) para render read-only de turnos (F5.2). A saída é SEMPRE
+# sanitizada server-side por allowlist (ADR-012); parser usado em modo seguro (sem raw HTML).
+gem "commonmarker"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 

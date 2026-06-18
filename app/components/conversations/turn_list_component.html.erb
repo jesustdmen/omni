@@ -1,7 +1,8 @@
 <div class="subhead" id="conversa"><h2>Conversa</h2></div>
 
-<%# READ-ONLY. Conteudo NAO confiavel: renderizado apenas com auto-escape do ERB. %>
-<%# Proibido aqui: html_safe, raw, simple_format, sanitize, markdown, auto-link. %>
+<%# READ-ONLY. Conteudo NAO confiavel. O `text` chega como HTML JA sanitizado pelo %>
+<%# MarkdownRenderer (F5.2); o restante usa auto-escape do ERB. Proibido AQUI: %>
+<%# html_safe, raw, simple_format, sanitize (a sanitizacao vive so no renderer). %>
 <% case status %>
 <% when :ok %>
   <% if mismatched.positive? %>
@@ -18,7 +19,7 @@
             <span class="muted turn__meta"><%= timestamp_label(turn.ts) %> · linha <%= turn.line_no %></span>
           </div>
           <% if turn.text.present? %>
-            <div class="turn__body"><%= turn_text(turn) %></div>
+            <div class="turn__body markdown"><%= turn_body_html(turn) %></div>
           <% end %>
           <% if tool_input?(turn) %>
             <div class="turn__tool">

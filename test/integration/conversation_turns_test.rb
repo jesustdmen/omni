@@ -62,6 +62,27 @@ class ConversationTurnsTest < ActionDispatch::IntegrationTest
     assert_no_match(/<img[^>]*onerror=/, response.body)
   end
 
+  test "F5.2 — text renderiza markdown como HTML seguro; tool_input não vira markdown" do
+    conv = Conversation.create!(thread_id: "tMD", source: "x", message_count: 1)
+    build_for([
+      line(thread_id: "tMD", role: "assistant",
+           text: "# Título\n\nUm **negrito**, `code` e [link](https://ex.com).",
+           tool: "echo", tool_input: { "note" => "isto **não** é markdown" })
+    ])
+    get conversation_path(conv)
+    assert_response :success
+    # markdown do `text` vira HTML seguro dentro de .turn__body.markdown
+    assert_select ".turn__body.markdown h1", text: "Título"
+    assert_includes response.body, "<strong>negrito</strong>"
+    assert_includes response.body, "<code>code</code>"
+    assert_includes response.body, 'rel="nofollow noopener noreferrer"'
+    assert_includes response.body, 'href="https://ex.com"'
+    # tool_input continua texto LITERAL em <pre> (sem markdown)
+    assert_select "pre.turn__pre"
+    assert_includes response.body, "isto **não** é markdown"
+    refute_includes response.body, "<strong>não</strong>"
+  end
+
   test "F5.1.5 — redige PII em text no render (e-mail, path, token)" do
     conv = Conversation.create!(thread_id: "tPII", source: "x", message_count: 1)
     build_for([

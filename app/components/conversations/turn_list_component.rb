@@ -1,11 +1,13 @@
 require "json"
 
 module Conversations
-  # F5.1 — render READ-ONLY de turnos (ADR-021 + ADR-012).
+  # F5.1/F5.2 — render READ-ONLY de turnos (ADR-021 + ADR-012).
   # Recebe o ConversationTurns::LazyLoader::Result e renderiza com segurança:
-  # somente texto auto-escapado (a view usa <%= %>); tool_input SEMPRE como texto
-  # em <pre> (nunca HTML); role por allowlist; source_file NÃO é exibido; conteúdo
-  # truncado por teto de bytes. NÃO usa html_safe/raw/markdown/auto-link.
+  # o `text` é redigido (PII), truncado e convertido a HTML SEGURO de markdown via
+  # ConversationTurns::MarkdownRenderer (única fonte de html_safe); tool_input SEMPRE
+  # como texto em <pre> (nunca markdown/HTML); role por allowlist; source_file NÃO é
+  # exibido; conteúdo truncado por teto de bytes. O componente em si NÃO usa
+  # html_safe/raw/sanitize (delega ao renderer) — grep-guard mantido.
   class TurnListComponent < ViewComponent::Base
     ALLOWED_ROLES = %w[user assistant system tool].freeze
     # Tom do badge por role (apenas apresentação; valores fixos — sem injeção).
@@ -57,8 +59,14 @@ module Conversations
       t ? t.strftime("%d/%m/%Y %H:%M") : value.to_s
     end
 
+    # Texto redigido (PII) e truncado — base (texto puro) para o markdown.
     def turn_text(turn)
       truncate_bytes(ConversationTurns::PiiRedactor.call(turn.text.to_s), TEXT_LIMIT)
+    end
+
+    # F5.2 — markdown sanitizado (HTML seguro) do texto já redigido/truncado.
+    def turn_body_html(turn)
+      ConversationTurns::MarkdownRenderer.call(turn_text(turn))
     end
 
     def tool_input?(turn)

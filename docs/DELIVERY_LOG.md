@@ -9,6 +9,27 @@
 
 ## Entradas
 
+## 2026-06-18 — [Fase 5 · F5.2] Markdown sanitizado no render read-only de turnos — CONCLUÍDO
+### Resumo
+O `text` do turno passa a ser renderizado como **markdown (GFM) → HTML sanitizado server-side** (ADR-012), via novo `ConversationTurns::MarkdownRenderer` (defesa em profundidade: `commonmarker` em modo seguro + `Rails::HTML5::SafeListSanitizer` por allowlist + hardening de links). `tool_input` **continua** texto literal em `<pre>` (sem markdown). PII é redigida **antes** do markdown. O componente/template **não** usam `html_safe`/`raw`/`sanitize` (delegam ao renderer) — **grep-guard mantido verde**.
+### Entregue
+- **Dependência:** `commonmarker 2.8.2` (GFM em Rust; 0 transitivas Ruby; `bundler-audit` 0).
+- **`app/services/conversation_turns/markdown_renderer.rb`** (novo): `call(text)` → `Commonmarker.to_html(unsafe:false, escape:true)` → `SafeListSanitizer` (allowlist) → `harden_links` → **SafeBuffer**. Única fonte de `html_safe` de conteúdo de conversa.
+- **`TurnListComponent`**: `turn_body_html(turn)` (PII → trunca → markdown seguro); `tool_input_text` inalterado.
+- **Template**: `.turn__body.markdown` renderiza o SafeBuffer; `tool_input` em `<pre>` inalterado.
+- **CSS** `.turn__body.markdown` (p/headings/listas/code/pre/blockquote/links/tabela/hr).
+- Testes: `markdown_renderer_test` (21) + integração (markdown vira HTML; XSS neutralizado; PII não vaza; `tool_input` literal; grep-guard verde).
+### Segurança (allowlist + links)
+- **Tags:** `p br hr strong em b i del code pre blockquote ul ol li h1-h6 a table thead tbody tr th td`. **Atributos:** só `href rel target` (em `a`). **Sem** `img`/`script`/`style`/`class`/`id`/`on*`.
+- **Links:** só `http`/`https`/`mailto` → `rel="nofollow noopener noreferrer"` + `target="_blank"`; demais esquemas (`javascript:`/`data:`) e âncoras vazias **viram texto** (href removido).
+- **Raw HTML** da fonte (`<script>`/`<img onerror>`/`<svg onload>`/`<div on…>`) é **escapado** (texto inerte), não executado; **imagem markdown** (`![]()`) é removida.
+### Limitações conhecidas
+- Raw HTML perigoso é **neutralizado por escape** (visível como texto), não apagado — inerte, mas aparece como texto.
+- Sem syntax highlight; sem imagens (remotas ou markdown); sem autolink de e-mail (e-mail já é redigido a `<EMAIL>`).
+- Tabelas GFM **habilitadas** (sem atributos). Markdown só no `text` (nunca em `tool_input`).
+### Testes/validações
+`bin/rails test` **257 runs / 966 assertions / 0** falhas; rubocop **129/0**; **brakeman 0** (sem warning de HTML/sanitização); bundler-audit **0**. Smoke real `/conversations/cd086107…`: **200**, **50** turnos, "Página 1 de 4", sem `:stale`; markdown visível (27 `.markdown`, 17 `<strong>`, 25 listas, 8 `<code>`, 3 headings); **0** tags vivas perigosas; **0** href `javascript:`/`data:`; **0** vazamento de `/Users/`//`/home/`//`C:\Users`//`file:///`//e-mail//`Bearer <token>`.
+
 ## 2026-06-18 — [Fase 5 · F5.1.5] Redação de PII em `text`/`tool_input` no render de turnos — CONCLUÍDO (`821f495`)
 ### Resumo
 Camada **conservadora e idempotente** de redação de PII/segredos no render **read-only** de turnos, via `ConversationTurns::PiiRedactor`, aplicada em `TurnListComponent#turn_text` e `#tool_input_text` **antes do truncamento**. Preserva ERB auto-escape; **sem** `html_safe`/`raw`/`<%==`/`simple_format`/markdown; `tool_input` segue como texto em `<pre>`. Recorte estrito ao render — **loader/builder/importers/schema/banco inalterados**.

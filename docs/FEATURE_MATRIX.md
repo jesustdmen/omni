@@ -32,7 +32,7 @@
 
 ## Conversas
 
-> **Nota (turnos lazy, pré-F5, 2026-06-17 · ADR-021):** a estratégia para localizar/abrir turnos sob demanda foi **decidida** no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Isso destravou (ver status atual na tabela): **CV-02** (infra de índice/loader lazy entregue), **CV-05/CV-06** (parciais via F5.1 read-only), **CV-08** (entregue — `tool_input` em `<pre>`); **CV-07** (markdown sanitizado) segue para **F5.2** (ADR-012). Fronteira em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
+> **Nota (turnos lazy, pré-F5, 2026-06-17 · ADR-021):** a estratégia para localizar/abrir turnos sob demanda foi **decidida** no **[ADR-021](adr/ADR-021-lazy-load-turnos-via-indice-offsets.md)** (índice de offsets por `thread_id` em `sessions.jsonl`; ponteiros, não conteúdo; `seek`+`readline`; **sem importar turnos para o banco**). Isso destravou (ver status atual na tabela): **CV-02** (infra de índice/loader lazy entregue), **CV-05/CV-06** (parciais via F5.1 read-only), **CV-08** (entregue — `tool_input` em `<pre>`); **CV-07** (markdown sanitizado) **entregue na F5.2** (ADR-012). Fronteira em [`F5_CONTRACT_DECISIONS.md`](F5_CONTRACT_DECISIONS.md).
 >
 > **Nota (F3.0→F3.2.1, 2026-06-17 · commit `bd0a9ce`):** Sync de **metadados de conversa** entregue e publicado. F3.0 (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`); F3.1 (tabelas + `Sync::ImportSummaries` + rake `sync:summaries`, idempotente); **F3.2 = primeiro sync real controlado** de `summaries.jsonl` (1635 conversas; backup + allowlist `:ro`); **F3.2.1 = correção do merge** de escalares com `last_ts` nulo (`source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 por limitação do dado). **Turnos (`sessions.jsonl`/shards), UI, vínculo conversa↔tarefa e triagem ficam FORA** (ADR-018; F4/F5).
 >
@@ -44,9 +44,9 @@
 | CV-02 | Import `sessions.jsonl` (turnos, lazy) | Repo B | 3/5 | MVP | 🟡 Infra entregue (pré-F5: índice offsets + loader lazy; ADR-021) | CV-01 | turnos == turn_count |
 | CV-03 | Títulos de sessão | Repo B | 3 | MVP | Não iniciado | CV-01 | títulos esperados |
 | CV-04 | Lista de conversas | Mockup/Viewer | 5 | MVP | Não iniciado | CV-01 | filtros funcionam |
-| CV-05 | Detalhe de conversa | Mockup/Viewer | 5 | MVP | 🟡 Parcial (F5.1 read-only; F5.1.1 fix artefato + cor de role; F5.1.5 redação de PII em `text`/`tool_input`; sem markdown) | CV-02 | render ordenado |
+| CV-05 | Detalhe de conversa | Mockup/Viewer | 5 | MVP | 🟡 Parcial (F5.1 read-only; F5.1.1 fix artefato + cor de role; F5.1.5 redação de PII; F5.2 markdown sanitizado) | CV-02 | render ordenado |
 | CV-06 | Turnos ordenados (`seq`) | Repo B | 3/5 | MVP | 🟡 Parcial (F5.1 — ordenado por `line_no`) | CV-02 | UNIQUE(conv,seq) |
-| CV-07 | Markdown sanitizado | Mockup | 5 | MVP | Não iniciado (F5.2) | CV-05 | payload XSS neutralizado |
+| CV-07 | Markdown sanitizado | Mockup | 5 | MVP | ✅ Entregue (F5.2 — `MarkdownRenderer`: commonmarker seguro + allowlist + links; XSS neutralizado) | CV-05 | payload XSS neutralizado |
 | CV-08 | Tool calls (tool_input escapado) | Repo B/Mockup | 5 | MVP | ✅ Entregue (F5.1 — `tool_input` em `<pre>` escapado) | CV-05 | tool_input nunca HTML |
 | CV-09 | Arquivos alterados | Repo B | 5 | v1 | Não iniciado | CV-05 | lista correta |
 | CV-10 | Tags (conversa) | Repo B/Mockup | 3/5 | MVP | Não iniciado | CV-01 | filtro por tag |
