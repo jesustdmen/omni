@@ -9,6 +9,22 @@
 
 ## Entradas
 
+## 2026-06-18 — [Fase 5 · F5.1.5] Redação de PII em `text`/`tool_input` no render de turnos — CONCLUÍDO (`821f495`)
+### Resumo
+Camada **conservadora e idempotente** de redação de PII/segredos no render **read-only** de turnos, via `ConversationTurns::PiiRedactor`, aplicada em `TurnListComponent#turn_text` e `#tool_input_text` **antes do truncamento**. Preserva ERB auto-escape; **sem** `html_safe`/`raw`/`<%==`/`simple_format`/markdown; `tool_input` segue como texto em `<pre>`. Recorte estrito ao render — **loader/builder/importers/schema/banco inalterados**.
+### Entregue
+- **`app/services/conversation_turns/pii_redactor.rb`** (novo, PORO `module_function call`): redige strings; idempotente (rodar 2× não degrada `<EMAIL>`/`<SECRET>`/`<USER>`).
+- **`TurnListComponent`** (`turn_text`/`tool_input_text`) passam pelo redator antes de `truncate_bytes`.
+- Testes: unit `test/services/conversation_turns/pii_redactor_test.rb` + integração de render em `conversation_turns_test.rb` (text/tool_input redigidos; XSS escapado; grep-guard mantido).
+### Padrões cobertos
+e-mail → `<EMAIL>`; `Bearer <token>` → `Bearer <SECRET>`; `token`/`api_key`/`secret`/`password`/`access_token`/`refresh_token` (querystring e JSON) → `chave=<SECRET>`; paths `/Users/<nome>`, `/home/<nome>`, `C:\Users\<nome>`, `C:/Users/<nome>`, `file:///Users…`, `file:///home…` → `…/<USER>`.
+### Limitações conhecidas
+Não exaustivo; **não** redige segredos soltos sem rótulo; **não** cobre CPF/telefone/IP nesta fatia; conteúdo-fonte (`sessions.jsonl`) permanece **read-only e inalterado**; redação aplicada **apenas no render** (não persistido).
+### Testes/validações
+`bin/rails test` **235 runs / 861 assertions / 0** falhas/erros/skips; rubocop **127/0**; brakeman **0**; bundler-audit **0**. Smoke real: `/conversations/cd086107…` → **200**, **50** `li.turn`, "Página 1 de 4", **sem `:stale`**; zero vazamento de `/Users/`//`/home/`//`C:\Users`//`file:///`//e-mail//`Bearer <token>` na página.
+### Fora de escopo (cumprido)
+Sem markdown/F5.2/busca/virtualização/scorer/auto-link/triagem/chat; sem alterar loader/builder/importers/schema/migration/banco/config/`.devstack`/deploy/credenciais; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-18 — [P0.1] Saneamento documental + índice de documentação — CONCLUÍDO (docs-only)
 ### Resumo
 Correção de incoerências remanescentes pós-P0 e criação de um **índice oficial** da documentação para reduzir drift. Somente documentação; sem código/teste/banco/migration/deploy.

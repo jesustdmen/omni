@@ -77,7 +77,7 @@
 - **F5.1.3 (2026-06-18, `8d32f4f`) — CONCLUÍDA:** oculta `source_file` cru em `/sync_runs/:id` via helper `safe_basename` (só o nome do arquivo; sem `/normalized`//`/tmp`//`/home`//`C:\Users`//`file://`). +4 testes.
 - **F5.1.4 (2026-06-18) — CONCLUÍDA (DB-only):** limpeza transacional dos resíduos sintéticos de auditoria no DB dev (9 refs + 3 turn_sources `/tmp` + 3 conversas `tXSS*` + 3 sync_runs `/tmp`; backup gitignored). DB dev fiel ao real (1635/1/129482/5/1, órfãs 0). Registrada em `8f65cf8`.
 - **F5.1 = sub-entrega CONCLUÍDA; a Fase 5 permanece ABERTA** (o grosso da UI unificada é F5.2+).
-- **Ainda FORA (F5.2+):** **markdown sanitizado (CV-07)** + code blocks, syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04); **redação de PII em `text`/`tool_input`** (follow-up de segurança).
+- **Ainda FORA (F5.2+):** **markdown sanitizado (CV-07)** + code blocks, syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04). *(Redação de PII em `text`/`tool_input` entregue na F5.1.5, `821f495`.)*
 - **Entregáveis:** índice de turnos (ADR-021 ✓); aba Conversas; lista+detalhe de conversa (markdown sanitizado — ADR-012); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
 - **Critérios de aceite:** abertura lazy sem full-scan; turnos ordenados; fluxos MVP; payload XSS neutralizado; `tool_input` nunca HTML; `personal` respeitado.
 - **Marco:** M5.
@@ -91,7 +91,7 @@
 - **Entregáveis:** suíte completa; performance de import; backup/rollback; runbook; rake task de homologação.
 - **Critérios de aceite:** suíte verde; import dentro do SLA; runbook validado.
 - **Readiness de produção (diagnóstico pós-F5.1.4 — produção NUNCA exercida):** bloqueadores conhecidos a tratar na F7 —
-  `production.rb` não endurecido (`force_ssl`/`assume_ssl`/`config.hosts` comentados); schemas **Solid cache/queue/cable** ausentes (só `db/queue_schema.rb`); `cable.yml` de prod ainda em **Redis** (não `solid_cable`); **Kamal/deploy ausente** (`config/deploy.yml`/`.kamal/`); **admin seed** ausente (`db/seeds.rb` vazio); **worker de jobs** (Solid Queue) não definido; **`/normalized` em produção indefinido** (sem origem/volume → `:stale`); **pipeline Python** sem topologia de prod; **backup/restore/rollback** de prod pendentes; **redação de PII em `text`/`tool_input`** pendente; `action_mailer` host placeholder.
+  `production.rb` não endurecido (`force_ssl`/`assume_ssl`/`config.hosts` comentados); schemas **Solid cache/queue/cable** ausentes (só `db/queue_schema.rb`); `cable.yml` de prod ainda em **Redis** (não `solid_cable`); **Kamal/deploy ausente** (`config/deploy.yml`/`.kamal/`); **admin seed** ausente (`db/seeds.rb` vazio); **worker de jobs** (Solid Queue) não definido; **`/normalized` em produção indefinido** (sem origem/volume → `:stale`); **pipeline Python** sem topologia de prod; **backup/restore/rollback** de prod pendentes; `action_mailer` host placeholder. *(Redação de PII em `text`/`tool_input` no render entregue na F5.1.5; ampliação p/ CPF/telefone/IP/segredos não-rotulados segue como follow-up.)*
 - **Não bloqueante (corrigir na F7):** entrada órfã `001 NO FILE` em `schema_migrations`; `timezone`/`locale` nos defaults (UTC/:en) apesar da UI pt-BR.
 - **Pré-requisito de exposição externa/multi-tenant:** F7 completa + **isolamento por owner/tenant** (hoje ADR-014 domínio compartilhado) + redação de PII.
 - **Marco:** M7.

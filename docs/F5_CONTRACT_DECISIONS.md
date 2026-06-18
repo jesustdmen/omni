@@ -23,12 +23,13 @@ Fatia mínima entregue (consome o `LazyLoader`; **sem** markdown/scorer/UI rica)
 - **Validação real:** conversa de 177 turnos → loader `:ok`, render 50/página ("Página 1 de 4"), sem `<script>`/`onerror=` crus, sem vazar path/`Users`.
 - **F5.1.1 (`a01efbd`):** correção do artefato ERB `). %>` (comentário do componente continha `<%= %>`) + **cor de badge por role** via allowlist (`ROLE_TONES`); render read-only mantido.
 - **F5.1.2:** consolidação documental + **persistência do mount `/normalized:ro`** no `.devstack/up.sh` (runtime reproduzível); addendum ao ADR-013 (`personal` boolean + b1). Sem mudança de comportamento.
-- **F5.1.3:** `sync_runs/show` deixa de exibir o caminho cru de `source_file` — helper `safe_basename` mostra só o nome do arquivo (sem `/normalized`//`/tmp`//`/home`//`C:\Users`//`file://`). Pendência de PII em `text`/`tool_input` segue como follow-up.
+- **F5.1.3:** `sync_runs/show` deixa de exibir o caminho cru de `source_file` — helper `safe_basename` mostra só o nome do arquivo (sem `/normalized`//`/tmp`//`/home`//`C:\Users`//`file://`). *(PII em `text`/`tool_input` entregue depois, na F5.1.5.)*
 - **F5.1.4 (DB-only):** limpeza transacional dos resíduos sintéticos de auditoria no DB **dev** (9 refs + 3 turn_sources `/tmp` + 3 conversas `tXSS*` + 3 sync_runs `/tmp`; backup gitignored). DB dev fiel ao real (1635/1/129482/5/1, órfãs 0); conversa real e loader `:ok` (177) preservados. Sem alterar código/schema.
+- **F5.1.5 (`821f495`):** **redação de PII/segredos** em `text`/`tool_input` no render, via `ConversationTurns::PiiRedactor` (conservador/idempotente) aplicado em `TurnListComponent#turn_text`/`#tool_input_text` **antes do truncamento**; cobre e-mail, `Bearer`, `token|api_key|secret|password|access_token|refresh_token`, paths `Users|home` (Unix/Windows/`file://`) → `<EMAIL>`/`<SECRET>`/`<USER>`. ERB auto-escape mantido; `tool_input` segue em `<pre>`; sem markdown. **Limitação:** não exaustivo (sem segredos não-rotulados; sem CPF/telefone/IP); conteúdo-fonte read-only inalterado; redação só no render.
 
 ## Status da Fase 5 (P0, 2026-06-18)
 - **F5.1 = sub-entrega CONCLUÍDA** (read-only); **a Fase 5 permanece ABERTA**. Suíte atual: **225 runs / 811 assertions / 0**; rubocop 125/0; brakeman 0; bundler-audit 0.
-- **Pendências F5.2+:** markdown sanitizado (CV-07) + code blocks, syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04), **redação de PII em `text`/`tool_input`**.
+- **Pendências F5.2+:** markdown sanitizado (CV-07) + code blocks, syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04). *(Redação de PII em `text`/`tool_input` entregue na F5.1.5.)*
 - **Produção (F7) não iniciada** — readiness consolidado no `PROJECT_STATUS.md` (seção "Readiness de produção"). Exposição externa/multi-tenant exige F7 + isolamento por owner/tenant (ADR-014) + redação de PII.
 
 ## Fronteiras da Fase 5
