@@ -58,7 +58,7 @@ module Conversations
     end
 
     def turn_text(turn)
-      truncate_bytes(turn.text.to_s, TEXT_LIMIT)
+      truncate_bytes(ConversationTurns::PiiRedactor.call(turn.text.to_s), TEXT_LIMIT)
     end
 
     def tool_input?(turn)
@@ -73,7 +73,7 @@ module Conversations
         when String then turn.tool_input
         else json_safe(turn.tool_input)
         end
-      truncate_bytes(serialized, TOOL_INPUT_LIMIT)
+      truncate_bytes(ConversationTurns::PiiRedactor.call(serialized), TOOL_INPUT_LIMIT)
     end
 
     def page_url(target)

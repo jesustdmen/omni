@@ -62,6 +62,38 @@ class ConversationTurnsTest < ActionDispatch::IntegrationTest
     assert_no_match(/<img[^>]*onerror=/, response.body)
   end
 
+  test "F5.1.5 — redige PII em text no render (e-mail, path, token)" do
+    conv = Conversation.create!(thread_id: "tPII", source: "x", message_count: 1)
+    build_for([
+      line(thread_id: "tPII", role: "user",
+           text: "contato joao@example.com em /Users/jesus/proj e token=abc123xyz")
+    ])
+    get conversation_path(conv)
+    assert_response :success
+    # marcadores auto-escapados pelo ERB (prova: <EMAIL> vira &lt;EMAIL&gt;)
+    assert_includes response.body, "&lt;EMAIL&gt;"
+    assert_includes response.body, "/Users/&lt;USER&gt;/proj"
+    assert_includes response.body, "token=&lt;SECRET&gt;"
+    assert_not_includes response.body, "joao@example.com"
+    assert_not_includes response.body, "/Users/jesus"
+    assert_not_includes response.body, "abc123xyz"
+  end
+
+  test "F5.1.5 — redige PII em tool_input no render (<pre>)" do
+    conv = Conversation.create!(thread_id: "tPII2", source: "x", message_count: 1)
+    build_for([
+      line(thread_id: "tPII2", role: "assistant", text: "ok", tool: "http",
+           tool_input: { "auth" => "Bearer eyJabc.def", "home" => "/home/maria/.ssh" })
+    ])
+    get conversation_path(conv)
+    assert_response :success
+    assert_select "pre.turn__pre"
+    assert_includes response.body, "Bearer &lt;SECRET&gt;"
+    assert_includes response.body, "/home/&lt;USER&gt;"
+    assert_not_includes response.body, "eyJabc.def"
+    assert_not_includes response.body, "/home/maria"
+  end
+
   test "pagina turnos com PER_PAGE=50" do
     conv = Conversation.create!(thread_id: "tP", source: "x", message_count: 55)
     build_for((1..55).map { |i| line(thread_id: "tP", role: "user", text: "linha #{i}") })
