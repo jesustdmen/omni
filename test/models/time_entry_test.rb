@@ -68,4 +68,65 @@ class TimeEntryTest < ActiveSupport::TestCase
     @task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 12)
     assert_equal 42, @task.reload.total_duration
   end
+
+  # --- PB-003a — timer ---
+
+  test "scope running retorna só timers abertos" do
+    open = TimeEntry.start_for(@task)
+    closed = @task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 60)
+    assert_includes TimeEntry.running, open
+    assert_not_includes TimeEntry.running, closed
+  end
+
+  test "start_for cria timer running sem end_time" do
+    entry = TimeEntry.start_for(@task)
+    assert entry.persisted?
+    assert entry.is_running
+    assert_nil entry.end_time
+    assert_equal 0, entry.duration
+  end
+
+  test "stop! calcula duração em segundos e encerra" do
+    start = Time.current - 90.seconds
+    entry = @task.time_entries.create!(start_time: start, date: start.to_date, is_running: true, duration: 0)
+    entry.stop!(at: start + 90.seconds)
+    assert_not entry.is_running
+    assert_not_nil entry.end_time
+    assert_equal 90, entry.duration
+  end
+
+  test "não permite dois timers abertos na mesma tarefa" do
+    TimeEntry.start_for(@task)
+    dup = TimeEntry.start_for(@task)
+    assert_not dup.persisted?
+    assert dup.errors[:base].any?
+  end
+
+  test "com paralelismo permitido, timers em tarefas diferentes coexistem" do
+    other = @client.tasks.create!(title: "T2", type: "support")
+    a = TimeEntry.start_for(@task)
+    b = TimeEntry.start_for(other)
+    assert a.persisted?
+    assert b.persisted?, "timer em outra tarefa deve ser permitido com paralelismo ligado"
+  end
+
+  test "com paralelismo desabilitado, bloqueia novo timer havendo qualquer aberto" do
+    other = @client.tasks.create!(title: "T2", type: "support")
+    TimeEntry.start_for(@task)
+    with_parallel_timers(false) do
+      blocked = TimeEntry.start_for(other)
+      assert_not blocked.persisted?
+      assert blocked.errors[:base].any?
+    end
+  end
+
+  private
+
+  def with_parallel_timers(value)
+    prev = Rails.configuration.x.allow_parallel_running_timers
+    Rails.configuration.x.allow_parallel_running_timers = value
+    yield
+  ensure
+    Rails.configuration.x.allow_parallel_running_timers = prev
+  end
 end

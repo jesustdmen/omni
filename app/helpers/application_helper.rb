@@ -38,19 +38,54 @@ module ApplicationHelper
     cleaned.split(%r{[/\\]}).last.presence || "—"
   end
 
-  # Formata uma duração inteira (em minutos — unidade a confirmar na carga real,
-  # ver F3_CONTRACT_DECISIONS.md) para um rótulo legível: "—", "0 min", "45 min",
-  # "1 h", "1 h 30 min".
+  # PB-003a — ícones inline (estilo lucide, autorados; sem copiar de _origem).
+  # Construídos com tag-builders (sem html_safe/raw). `aria-hidden` — o nome
+  # acessível vem do aria-label/title do botão que contém o ícone.
+  ACTION_ICONS = {
+    "eye" => [
+      [ :path, { d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" } ],
+      [ :circle, { cx: 12, cy: 12, r: 3 } ]
+    ],
+    "pencil" => [
+      [ :path, { d: "M12 20h9" } ],
+      [ :path, { d: "M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" } ]
+    ],
+    "trash" => [
+      [ :path, { d: "M3 6h18" } ],
+      [ :path, { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" } ],
+      [ :line, { x1: 10, x2: 10, y1: 11, y2: 17 } ],
+      [ :line, { x1: 14, x2: 14, y1: 11, y2: 17 } ]
+    ],
+    "stop" => [ [ :rect, { x: 6, y: 6, width: 12, height: 12, rx: 2 } ] ],
+    "play" => [ [ :polygon, { points: "6 3 20 12 6 21 6 3" } ] ]
+  }.freeze
+
+  def action_icon(name)
+    children = ACTION_ICONS.fetch(name.to_s, [])
+    tag.svg(
+      width: 16, height: 16, viewBox: "0 0 24 24", fill: "none",
+      stroke: "currentColor", "stroke-width": 2, "stroke-linecap": "round",
+      "stroke-linejoin": "round", "aria-hidden": "true", class: "icon"
+    ) do
+      safe_join(children.map { |element, attrs| tag.public_send(element, "", **attrs) })
+    end
+  end
+
+  # Formata uma duração inteira **em segundos** (unidade canônica — PB-003) para um
+  # rótulo legível: "—", "0 min", "42 s", "1 min 30 s", "1 h", "1 h 30 min".
+  # Segundos só aparecem quando < 1 h (precisão de timers curtos).
   def duration_label(value)
     return "—" if value.blank?
 
-    minutes = value.to_i
-    return "0 min" if minutes <= 0
+    seconds = value.to_i
+    return "0 min" if seconds <= 0
 
-    hours, mins = minutes.divmod(60)
+    hours, rem = seconds.divmod(3600)
+    minutes, secs = rem.divmod(60)
     parts = []
     parts << "#{hours} h" if hours.positive?
-    parts << "#{mins} min" if mins.positive?
-    parts.join(" ")
+    parts << "#{minutes} min" if minutes.positive?
+    parts << "#{secs} s" if secs.positive? && hours.zero?
+    parts.join(" ").presence || "0 min"
   end
 end

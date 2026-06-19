@@ -23,5 +23,11 @@ module App
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # PB-003a — permite múltiplos timers abertos em tarefas diferentes (default true).
+    # Quando false, bloqueia novo timer se já houver qualquer um aberto. App-wide
+    # (ADR-014: domínio compartilhado, sem regra por usuário). Sem tela de config nesta fase.
+    config.x.allow_parallel_running_timers =
+      ActiveModel::Type::Boolean.new.cast(ENV.fetch("ALLOW_PARALLEL_RUNNING_TIMERS", "true"))
   end
 end

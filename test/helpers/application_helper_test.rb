@@ -1,6 +1,16 @@
 require "test_helper"
 
 class ApplicationHelperTest < ActionView::TestCase
+  # PB-003a — duration_label formata SEGUNDOS (unidade canônica).
+  test "duration_label formata segundos em h/min/s" do
+    assert_equal "—", duration_label(nil)
+    assert_equal "0 min", duration_label(0)
+    assert_equal "42 s", duration_label(42)
+    assert_equal "1 min 30 s", duration_label(90)
+    assert_equal "1 h", duration_label(3600)
+    assert_equal "1 h 30 min", duration_label(5400)
+  end
+
   # F5.1.3 — safe_basename: nome de arquivo seguro (sem path/PII) para telas.
   test "safe_basename retorna só o nome do arquivo" do
     assert_equal "sessions.jsonl", safe_basename("/normalized/sessions.jsonl")

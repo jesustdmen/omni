@@ -89,4 +89,70 @@ class TimeEntriesTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to time_entries_path
   end
+
+  # --- PB-003a — timer start/stop ---
+
+  test "iniciar timer cria TimeEntry running" do
+    assert_difference "TimeEntry.count", 1 do
+      post task_timer_path(@task)
+    end
+    entry = TimeEntry.order(:created_at).last
+    assert entry.is_running
+    assert_nil entry.end_time
+    assert_redirected_to task_path(@task)
+  end
+
+  test "parar timer calcula duração e encerra" do
+    start = Time.current - 120.seconds
+    entry = @task.time_entries.create!(start_time: start, date: start.to_date, is_running: true, duration: 0)
+    patch stop_time_entry_path(entry)
+    entry.reload
+    assert_not entry.is_running
+    assert entry.duration >= 110 # ~120s, tolerância de relógio
+  end
+
+  test "segundo timer na mesma tarefa falha" do
+    post task_timer_path(@task)
+    assert_no_difference "TimeEntry.count" do
+      post task_timer_path(@task)
+    end
+    assert_redirected_to task_path(@task)
+  end
+
+  test "timer em outra tarefa é permitido com paralelismo ligado (default)" do
+    other = @client.tasks.create!(title: "T2", type: "support")
+    post task_timer_path(@task)
+    assert_difference "TimeEntry.count", 1 do
+      post task_timer_path(other)
+    end
+  end
+
+  test "timer em outra tarefa é bloqueado com paralelismo desligado" do
+    other = @client.tasks.create!(title: "T2", type: "support")
+    post task_timer_path(@task)
+    with_parallel_timers(false) do
+      assert_no_difference "TimeEntry.count" do
+        post task_timer_path(other)
+      end
+    end
+  end
+
+  test "anônimo não acessa start/stop" do
+    entry = @task.time_entries.create!(start_time: Time.current, date: Date.current, is_running: true, duration: 0)
+    sign_out @user
+    post task_timer_path(@task)
+    assert_redirected_to new_user_session_path
+    patch stop_time_entry_path(entry)
+    assert_redirected_to new_user_session_path
+  end
+
+  private
+
+  def with_parallel_timers(value)
+    prev = Rails.configuration.x.allow_parallel_running_timers
+    Rails.configuration.x.allow_parallel_running_timers = value
+    yield
+  ensure
+    Rails.configuration.x.allow_parallel_running_timers = prev
+  end
 end

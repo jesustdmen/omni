@@ -38,6 +38,16 @@ class TimeEntriesController < ApplicationController
     redirect_to time_entries_path, notice: "Apontamento removido."
   end
 
+  # PB-003a — para um timer em andamento (calcula duração em segundos).
+  # Carrega/autoriza aqui (não via set_time_entry) usando `:update?` — sem
+  # introduzir `stop?` na policy.
+  def stop
+    @time_entry = TimeEntry.find(params[:id])
+    authorize @time_entry, :update?
+    @time_entry.stop!
+    redirect_back fallback_location: @time_entry.task, notice: "Timer parado."
+  end
+
   private
 
   def set_time_entry

@@ -14,11 +14,16 @@ Rails.application.routes.draw do
     resources :contacts, only: %i[new create edit update destroy]
   end
   resources :projects
-  resources :tasks
+  resources :tasks do
+    # PB-003a — iniciar timer a partir da tarefa (contexto explícito na URL).
+    resource :timer, only: %i[create], controller: "task_timers"
+  end
   resources :demands do
     post :convert, on: :member
   end
-  resources :time_entries
+  resources :time_entries do
+    patch :stop, on: :member # PB-003a — parar um timer em andamento.
+  end
 
   # F3.UI.1 — console read-only de validação da Fase 3 (somente leitura).
   # F4 — vínculo manual conversa↔tarefa (links aninhados; create/destroy).

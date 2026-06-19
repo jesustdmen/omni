@@ -51,27 +51,72 @@
   </div>
 </section>
 
-<%# Aba "Time entries" — conteúdo real read-only (F2.5). CRUD completo vive em /time_entries. %>
+<%# PB-003a — Histórico de Apontamentos (timer + registro de tempo). %>
 <section class="tab-panel" id="tab-time">
+  <% entries = @task.time_entries.order(start_time: :desc) %>
   <div class="subhead">
-    <h2>Time entries</h2>
-    <%= link_to "Novo apontamento", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+    <div class="subhead__titles">
+      <h2>Histórico de Apontamentos</h2>
+      <p class="muted"><%= entries.size %> apontamento(s) registrado(s)</p>
+    </div>
+    <div class="page-head__actions">
+      <%# Controle de timer da tarefa (1 aberto por tarefa). %>
+      <% running = @task.time_entries.running.order(start_time: :desc).first %>
+      <% if running %>
+        <span class="muted">⏱ em andamento desde <%= running.start_time&.strftime("%H:%M") %></span>
+        <%= button_to stop_time_entry_path(running), method: :patch, class: "btn btn--primary btn--sm" do %>
+          <%= action_icon("stop") %> Parar timer
+        <% end %>
+      <% else %>
+        <%= button_to task_timer_path(@task), method: :post, class: "btn btn--primary btn--sm" do %>
+          <%= action_icon("play") %> Iniciar timer
+        <% end %>
+      <% end %>
+      <%= link_to "Novo apontamento", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+    </div>
   </div>
 
-  <% entries = @task.time_entries.order(start_time: :desc) %>
   <% if entries.any? %>
-    <table>
+    <table class="te-history">
       <thead>
-        <tr><th>Data</th><th>Início</th><th>Duração</th><th>Descrição</th><th>Ações</th></tr>
+        <tr>
+          <th>Data</th><th>Descrição</th><th>Início</th><th>Término</th>
+          <th class="te-col-duration">Duração</th><th>Ações</th>
+        </tr>
       </thead>
       <tbody>
         <% entries.each do |entry| %>
           <tr>
-            <td><%= entry.date %></td>
-            <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
-            <td><%= duration_label(entry.duration) %></td>
-            <td><%= entry.description.presence || "—" %></td>
-            <td><%= link_to "Ver", entry, class: "btn btn--ghost btn--sm" %></td>
+            <td class="te-date"><%= entry.date&.strftime("%d/%m/%Y") %></td>
+            <td class="te-desc"><%= entry.description.presence || "—" %></td>
+            <td><%= entry.start_time&.strftime("%H:%M") || "—" %></td>
+            <td>
+              <% if entry.end_time %><%= entry.end_time.strftime("%H:%M") %>
+              <% elsif entry.is_running %><span class="badge badge--info">em andamento</span>
+              <% else %>—<% end %>
+            </td>
+            <td class="te-col-duration">
+              <% if entry.is_running %><span class="muted">—</span>
+              <% else %><strong><%= duration_label(entry.duration) %></strong><% end %>
+            </td>
+            <td>
+              <%# PB-003a — ações operacionais diretas na linha (rotas CRUD/stop existentes). %>
+              <div class="te-actions">
+                <%= link_to action_icon("eye"), entry, class: "btn btn--ghost btn--icon te-action--view",
+                      title: "Ver", "aria-label": "Ver apontamento" %>
+                <%= link_to action_icon("pencil"), edit_time_entry_path(entry), class: "btn btn--ghost btn--icon te-action--edit",
+                      title: "Editar", "aria-label": "Editar apontamento" %>
+                <% if entry.is_running %>
+                  <%= button_to action_icon("stop"), stop_time_entry_path(entry), method: :patch,
+                        class: "btn btn--ghost btn--icon te-action--stop", form_class: "inline",
+                        title: "Parar timer", "aria-label": "Parar timer deste apontamento" %>
+                <% end %>
+                <%= button_to action_icon("trash"), time_entry_path(entry), method: :delete,
+                      class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                      title: "Excluir", "aria-label": "Excluir apontamento",
+                      data: { turbo_confirm: "Excluir este apontamento?" } %>
+              </div>
+            </td>
           </tr>
         <% end %>
       </tbody>

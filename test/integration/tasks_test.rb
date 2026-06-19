@@ -97,8 +97,33 @@ class TasksTest < ActionDispatch::IntegrationTest
     get task_path(task)
     assert_response :success
     assert_select "#tab-time table"
+    assert_select "#tab-time", /Histórico de Apontamentos/
+    assert_select "#tab-time", /apontamento\(s\) registrado\(s\)/
     assert_select "#tab-time", /Total de duração/
     assert_select "#tab-time", /42/
+  end
+
+  # PB-003a — ações operacionais diretas na linha do histórico.
+  test "linha do apontamento expõe Editar e Excluir diretamente" do
+    task = @client.tasks.create!(title: "Bug X", type: "support")
+    entry = task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 30)
+    get task_path(task)
+    assert_response :success
+    assert_select "#tab-time .te-actions a[href=?]", edit_time_entry_path(entry)
+    assert_select "#tab-time .te-actions form[action=?][method=post]", time_entry_path(entry) do
+      assert_select "input[name=_method][value=delete]", true
+    end
+    # sem timer aberto → sem botão "Parar" na linha
+    assert_select "#tab-time .te-actions form[action=?]", stop_time_entry_path(entry), count: 0
+  end
+
+  test "linha do timer em andamento expõe Parar diretamente" do
+    task = @client.tasks.create!(title: "Bug X", type: "support")
+    running = task.time_entries.create!(start_time: Time.current, date: Date.current, is_running: true, duration: 0)
+    get task_path(task)
+    assert_response :success
+    assert_select "#tab-time .te-actions form[action=?]", stop_time_entry_path(running)
+    assert_select "#tab-time .te-actions a[href=?]", edit_time_entry_path(running)
   end
 
   test "edit e update" do

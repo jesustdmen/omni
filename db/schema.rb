@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_17_150001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_19_215951) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -324,6 +324,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_150001) do
     t.index ["conversation_id"], name: "index_time_entries_on_conversation_id"
     t.index ["date"], name: "index_time_entries_on_date"
     t.index ["start_time"], name: "index_time_entries_on_start_time"
+    t.index ["task_id"], name: "idx_time_entries_one_running_per_task", unique: true, where: "is_running"
     t.index ["task_id"], name: "index_time_entries_on_task_id"
     t.check_constraint "duration >= 0", name: "time_entries_duration_check"
   end

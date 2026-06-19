@@ -494,8 +494,33 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 }
 .tab-panel.placeholder + .tab-panel.placeholder { margin-top: 12px; }
 
+/* PB-003a — Histórico de Apontamentos (apresentação operacional). */
+.subhead__titles { display: flex; flex-direction: column; gap: 2px; }
+.subhead__titles .muted { font-size: .8rem; }
+.te-history .te-date { white-space: nowrap; }
+.te-history .te-desc { white-space: normal; overflow-wrap: anywhere; max-width: 360px; color: var(--text); }
+.te-history .te-col-duration { text-align: right; white-space: nowrap; }
+.te-history .te-col-duration strong { font-variant-numeric: tabular-nums; }
+.te-actions { display: inline-flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.te-actions form.inline { display: inline; margin: 0; }
+
+/* PB-003a — botões só-ícone (estilo lucide) acessíveis (aria-label/title). */
+.btn--icon { padding: 6px; line-height: 0; display: inline-flex; align-items: center; justify-content: center; }
+.btn .icon { display: block; width: 16px; height: 16px; }
+.btn--sm .icon { vertical-align: -3px; margin-right: 4px; } /* ícone + texto nos botões de timer */
+
+/* Cor por ação (paridade c/ TaskManager: ver=verde, editar=azul, excluir/parar=vermelho). */
+.te-action--view   { color: var(--tone-success-text); }
+.te-action--edit   { color: var(--tone-info-text); }
+.te-action--delete,
+.te-action--stop   { color: var(--tone-danger-text); }
+.te-action--view:hover   { background: var(--tone-success-bg); border-color: var(--tone-success-border); }
+.te-action--edit:hover   { background: var(--tone-info-bg); border-color: var(--tone-info-border); }
+.te-action--delete:hover,
+.te-action--stop:hover   { background: var(--tone-danger-bg); border-color: var(--tone-danger-border); }
+
 /* linha de total (soma de duração) na aba Time entries da task */
-.te-total { margin-top: 14px; font-size: .95rem; color: var(--text-muted); }
+.te-total { margin-top: 14px; font-size: .95rem; color: var(--text-muted); text-align: right; }
 .te-total strong { color: var(--text); }
 
 /* ------------------------------------------------------------------ */
