@@ -1,0 +1,246 @@
+# Omni — Product Backlog
+
+> **Status inicial:** proposta de governança de produto para a nova onda pós-F7.1.  
+> **Função:** fonte oficial para priorização e autorização de trabalho de produto.  
+> **Regra central:** nenhum agente deve implementar item de produto que não esteja registrado aqui e autorizado explicitamente pelo Product Owner.
+
+---
+
+## 1. Propósito
+
+Este documento registra o backlog oficial de produto do Omni, com foco em transformar a aplicação em uma ferramenta de uso diário para organizar clientes, projetos, tarefas, demandas, apontamentos de horas e conversas técnicas.
+
+Ele complementa, mas não substitui:
+
+- `FEATURE_MATRIX.md` — inventário/status granular de features.
+- `ROADMAP.md` — fases e marcos macro.
+- `PROJECT_STATUS.md` — fotografia consolidada do projeto.
+- `DELIVERY_LOG.md` — histórico append-only de entregas reais.
+- `PRODUCT_GAP_REVIEW.md` — diagnóstico de lacunas e decisões pendentes.
+
+Este backlog deve ser usado para evitar perda de contexto, escopo implícito e execução baseada em inferência.
+
+---
+
+## 2. Regras anti-alucinação / anti-drift
+
+1. **Não executar item não autorizado.** Um agente só pode implementar item com status `Pronto para execução` e autorização explícita do Product Owner.
+2. **Não marcar como entregue sem evidência objetiva.** Entrega exige commit, diff, teste/validação e atualização dos documentos oficiais pertinentes.
+3. **Não converter hipótese em fato.** Quando não houver evidência no código/docs/telas, registrar como `Decisão pendente` ou `A confirmar`.
+4. **Não alterar `_origem/` nem `_mockup/`.** Eles são referência somente leitura.
+5. **Não retomar F7 por inércia.** Readiness de produção fica pausada até passar pelo gate de produto operacional.
+6. **Não recriar API JSON por reflexo.** Para cada endpoint legado, decidir se era API interna do React, ação de tela Rails, contrato externo, admin/health ou descarte.
+7. **Não inflar o MVP.** Separar `P0 uso diário`, `P1 usabilidade forte`, `P2 produção/operação`, `P3 evolução`.
+8. **Não usar a conversa como fonte de verdade permanente.** Decisões aprovadas devem virar documento em `app/docs/`.
+
+---
+
+## 3. Prioridades
+
+| Prioridade | Definição | Exemplo |
+|---|---|---|
+| P0 | Necessário para uso diário da ferramenta | registrar tempo, abrir tarefa, converter demanda |
+| P1 | Melhora forte de usabilidade ou paridade operacional relevante | duplicar projeto, buscar CNPJ, filtros melhores |
+| P2 | Produção/operação técnica | Solid, deploy, backup, rollback, worker |
+| P3 | Evolução futura / v1 | scorer, auto-link, inbox avançada, API externa |
+
+---
+
+## 4. Status permitidos
+
+| Status | Significado |
+|---|---|
+| Proposto | Item identificado, ainda não validado como necessário |
+| Em análise | Item em revisão de produto/técnica |
+| Aprovado | Item aceito como parte do produto, mas ainda sem autorização de execução |
+| Pronto para execução | Pode ser enviado ao agente executor mediante prompt específico |
+| Em execução | Agente autorizado está trabalhando no item |
+| Entregue | Implementado/validado/documentado |
+| Descartado | Decisão explícita de não fazer |
+| Bloqueado | Depende de decisão, dado, técnica ou outro item |
+
+---
+
+## 5. Gate de produto antes de F7
+
+A continuidade de F7.2+ fica pausada até que o Product Owner valide o seguinte gate:
+
+| Gate | Critério |
+|---|---|
+| GP-01 | O Omni permite registrar e consultar trabalho diário sem depender do TaskManager antigo |
+| GP-02 | Tarefa possui detalhe operacional suficiente para acompanhamento real |
+| GP-03 | Apontamento de horas atende uso real: timer/retroativo/histórico/totalização/manutenção |
+| GP-04 | Demandas podem ser registradas, priorizadas e convertidas em tarefa com clareza |
+| GP-05 | Clientes, contatos e projetos têm busca/filtros/campos suficientes para operação |
+| GP-06 | A decisão API TaskManager → Rails está documentada, sem lacunas de contrato externo |
+| GP-07 | `FEATURE_MATRIX.md` reflete a revisão de produto aprovada |
+
+Enquanto estes gates não forem aceitos, F7 permanece como P2.
+
+---
+
+## 6. Backlog inicial
+
+### PB-001 — Auditoria de paridade operacional do TaskManager
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0 |
+| Status | Pronto para execução |
+| Problema que resolve | Evita seguir implementação/produção sem saber se o Omni cobre o uso diário real observado nas telas do TaskManager. |
+| Origem/evidência | Telas do TaskManager analisadas em sessão de produto; `FEATURE_MATRIX.md` atual está macro/CRUD demais. |
+| Critério de aceite | `PRODUCT_GAP_REVIEW.md` preenchido com lacunas por área, impacto, prioridade sugerida e decisões pendentes. |
+| Fora de escopo | Implementar código; alterar schema; alterar `_origem`; atualizar `DELIVERY_LOG` como se fosse entrega de produto. |
+| Dependências | Docs atuais; imagens/telas do TaskManager; código Omni; `_origem/_repoa` somente leitura. |
+| Relacionado | `PRODUCT_GAP_REVIEW.md`, `FEATURE_MATRIX.md`, WD-01..WD-10. |
+
+### PB-002 — Revisão oficial da FEATURE_MATRIX após auditoria
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0 |
+| Status | Bloqueado |
+| Problema que resolve | A matriz atual pode transmitir que “CRUD entregue” equivale a ferramenta operacional completa. |
+| Origem/evidência | Discussão pós-commit `497cb49`; telas mostram features não refletidas em detalhe. |
+| Critério de aceite | `FEATURE_MATRIX.md` atualizada somente após PB-001, separando entregue, parcial, roadmap, não migrar e lacuna. |
+| Fora de escopo | Usar a matriz como rascunho de debate; marcar itens como entregues sem evidência. |
+| Dependências | PB-001. |
+| Relacionado | `FEATURE_MATRIX.md`, `PROJECT_STATUS.md`. |
+
+### PB-003 — Controle de tempo operacional
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0 |
+| Status | Proposto |
+| Problema que resolve | O uso diário depende de registrar tempo com fluidez, não apenas CRUD de `time_entries`. |
+| Origem/evidência | Telas mostram timer, status parado, descrição do trabalho, registro retroativo, histórico por dia, duração e ações de manutenção. |
+| Critério de aceite | Usuário consegue iniciar/parar tempo, registrar retroativo, visualizar histórico por tarefa, ver totais por dia e editar/excluir apontamentos. |
+| Fora de escopo | Relatórios financeiros avançados; faturamento; integração externa. |
+| Dependências | WD-04, WD-07; validação do modelo atual de `time_entries`. |
+| Relacionado | WD-07, UI-03. |
+
+### PB-004 — Detalhe de tarefa utilizável no dia a dia
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0 |
+| Status | Proposto |
+| Problema que resolve | A tarefa precisa ser o centro operacional: detalhes, tempo, conversas, demanda/histórico e ações claras. |
+| Origem/evidência | `/tasks/:id` já existe, mas a navegação por âncoras foi reconhecida como melhoria mínima; algumas abas/fluxos podem ainda estar pobres. |
+| Critério de aceite | Página da tarefa permite acompanhar status/tipo/cliente/projeto, tempo, conversas vinculadas e ações principais sem ambiguidade. |
+| Fora de escopo | Abas JS ricas se âncoras forem suficientes; campos v1 sem decisão. |
+| Dependências | PB-003, LK-01/LK-02/LK-07. |
+| Relacionado | WD-04, UI-03, UI-04, UI-10. |
+
+### PB-005 — Demandas e conversão usável
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0 |
+| Status | Proposto |
+| Problema que resolve | Demandas precisam servir como entrada rápida de trabalho e virar tarefa sem perda de contexto. |
+| Origem/evidência | Telas mostram cards, busca, filtro por prioridade, origem, cliente, prioridade, data/hora e botão converter. |
+| Critério de aceite | Usuário registra demanda, filtra por prioridade/origem, edita/exclui e converte em tarefa com transação clara. |
+| Fora de escopo | Automação de triagem por IA; SLA; integrações externas. |
+| Dependências | WD-05, WD-06, WD-04. |
+| Relacionado | WD-05, WD-06. |
+
+### PB-006 — Clientes e contatos com busca e dados completos
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0/P1 |
+| Status | Proposto |
+| Problema que resolve | Clientes/contatos precisam ser práticos para consulta diária e relacionamento com tarefas/projetos/demandas. |
+| Origem/evidência | Telas mostram abas Empresas/Contatos, busca por razão social/fantasia/CNPJ, filtro status, contatos por cliente e contato principal. |
+| Critério de aceite | Usuário encontra cliente/contato rapidamente, mantém contato principal e filtra por cliente/status. Decisão explícita sobre busca de CNPJ. |
+| Fora de escopo | Integração obrigatória com serviço externo de CNPJ sem decisão de fornecedor. |
+| Dependências | WD-01, WD-02, ADR-017. |
+| Relacionado | WD-01, WD-02. |
+
+### PB-007 — Projetos com status, período, orçamento e duplicação
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | Proposto |
+| Problema que resolve | Projetos precisam organizar tarefas por cliente, período, status e orçamento; duplicação acelera criação de projetos similares. |
+| Origem/evidência | Telas mostram busca, filtro por cliente/status, início/fim, prazo, orçamento e ação duplicar/copiar. |
+| Critério de aceite | Projeto possui campos/ações necessários ou decisão explícita do que fica para v1. Duplicação cria projeto novo sem copiar indevidamente dados sensíveis. |
+| Fora de escopo | Gestão financeira completa do projeto; alocação de equipe; Gantt. |
+| Dependências | WD-03. |
+| Relacionado | WD-03. |
+
+### PB-008 — Revisão API/contratos TaskManager → Rails
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0 |
+| Status | Proposto |
+| Problema que resolve | Evita confundir API interna React/Express com contrato externo obrigatório e evita perder ações reais que precisam existir em Rails. |
+| Origem/evidência | TaskManager original era React/Vite + Express/Drizzle; Omni é Rails/Hotwire por ADR. |
+| Critério de aceite | Tabela classificando endpoints/contratos como API interna React, ação Rails, API externa, admin/health, descartado ou lacuna. |
+| Fora de escopo | Criar API JSON geral sem consumidor; reintroduzir React/SPA. |
+| Dependências | ADR-001, ADR-002, MIGRATION_PLAN; inspeção read-only de `_origem/_repoa`. |
+| Relacionado | GOV/OP/WD, `PRODUCT_GAP_REVIEW.md`. |
+
+### PB-009 — Health/configurações/admin: decidir o que migra
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1/P2 |
+| Status | Proposto |
+| Problema que resolve | A tela Settings do TaskManager mistura health/status útil com runtime-switch/homologação descartado por ADR-015. |
+| Origem/evidência | Telas mostram ambiente ativo, health geral, status de bases, abas Ambiente/Usuários/Testes, produção/homologação. |
+| Critério de aceite | Separar claramente: não migrar runtime-switch/clone HTTP; avaliar health/status/admin como OP/UI. |
+| Fora de escopo | Endpoint HTTP de clone de banco; AsyncLocalStorage/Proxy de DB; spawn de pg_dump via web. |
+| Dependências | ADR-015, F7_CONTRACT_DECISIONS. |
+| Relacionado | WD-10, OP, UI-07. |
+
+### PB-010 — Busca e recuperação de contexto
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | Proposto |
+| Problema que resolve | O valor do Omni aumenta se o usuário recuperar contexto de conversas/tarefas/clientes rapidamente. |
+| Origem/evidência | Viewer possui busca full-text em título/thread/texto/tags; Omni atual parece ter busca mais restrita. |
+| Critério de aceite | Definir escopo de busca: título/thread, conteúdo de turnos, tags, fonte, cliente/projeto/tarefa, com limites de performance e segurança. |
+| Fora de escopo | Search engine externa; embeddings; ranking sem necessidade medida. |
+| Dependências | CV-05, CV-12, ADR-021. |
+| Relacionado | CV-12, CV-13, CV-10. |
+
+### PB-011 — Retomada controlada da F7 após gate de produto
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P2 |
+| Status | Bloqueado |
+| Problema que resolve | Garante que readiness de produção só avance quando o produto estiver suficientemente útil. |
+| Origem/evidência | F7.1 entregue; F7.2 planejada, mas rota foi pausada por decisão de produto. |
+| Critério de aceite | GP-01..GP-07 aceitos pelo Product Owner; F7.2 retomada com prompt específico. |
+| Fora de escopo | Deploy real sem autorização; schema de produção sem gate. |
+| Dependências | Gate de produto. |
+| Relacionado | F7_CONTRACT_DECISIONS.md, PROJECT_STATUS.md. |
+
+### PB-012 — Conversas/vínculos v1: UI rica, tags, títulos, scorer e inbox
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1/P3 |
+| Status | Proposto |
+| Problema que resolve | Evolui o módulo de conversas além do MVP interno: classificação, triagem e vínculo assistido. |
+| Origem/evidência | F5 concluiu o loop interno, mas UI-04/09, CV-03/10, scorer, inbox e auto-link ficaram roadmap/v1. |
+| Critério de aceite | Separar o que é necessário para uso diário imediato do que é automação futura. |
+| Fora de escopo | Auto-link silencioso; import massivo de turnos; conteúdo sem sanitização. |
+| Dependências | F4/F5, ADR-012, ADR-013, ADR-021. |
+| Relacionado | CV/LK/UI. |
+
+---
+
+## 7. Próxima ação recomendada
+
+Executar PB-001 em modo auditoria/documentação, sem código, para preencher `PRODUCT_GAP_REVIEW.md` e validar a priorização inicial deste backlog.
+
+Depois da revisão, o Product Owner decide quais itens passam para `Aprovado` ou `Pronto para execução`.

@@ -21,6 +21,8 @@ Omni unifica o domínio de trabalho (clientes/projetos/tarefas/demandas/apontame
 | [adr/](adr/) | ADRs 001–021 (texto completo) | **Decisões arquiteturais** (cada `ADR-NNN-*.md`) |
 | Contratos de fase: [F3_CONTRACT_DECISIONS.md](F3_CONTRACT_DECISIONS.md) · [F4_CONTRACT_DECISIONS.md](F4_CONTRACT_DECISIONS.md) · [F5_CONTRACT_DECISIONS.md](F5_CONTRACT_DECISIONS.md) | Decisões/contrato de cada fase | **Detalhe técnico/contrato** da fase respectiva |
 | [UI_COMPLIANCE_AUDIT.md](UI_COMPLIANCE_AUDIT.md) | Régua de conformidade visual | Padrões de UI/hi-fi |
+| [PRODUCT_GAP_REVIEW.md](PRODUCT_GAP_REVIEW.md) | Diagnóstico de lacunas de produto | Revisão de paridade operacional TaskManager/Viewer/Mockup/Omni; não autoriza execução por si só |
+| [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md) | Backlog oficial de produto | Priorização P0/P1/P2/P3, status dos itens e fila autorizável da próxima onda |
 
 ## Fonte de verdade por assunto (resumo)
 - **Decisão arquitetural:** o `ADR-NNN` específico → indexado em `ARCHITECTURE_DECISIONS_INDEX.md`.
@@ -50,6 +52,7 @@ Omni unifica o domínio de trabalho (clientes/projetos/tarefas/demandas/apontame
 2. Métricas de estado (testes, contagens) ficam no `PROJECT_STATUS`; outros docs citam "ver PROJECT_STATUS" em vez de repetir números que envelhecem.
 3. Status de feature só em `FEATURE_MATRIX`; status de fase só em `ROADMAP`; ambos devem concordar com o `PROJECT_STATUS`.
 4. Ao tocar qualquer doc, conferir este `INDEX` e os gatilhos acima.
+5. Nenhum item de produto deve ser executado por agente sem estar registrado no `PRODUCT_BACKLOG.md` e autorizado explicitamente pelo Product Owner.
 
 ## Topologia de repositórios (onde os docs oficiais vivem)
 - **Repositório único e oficial:** `app/` (produto Rails + governança em **`app/docs/`**) — ADR-019.
