@@ -9,6 +9,21 @@
 
 ## Entradas
 
+## 2026-06-19 — [Fase 5 · F5.4] Lista de conversas acionável / status de vínculo (CV-04) — CONCLUÍDO
+### Resumo
+`/conversations` ganha **status de vínculo por linha** e **filtro por vínculo**, virando uma lista de triagem leve (sem inbox/lote/atalhos — isso segue UI-05/v1). **Não carrega turnos** (LazyLoader não é chamado). Eager loading evita N+1.
+### Entregue
+- **Coluna "Vínculo"** (helper `ConversationsHelper#link_status_badge`, seguro: `content_tag`/`link_to`/`safe_join`, sem `html_safe`/`raw`/`sanitize`):
+  - **Sem vínculo** → badge + ação rápida **"Criar tarefa"** (GET → `new_conversation_task_path`, fluxo F5.3);
+  - **Primária** → badge `info` linkando à task (título); **"+N menção"** se houver menções adicionais;
+  - **Menção (N)** → quando só há menções.
+- **Filtro `link`** (`none`/`primary`/`mention`) via subquery em coluna indexada; semântica "mention" = possui ≥1 menção (mesmo com primária).
+- **Eager loading** `includes(conversation_links: :task)` **só na coleção paginada** (`@total_count` sem includes).
+### Testes/validações
+`bin/rails test` **272 runs / 1047 assertions / 0** falhas; rubocop **132/0**; brakeman **0**; bundler-audit **0**. Guarda de N+1: vínculos carregados em **1 query** (preload), não por linha. Smoke real: `/conversations` 200; `?link=primary` → 1 conversa (badge linka à task); `?link=none` → 1634; `?link=mention` → 0 (sem menções nos dados reais); ação "Criar tarefa" nas não-vinculadas; teste read-only verde.
+### Fora de escopo (cumprido)
+Sem migration/schema/model/policy/rota; sem inbox de triagem (UI-05), tags, arquivos alterados, dashboard, Ctrl+L, scorer, busca avançada, abas reais — seguem como F5.5+/F6/roadmap. Sem alterar import/sync, MarkdownRenderer/PiiRedactor, fluxo F5.3, `_origem/`/`_mockup/`.
+
 ## 2026-06-18 — [Fase 5 · F5.3] Criar tarefa a partir da conversa (UI-10) — CONCLUÍDO
 ### Resumo
 Fecha o loop **Conversa → Tarefa**: na conversa, ação "Criar tarefa desta conversa" abre form de nova tarefa (título pré-preenchido); ao salvar, cria a `Task` **e** o `ConversationLink` `primary`/`manual` **na mesma transação** (sem tarefa órfã). Antes só era possível vincular a tarefa **já existente**.

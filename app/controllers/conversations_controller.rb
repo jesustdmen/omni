@@ -10,7 +10,10 @@ class ConversationsController < ApplicationController
     @total_count = scope.count
     @page = [ params[:page].to_i, 1 ].max
     @total_pages = [ (@total_count.to_f / PER_PAGE).ceil, 1 ].max
+    # F5.4 — eager load de vínculos+task APENAS na página (evita N+1 dos badges;
+    # @total_count fica sem includes). Turnos NÃO são carregados aqui.
     @conversations = scope
+      .includes(conversation_links: :task)
       .order(Arel.sql("last_ts DESC NULLS LAST, updated_at DESC"))
       .limit(PER_PAGE)
       .offset((@page - 1) * PER_PAGE)
@@ -64,6 +67,13 @@ class ConversationsController < ApplicationController
     case params[:folder]
     when "with" then scope = scope.where(workspace_hash: resolved_hashes)
     when "orphan" then scope = scope.where.not(workspace_hash: resolved_hashes)
+    end
+
+    # F5.4 — filtro por status de vínculo (subquery em coluna indexada; sem JOIN duplicado).
+    case params[:link]
+    when "none" then scope = scope.where.missing(:conversation_links)
+    when "primary" then scope = scope.where(id: ConversationLink.where(link_type: "primary").select(:conversation_id))
+    when "mention" then scope = scope.where(id: ConversationLink.where(link_type: "mention").select(:conversation_id))
     end
 
     if params[:q].present?

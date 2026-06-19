@@ -43,7 +43,7 @@
 | CV-01 | Import `summaries.jsonl` | Repo B/Mockup | 3 | MVP | ✅ Entregue (F3.2 — sync real idempotente; 1635 conversas) | M2 + corpus + validação shard | linhas válidas == count |
 | CV-02 | Import `sessions.jsonl` (turnos, lazy) | Repo B | 3/5 | MVP | 🟡 Infra entregue (pré-F5: índice offsets + loader lazy; ADR-021) | CV-01 | turnos == turn_count |
 | CV-03 | Títulos de sessão | Repo B | 3 | MVP | Não iniciado | CV-01 | títulos esperados |
-| CV-04 | Lista de conversas | Mockup/Viewer | 5 | MVP | Não iniciado | CV-01 | filtros funcionam |
+| CV-04 | Lista de conversas | Mockup/Viewer | 5 | MVP | ✅ Entregue (F5.4 — lista acionável: status de vínculo + filtro `link`; F3.UI.1 base) | CV-01 | filtros funcionam |
 | CV-05 | Detalhe de conversa | Mockup/Viewer | 5 | MVP | 🟡 Parcial (F5.1 read-only; F5.1.1 fix artefato + cor de role; F5.1.5 redação de PII; F5.2 markdown sanitizado) | CV-02 | render ordenado |
 | CV-06 | Turnos ordenados (`seq`) | Repo B | 3/5 | MVP | 🟡 Parcial (F5.1 — ordenado por `line_no`) | CV-02 | UNIQUE(conv,seq) |
 | CV-07 | Markdown sanitizado | Mockup | 5 | MVP | ✅ Entregue (F5.2 — `MarkdownRenderer`: commonmarker seguro + allowlist + links; XSS neutralizado) | CV-05 | payload XSS neutralizado |

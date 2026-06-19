@@ -37,6 +37,7 @@
   <%= f.select :source, options_for_select([ [ "Todas as fontes", "" ] ] + @sources.map { |s| [ s, s ] }, params[:source]) %>
   <%= f.select :title, options_for_select([ [ "Título: todos", "" ], [ "Com título", "with" ], [ "Sem título", "without" ] ], params[:title]) %>
   <%= f.select :folder, options_for_select([ [ "Workspace: todos", "" ], [ "Com folder", "with" ], [ "Órfão", "orphan" ] ], params[:folder]) %>
+  <%= f.select :link, options_for_select([ [ "Vínculo: todos", "" ], [ "Sem vínculo", "none" ], [ "Com primária", "primary" ], [ "Com menção", "mention" ] ], params[:link]) %>
   <%= f.search_field :q, value: params[:q], placeholder: "Buscar título ou thread_id" %>
   <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
   <%= link_to "Limpar", conversations_path, class: "btn btn--ghost btn--sm" %>
@@ -45,7 +46,7 @@
 <% if @conversations.any? %>
   <table>
     <thead>
-      <tr><th>Título</th><th>Source</th><th>Workspace</th><th>Thread</th><th>Última atividade</th><th>Msgs</th><th></th></tr>
+      <tr><th>Título</th><th>Source</th><th>Workspace</th><th>Vínculo</th><th>Thread</th><th>Última atividade</th><th>Msgs</th><th></th></tr>
     </thead>
     <tbody>
       <% @conversations.each do |c| %>
@@ -58,6 +59,7 @@
             <% elsif c.workspace_hash.present? %><span class="muted"><%= c.workspace_hash.truncate(12) %></span> <span class="badge badge--neutral">órfão</span>
             <% else %><span class="muted">—</span><% end %>
           </td>
+          <td><%= link_status_badge(c) %></td>
           <td class="mono"><%= c.thread_id.truncate(16) %></td>
           <td><%= c.last_ts&.strftime("%d/%m/%Y %H:%M") || "—" %></td>
           <td><%= c.message_count %></td>
