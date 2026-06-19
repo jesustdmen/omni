@@ -92,11 +92,11 @@
 - **Critérios de aceite:** aceitar lote atômico; retenção roda; handoff abre externo.
 - **Marco:** M6.
 
-### Fase 7 — Hardening, testes e documentação (produção) — ⬜ Não iniciada
+### Fase 7 — Hardening, testes e documentação (produção) — 🟡 Em progresso (F7.1 entregue)
 - **Entregáveis:** suíte completa; performance de import; backup/rollback; runbook; rake task de homologação.
 - **Critérios de aceite:** suíte verde; import dentro do SLA; runbook validado.
-- **Readiness de produção (diagnóstico pós-F5.1.4 — produção NUNCA exercida):** bloqueadores conhecidos a tratar na F7 —
-  `production.rb` não endurecido (`force_ssl`/`assume_ssl`/`config.hosts` comentados); schemas **Solid cache/queue/cable** ausentes (só `db/queue_schema.rb`); `cable.yml` de prod ainda em **Redis** (não `solid_cable`); **Kamal/deploy ausente** (`config/deploy.yml`/`.kamal/`); **admin seed** ausente (`db/seeds.rb` vazio); **worker de jobs** (Solid Queue) não definido; **`/normalized` em produção indefinido** (sem origem/volume → `:stale`); **pipeline Python** sem topologia de prod; **backup/restore/rollback** de prod pendentes; `action_mailer` host placeholder. *(Redação de PII em `text`/`tool_input` no render entregue na F5.1.5; ampliação p/ CPF/telefone/IP/segredos não-rotulados segue como follow-up.)*
+- **F7.1 (2026-06-19) — CONCLUÍDA:** endurecimento de `production.rb` por ENV (`force_ssl`/`assume_ssl`/`config.hosts`/mailer host; `/up` fora do redirect) + **admin seed** opt-in/idempotente (`db/seeds.rb`, `OMNI_SEED_ADMIN`+`OMNI_ADMIN_*`; sem senha padrão; no-op sem flag). Sem schema/Solid/Kamal/Dockerfile/credentials. Suíte 279/1087/0. Detalhe em [`F7_CONTRACT_DECISIONS.md`](F7_CONTRACT_DECISIONS.md). **Próximas:** F7.2 Solid trifecta · F7.3 worker · F7.4 Kamal · F7.5 `/normalized` prod · F7.6 runbook · F7.7 pipeline.
+- **Readiness de produção (produção NUNCA exercida).** **Resolvido na F7.1:** `production.rb` endurecido por ENV (`force_ssl`/`assume_ssl`/`config.hosts`/mailer host); **admin seed** opt-in/idempotente; redação de PII (F5.1.5). **Bloqueadores restantes:** schemas **Solid cache/cable** ausentes (só `db/queue_schema.rb`); `cable.yml` de prod em **Redis** (decidir `solid_cable`); **Kamal/deploy ausente** (`config/deploy.yml`/`.kamal/`); **worker de jobs** (Solid Queue) não amarrado ao deploy; **`/normalized` em produção indefinido** (→ `:stale`); **pipeline Python** sem topologia de prod; **backup/restore/rollback** de prod (runbook); **SMTP** não configurado. *(Ampliação de PII p/ CPF/telefone/IP/segredos não-rotulados = follow-up.)*
 - **Não bloqueante (corrigir na F7):** entrada órfã `001 NO FILE` em `schema_migrations`; `timezone`/`locale` nos defaults (UTC/:en) apesar da UI pt-BR.
 - **Pré-requisito de exposição externa/multi-tenant:** F7 completa + **isolamento por owner/tenant** (hoje ADR-014 domínio compartilhado) + redação de PII.
 - **Marco:** M7.
@@ -112,4 +112,4 @@
 | M4 | Vínculo conversa/tarefa operacional | 4 | 🟢 MVP manual concluído (`conversation_links` reversível/auditável + counters; LK-01/02/03/07/08); scorer/sugestões/auto-link/aceite-lote/`time_entry_id` → v1 |
 | M5 | UI principal unificada | 5 | ✅ MVP interno concluído (F5.1 render + F5.1.5 PII + F5.2 markdown + F5.3 criar tarefa + F5.4 lista acionável + F5.5 navegação por âncoras). Roadmap/v1: UI-01/04/09, CV-03/05/06/10, scorer, inbox |
 | M6 | Triagem, diário e sync operacional | 6 | ⬜ Não iniciado |
-| M7 | Projeto estabilizado e documentado | 7 | ⬜ Não iniciado |
+| M7 | Projeto estabilizado e documentado | 7 | 🟡 Em progresso (F7.1: `production.rb` endurecido + admin seed) |

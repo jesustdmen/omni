@@ -9,6 +9,19 @@
 
 ## Entradas
 
+## 2026-06-19 — [Fase 7 · F7.1] Endurecimento de produção + admin seed — CONCLUÍDO
+### Resumo
+Primeira fatia de readiness de produção: `production.rb` endurecido **por ENV** e **admin seed** opt-in/idempotente. **Sem** schema/migration/Solid/Kamal/Dockerfile/credentials/deploy. Gate separado (auth/seed): implementado e validado; commit sob autorização.
+### Entregue
+- **`config/environments/production.rb`** (ENV; sem domínio/segredo hardcoded): `config.assume_ssl`←`APP_ASSUME_SSL` (default true), `config.force_ssl`←`APP_FORCE_SSL` (default true), `ssl_options` exclui `/up`; `config.hosts += APP_HOSTS` (lista por vírgula, só não-vazios após `strip`; sem `APP_HOSTS` não restringe); mailer `default_url_options` por `APP_HOST`/`APP_PROTOCOL`. Parser booleano via `ActiveModel::Type::Boolean`.
+- **`db/seeds.rb`** — admin OPT-IN (`OMNI_SEED_ADMIN`) + `OMNI_ADMIN_EMAIL`/`OMNI_ADMIN_PASSWORD`/`OMNI_ADMIN_USERNAME`: sem flag → no-op (CI verde); flag sem e-mail/senha → raise claro; idempotente (busca por e-mail; cria `role:"admin"`; existente não duplica/não troca senha, só promove); senha nunca logada. **Sem alterar `User`/policies.**
+- **`test/seeds_admin_test.rb`** (5 testes): no-op; raise; cria admin; idempotência; promoção sem trocar senha.
+- **`docs/F7_CONTRACT_DECISIONS.md`** (novo) — fronteira F7 + decisões/ENV da F7.1.
+### Testes/validações
+`bin/rails test` **279 runs / 1087 assertions / 0** falhas; rubocop **133/0**; brakeman **0**; bundler-audit **0**. `RAILS_ENV=test bin/rails db:seed:replant` → no-op (users=0). Smoke de config (`SECRET_KEY_BASE_DUMMY=1 RAILS_ENV=production bin/rails runner`, sem servidor/segredo): defaults → `force_ssl/assume_ssl=true`, `hosts=[]`, mailer `localhost/https`; com ENV → flags `false`, `hosts=[omni.example.com, www.omni.example.com]`, mailer `omni.example.com`.
+### Fora de escopo (cumprido)
+Sem schema/migration, Solid cache/cable/queue, Kamal, Dockerfile, credentials/secrets, deploy; sem seed real em dev/prod; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-19 — [Fase 5 · Fechamento] F5 declarada MVP interno CONCLUÍDO — (docs-only)
 ### Resumo
 Fechamento **somente documental** da Fase 5 como **MVP interno utilizável**, após avaliação read-only (7 smokes verdes). Sem alterar código/testes/banco/assets. Supersede o snapshot "F5/M5 → 🟡 ABERTA" da entrada P0 (2026-06-18), preservada como histórico.
