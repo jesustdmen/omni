@@ -9,6 +9,20 @@
 
 ## Entradas
 
+## 2026-06-19 — [Fase 5 · Fechamento] F5 declarada MVP interno CONCLUÍDO — (docs-only)
+### Resumo
+Fechamento **somente documental** da Fase 5 como **MVP interno utilizável**, após avaliação read-only (7 smokes verdes). Sem alterar código/testes/banco/assets. Supersede o snapshot "F5/M5 → 🟡 ABERTA" da entrada P0 (2026-06-18), preservada como histórico.
+### Fluxo interno essencial (completo e validado)
+listar conversas → filtrar por vínculo (`none`/`primary`/`mention`) → abrir conversa → renderizar turnos com segurança → **redigir PII** → **markdown sanitizado** → criar tarefa a partir da conversa → vincular conversa↔tarefa → ver o vínculo dos dois lados → navegar a task por âncoras.
+### Sub-entregas da F5
+F5.1 (render read-only) · F5.1.1–F5.1.4 (correções + `source_file` oculto + runtime + limpeza dev) · F5.1.5 (PII) · F5.2 (markdown sanitizado) · F5.3 (criar tarefa — UI-10) · F5.4 (lista acionável — CV-04) · F5.5 (navegação por âncoras — UI-03).
+### Reclassificado para roadmap/v1 (NÃO entregue)
+UI-01 dashboard · UI-04 aba Conversas rica/por kind · UI-09 modal Ctrl+L · CV-03 títulos (limitado pelo dado) · CV-10 tags · CV-05 melhorias (syntax highlight, busca, virtualização) · CV-06 ordenação por `seq` · abas dinâmicas JS (opcional) · scorer/sugestões/auto-link (LK-04/05/06) · inbox/triagem avançada (UI-05) · arquivos alterados (CV-09).
+### Métricas (estado atual)
+`bin/rails test` **274 runs / 1068 assertions / 0** falhas; rubocop **132/0**; brakeman **0**; bundler-audit **0**.
+### Arquivos
+`docs/PROJECT_STATUS.md`, `docs/FEATURE_MATRIX.md`, `docs/ROADMAP.md`, `docs/F5_CONTRACT_DECISIONS.md`, `docs/DELIVERY_LOG.md`.
+
 ## 2026-06-19 — [Fase 5 · F5.5] Usabilidade da Task: navegação por âncoras/seções — CONCLUÍDO
 ### Resumo
 As "abas" cosméticas de `tasks/show` (`span.tab`, `cursor:default`, sem troca) viram **navegação honesta por âncoras (sem JS)**: os itens reais são `<a class="tab" href="#tab-…">` que rolam até a seção (painéis seguem visíveis/empilhados). Resolve a afordância falsa que confundia no pós-vínculo (F5.3).

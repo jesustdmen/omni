@@ -56,9 +56,9 @@ Fatia mínima entregue (consome o `LazyLoader`; **sem** markdown/scorer/UI rica)
 - **Decisão: sem JS/Stimulus** — abas dinâmicas reais (hide/show) ficam como recorte opcional futuro. Não altera fluxo/redirect da F5.3.
 - **Validação:** suíte 274/1068/0; rubocop 132/0; brakeman 0; bundler-audit 0; smoke real (task vinculada com "Conversas (1)" + "Ver"; task sem vínculo sem contagem).
 
-## Status da Fase 5 (P0, 2026-06-18)
-- **F5.1 = sub-entrega CONCLUÍDA** (read-only); **a Fase 5 permanece ABERTA**. Suíte atual: **225 runs / 811 assertions / 0**; rubocop 125/0; brakeman 0; bundler-audit 0.
-- **Pendências F5.2+:** syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04). *(Markdown sanitizado + code blocks entregues na F5.2; redação de PII na F5.1.5.)*
+## Status da Fase 5 (MVP interno CONCLUÍDO, 2026-06-19)
+- **F5 = MVP interno CONCLUÍDO.** Sub-entregas: **F5.1** (render read-only), **F5.1.1–F5.1.4** (correções + `source_file` oculto + runtime + limpeza dev), **F5.1.5** (redação de PII), **F5.2** (markdown sanitizado), **F5.3** (criar tarefa da conversa — UI-10), **F5.4** (lista acionável — CV-04), **F5.5** (navegação da task por âncoras — UI-03). Loop interno completo e validado (7 smokes). Suíte: **274 runs / 1068 assertions / 0**; rubocop 132/0; brakeman 0; bundler-audit 0.
+- **Reclassificado para roadmap/v1 (NÃO entregue):** UI-01 dashboard, UI-04 aba Conversas rica/por kind, UI-09 modal vincular (Ctrl+L), CV-03 títulos de sessão (limitado pelo dado), CV-10 tags, **CV-05 melhorias** (syntax highlight, busca, virtualização de turnos), **CV-06** ordenação por `seq`, scorer/sugestões/auto-link (LK-04/05/06), inbox/triagem avançada (UI-05).
 - **Produção (F7) não iniciada** — readiness consolidado no `PROJECT_STATUS.md` (seção "Readiness de produção"). Exposição externa/multi-tenant exige F7 + isolamento por owner/tenant (ADR-014) + redação de PII.
 
 ## Fronteiras da Fase 5

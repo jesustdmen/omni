@@ -5,7 +5,7 @@
 ## Visão geral do projeto
 Omni unifica o domínio de trabalho (clientes/projetos/tarefas/demandas/apontamentos) com as **conversas de IA** (saída normalizada do pipeline Python externo) numa aplicação **Rails 8 / Hotwire / ViewComponent**, tratando conversas como evidência vinculável a tarefas. O pipeline Python permanece externo e intocado; o Rails consome `output/normalized/` (ADR-007/008) e lê turnos de forma **lazy** por índice de offsets (ADR-021).
 
-**Estado (2026-06-18):** M1/M2 ✅ · M3 🟢 MVP de metadados · M4 🟢 MVP manual · M5 🟡 aberta (F5.1 read-only entregue) · M6/M7 ⬜. Produção (F7) **não exercida** — ver readiness no `PROJECT_STATUS.md`. Suíte: 225/811/0.
+**Estado (2026-06-19):** M1/M2 ✅ · M3 🟢 MVP de metadados · M4 🟢 MVP manual · M5 ✅ MVP interno concluído (F5.1 render + F5.1.5 PII + F5.2 markdown + F5.3 criar tarefa + F5.4 lista acionável + F5.5 navegação por âncoras; UI-01/04/09, CV-03/05/06/10, scorer, inbox = roadmap/v1) · M6/M7 ⬜. Produção (F7) **não exercida** — ver readiness no `PROJECT_STATUS.md`. Suíte: 274/1068/0.
 
 ## Documentos oficiais
 | Documento | Função | Fonte de verdade para |
