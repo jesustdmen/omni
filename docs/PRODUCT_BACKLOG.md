@@ -86,10 +86,10 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | Pronto para execução |
+| Status | **Entregue** (auditoria em `docs/PB-001_PARITY_AUDIT.md`; commit `3037a00`) |
 | Problema que resolve | Evita seguir implementação/produção sem saber se o Omni cobre o uso diário real observado nas telas do TaskManager. |
 | Origem/evidência | Telas do TaskManager analisadas em sessão de produto; `FEATURE_MATRIX.md` atual está macro/CRUD demais. |
-| Critério de aceite | `PRODUCT_GAP_REVIEW.md` preenchido com lacunas por área, impacto, prioridade sugerida e decisões pendentes. |
+| Critério de aceite | ✅ `PB-001_PARITY_AUDIT.md` com matriz por área (8 áreas + API), impacto, prioridade e decisões pendentes. Lacunas P0 confirmadas: controle de tempo (timer/timesheet) e listas sem busca/filtro/paginação. |
 | Fora de escopo | Implementar código; alterar schema; alterar `_origem`; atualizar `DELIVERY_LOG` como se fosse entrega de produto. |
 | Dependências | Docs atuais; imagens/telas do TaskManager; código Omni; `_origem/_repoa` somente leitura. |
 | Relacionado | `PRODUCT_GAP_REVIEW.md`, `FEATURE_MATRIX.md`, WD-01..WD-10. |
@@ -99,10 +99,10 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | Bloqueado |
+| Status | **Entregue** (revisão aplicada na `FEATURE_MATRIX.md` após PB-001) |
 | Problema que resolve | A matriz atual pode transmitir que “CRUD entregue” equivale a ferramenta operacional completa. |
-| Origem/evidência | Discussão pós-commit `497cb49`; telas mostram features não refletidas em detalhe. |
-| Critério de aceite | `FEATURE_MATRIX.md` atualizada somente após PB-001, separando entregue, parcial, roadmap, não migrar e lacuna. |
+| Origem/evidência | Discussão pós-commit `497cb49`; auditoria `PB-001_PARITY_AUDIT.md`. |
+| Critério de aceite | ✅ Seção "Domínio de trabalho" da `FEATURE_MATRIX.md` revisada: WD-01/03/04/05 com **lacuna operacional** (busca/filtro/paginação) e WD-07 com **lacuna funcional P0** (timer/timesheet) registradas; WD-10 separa não-migrar (ADR-015) de health/admin (OP); nota "sem lacuna de modelo ≠ uso operacional completo". Sem rebaixar entregas com evidência; sem marcar lacuna como entregue. |
 | Fora de escopo | Usar a matriz como rascunho de debate; marcar itens como entregues sem evidência. |
 | Dependências | PB-001. |
 | Relacionado | `FEATURE_MATRIX.md`, `PROJECT_STATUS.md`. |
@@ -112,7 +112,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | Proposto |
+| Status | Proposto — **próximo candidato P0** (PB-001 confirmou como maior lacuna funcional; aguardando recomendação/autorização explícita do PO para virar "Pronto para execução") |
 | Problema que resolve | O uso diário depende de registrar tempo com fluidez, não apenas CRUD de `time_entries`. |
 | Origem/evidência | Telas mostram timer, status parado, descrição do trabalho, registro retroativo, histórico por dia, duração e ações de manutenção. |
 | Critério de aceite | Usuário consegue iniciar/parar tempo, registrar retroativo, visualizar histórico por tarefa, ver totais por dia e editar/excluir apontamentos. |
@@ -241,6 +241,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 ## 7. Próxima ação recomendada
 
-Executar PB-001 em modo auditoria/documentação, sem código, para preencher `PRODUCT_GAP_REVIEW.md` e validar a priorização inicial deste backlog.
+**PB-001 entregue** (`3037a00`, `PB-001_PARITY_AUDIT.md`) e **PB-002 entregue** (revisão da `FEATURE_MATRIX`). Lacunas P0 confirmadas: **controle de tempo (PB-003)** e **busca/filtros/paginação das listas de domínio** (atravessa PB-004/005/006).
 
-Depois da revisão, o Product Owner decide quais itens passam para `Aprovado` ou `Pronto para execução`.
+Próximo candidato P0 recomendado: **PB-003 — Controle de tempo operacional**. Decisão do Product Owner para promovê-lo a `Pronto para execução` (e responder as 8 decisões pendentes em `PB-001_PARITY_AUDIT.md §8`). Nada será implementado sem autorização explícita.
