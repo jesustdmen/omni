@@ -112,13 +112,19 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | Proposto — **próximo candidato P0** (PB-001 confirmou como maior lacuna funcional; aguardando recomendação/autorização explícita do PO para virar "Pronto para execução") |
+| Status | **Em execução (parcial)** — **PB-003a ENTREGUE** (commit `d11f099`, aceite manual do PO no fluxo principal); **PB-003b e PB-003c pendentes**. |
 | Problema que resolve | O uso diário depende de registrar tempo com fluidez, não apenas CRUD de `time_entries`. |
-| Origem/evidência | Telas mostram timer, status parado, descrição do trabalho, registro retroativo, histórico por dia, duração e ações de manutenção. |
+| Origem/evidência | Telas mostram timer, status parado, descrição do trabalho, registro retroativo, histórico por dia, duração e ações de manutenção. Contrato em `PB-003_TIME_CONTRACT.md`. |
 | Critério de aceite | Usuário consegue iniciar/parar tempo, registrar retroativo, visualizar histórico por tarefa, ver totais por dia e editar/excluir apontamentos. |
 | Fora de escopo | Relatórios financeiros avançados; faturamento; integração externa. |
 | Dependências | WD-04, WD-07; validação do modelo atual de `time_entries`. |
 | Relacionado | WD-07, UI-03. |
+
+**Fatias:**
+
+- **PB-003a — ENTREGUE (`d11f099`, 2026-06-19):** iniciar/parar timer; **cálculo automático de duração em segundos**; **paralelismo configurável** (`ALLOW_PARALLEL_RUNNING_TIMERS`, default `true`); **bloqueio de timer duplicado na mesma tarefa** (índice único parcial + validação); **histórico de apontamentos** operacional (título PT, contador, colunas Data/Descrição/Início/Término/Duração/Ações) com **ações inline** (ver/editar/excluir + parar) com ícones e cores. Aceite manual do PO no fluxo principal + paralelismo default. Modo `=false` coberto por teste automatizado.
+- **PB-003b — PENDENTE:** agrupamento por data, **subtotal por dia**, melhoria do total diário.
+- **PB-003c — PENDENTE:** registro retroativo assistido.
 
 ### PB-004 — Detalhe de tarefa utilizável no dia a dia
 
@@ -237,10 +243,36 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Dependências | F4/F5, ADR-012, ADR-013, ADR-021. |
 | Relacionado | CV/LK/UI. |
 
+### PB-013 — UX de navegação/contexto entre telas
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | Proposto |
+| Problema que resolve | A navegação entre telas ainda está estranha, com excesso de uso de "voltar" e perda de contexto operacional ao circular entre lista/detalhe/edição. |
+| Origem/evidência | Observação do Product Owner durante o aceite manual da PB-003a (2026-06-19). |
+| Critério de aceite | Retorno coerente entre lista↔detalhe↔edição preservando o contexto operacional (ex.: voltar para a tarefa após editar/excluir apontamento; menos "voltar" cego). |
+| Fora de escopo | Redesenho amplo de navegação; SPA; breadcrumbs avançados sem necessidade. |
+| Dependências | — |
+| Relacionado | UI-03, WD-04, WD-07. |
+
+### PB-014 — Código legível de tarefa
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 (decisão do PO; reabre ADR-016) |
+| Status | Proposto |
+| Problema que resolve | Tarefas são identificadas por UUID/URL, sem código operacional legível (ex.: `TSK-0001`) como no TaskManager — dificulta referência rápida no dia a dia. |
+| Origem/evidência | Observação do PO + `PB-001_PARITY_AUDIT.md §5.3`; **ADR-016** adiou "código legível" para v1. |
+| Critério de aceite | Decisão explícita do PO: reabrir no MVP (com geração de código) ou manter em v1; se aprovado, código estável/legível exibido na lista e no detalhe. |
+| Fora de escopo | Não implementar nesta etapa; requer decisão de produto e possível adendo ao ADR-016. |
+| Dependências | ADR-016. |
+| Relacionado | WD-04, UI-03. |
+
 ---
 
 ## 7. Próxima ação recomendada
 
-**PB-001 entregue** (`3037a00`, `PB-001_PARITY_AUDIT.md`) e **PB-002 entregue** (revisão da `FEATURE_MATRIX`). Lacunas P0 confirmadas: **controle de tempo (PB-003)** e **busca/filtros/paginação das listas de domínio** (atravessa PB-004/005/006).
+**PB-001/PB-002 entregues**; **PB-003a entregue e aceita** (`d11f099`). **PB-003 segue parcial** (PB-003b/PB-003c pendentes).
 
-Próximo candidato P0 recomendado: **PB-003 — Controle de tempo operacional**. Decisão do Product Owner para promovê-lo a `Pronto para execução` (e responder as 8 decisões pendentes em `PB-001_PARITY_AUDIT.md §8`). Nada será implementado sem autorização explícita.
+Próximos candidatos (decisão do PO): **PB-003b** (agrupamento/subtotal por dia) e **PB-003c** (retroativo assistido) para fechar a PB-003; ou a camada de **busca/filtros/paginação** das listas (PB-004/005/006); ou **PB-013** (UX de navegação). Nada será implementado sem autorização explícita.

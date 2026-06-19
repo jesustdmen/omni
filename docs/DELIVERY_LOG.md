@@ -9,6 +9,24 @@
 
 ## Entradas
 
+## 2026-06-19 — [Produto Operacional · PB-003a] Controle de tempo: timer + histórico de apontamentos — ENTREGUE (`d11f099`)
+### Resumo
+Núcleo do controle de tempo operacional na tarefa (fatia **a** da PB-003). **Aceite manual do PO** no fluxo principal. **PB-003b/PB-003c permanecem pendentes** — PB-003 não está concluída.
+### Entregue
+- **Timer:** iniciar (`TaskTimersController#create` → `/tasks/:id/timer`) e parar (`TimeEntriesController#stop` → `/time_entries/:id/stop`); `TimeEntry#stop!` calcula **`duration` em segundos**.
+- **Paralelismo configurável:** `ALLOW_PARALLEL_RUNNING_TIMERS` (ENV via `config.x`, **default `true`**) — permite timers abertos em tarefas diferentes; `false` bloqueia novo timer havendo qualquer aberto.
+- **Invariante de banco:** **índice único parcial** `idx_time_entries_one_running_per_task` (`WHERE is_running`) + validação → nunca 2 timers abertos na **mesma** tarefa.
+- **Histórico de Apontamentos** (`/tasks/:id`): título PT + contador; colunas Data/Descrição/Início/Término/Duração/Ações; duração destacada (segundos→h/min/s via `duration_label`); **ações inline** ver/editar/excluir + parar (ícones estilo lucide autorados, cores por ação verde/azul/vermelho, `aria-label`/`title`, confirmação de exclusão, fallback HTML).
+### Validação
+`bin/rails test` **294 runs / 1151 assertions / 0** falhas; rubocop **135/0**; brakeman **0**. **Aceite manual do PO:** iniciar/parar timer, paralelismo entre tarefas (default), histórico operacional e ações na linha — OK. Modo `ALLOW_PARALLEL_RUNNING_TIMERS=false` **coberto por teste automatizado** (não necessariamente por aceite manual).
+### Pendências explícitas
+- **PB-003b:** agrupamento por data + **subtotal por dia** + melhoria do total diário.
+- **PB-003c:** registro retroativo assistido.
+- **PB-013:** UX de navegação/contexto entre telas (observação do PO).
+- **PB-014:** código legível de tarefa (ADR-016 — decisão do PO).
+### Fora de escopo (cumprido)
+Sem PB-003b/PB-003c; sem vínculo `conversation_id`; sem dashboard/relatórios; sem alterar `_origem/`/`_mockup/`. ENV-only (sem tela de config). Migration aplicada (gate respeitado: commitada sob autorização).
+
 ## 2026-06-19 — [Fase 7 · F7.1] Endurecimento de produção + admin seed — CONCLUÍDO
 ### Resumo
 Primeira fatia de readiness de produção: `production.rb` endurecido **por ENV** e **admin seed** opt-in/idempotente. **Sem** schema/migration/Solid/Kamal/Dockerfile/credentials/deploy. Gate separado (auth/seed): implementado e validado; commit sob autorização.
