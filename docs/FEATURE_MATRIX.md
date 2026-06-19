@@ -21,14 +21,17 @@
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
 | WD-01 | Clientes (+workspace_paths, cnpj nullable) | Repo A/Mockup | 2 | MVP | ✅ Entregue (F2.1) | M1 | CRUD + partial-unique cnpj + GIN |
-| WD-02 | Contatos | Repo A | 2 | MVP | ✅ Entregue (F2.1) | WD-01 | CRUD + FK cascade |
+| WD-02 | Contatos | Repo A | 2 | MVP | ✅ Entregue (F2.1) — modelo: geridos na tela **Clientes** (lista/paginação/filtro por cliente; `is_primary`) | WD-01 | CRUD + FK cascade |
 | WD-03 | Projetos | Repo A | 2 | MVP | ✅ Entregue (F2.2) | WD-01 | CRUD + FK |
 | WD-04 | Tarefas (+counters, página /tasks/:id) | Repo A/Mockup | 2 | MVP | ✅ Entregue (F2.3 base) | WD-01,WD-03 | CRUD + abas + counters |
-| WD-05 | Demandas | Repo A | 2 | MVP | ✅ Entregue (F2.4) | WD-01 | CRUD + filtros |
+| WD-05 | Demandas | Repo A | 2 | MVP | ✅ Entregue (F2.4) — modelo: `origin` (phone/email/meeting/chat/whatsapp/other), `priority` (low/medium/high), `observations`, status pending→converted; busca + filtro por prioridade | WD-01 | CRUD + filtros |
 | WD-06 | Conversão demanda→tarefa (transacional) | Repo A | 2 | MVP | ✅ Entregue (F2.4) | WD-04,WD-05 | Task+demand atômico |
 | WD-07 | Apontamento de horas (+conversation_id) | Repo A/Mockup | 2 | MVP | ✅ Entregue (F2.5) | WD-04 | CRUD + soma duration |
 | WD-08 | Usuários (migração Devise) | Repo A | 1 | MVP | ✅ Entregue (M1) | M0 ✅ | model User + Devise (custo bcrypt 10 + re-hash); migração de dados na F2 |
 | WD-09 | Permissões (Pundit) | Mockup | 1 | MVP | ✅ Entregue (M1) | WD-08 | Pundit + verify_authorized; UserPolicy testada |
+| WD-10 | Admin de ambientes (homologação/produção) | Repo A | — | — | **Não migrar** (tela Settings/`environmentAdmin` do modelo — refresh de homologação a partir de produção; descartado por **ADR-015**: sem multi-ambiente via AsyncLocalStorage/Proxy nem clone via `spawn`) | — | n/a |
+
+> **Nota (TaskManager modelo, avaliado em `_origem/_repoa` — 2026-06-19):** app **React/Vite (client) + Express/Drizzle (server)** (referência, **não migra** o código; Omni reconstrói em Rails — ADR-001). **Telas** (`client/src/pages` + `App.tsx`): **Login** (gate `authApi.me`/CSRF/logout) → WD-08/WD-09; **Dashboard** (Health DB + URL da API + total de clientes) → **UI-01** (seção UI, não iniciado no Omni); **Clientes** (CRUD + filtro por status + paginação; **Contatos** geridos nesta tela) → WD-01/WD-02; **Projetos** (CRUD + filtro por cliente) → WD-03; **Tarefas** (lista + busca + filtro status/cliente + paginação 10/25/50/100 + CRUD modal + **detalhe com apontamentos** `TaskDetailDialog`) → WD-04/WD-07; **Demandas** (lista cards + busca + filtro prioridade + CRUD + **Converter→tarefa**) → WD-05/WD-06; **Configurações** (`environmentAdmin`) → **WD-10 não migrar (ADR-015)**. **Padrões transversais** do modelo já refletidos no Omni: busca, filtros, paginação, badges de status/tipo/prioridade, confirmação de exclusão. **Sem lacuna de domínio**: WD-01..09 cobrem o modelo; migração de dados de domínio = **N/A** (snapshot `app_v2` vazio). Auth/CSRF/rate-limit/CI são features de suporte → GOV/OP/SEC.
 
 ## Conversas
 
@@ -49,8 +52,15 @@
 | CV-07 | Markdown sanitizado | Mockup | 5 | MVP | ✅ Entregue (F5.2 — `MarkdownRenderer`: commonmarker seguro + allowlist + links; XSS neutralizado) | CV-05 | payload XSS neutralizado |
 | CV-08 | Tool calls (tool_input escapado) | Repo B/Mockup | 5 | MVP | ✅ Entregue (F5.1 — `tool_input` em `<pre>` escapado) | CV-05 | tool_input nunca HTML |
 | CV-09 | Arquivos alterados | Repo B | 5 | v1 | Não iniciado | CV-05 | lista correta |
-| CV-10 | Tags (conversa) | Repo B/Mockup | 3/5 | MVP | Não iniciado | CV-01 | filtro por tag |
+| CV-10 | Tags (conversa/workspace) | Repo B/Mockup/Viewer | 3/5 | MVP→roadmap | Não iniciado (modelo Viewer: `tags.json`; tags por `workspace_hash` herdadas pelas sessões; CRUD em `tab_tags`; filtro por tag na sidebar) | CV-01 | filtro por tag |
 | CV-11 | Resolução de workspaces (`folder`) | Repo B | 3 | MVP | ✅ Entregue (F3.3 — `ResolveWorkspaceFolders`; órfãos 86→3; usuário `<USER>`; ADR-020) | CV-01 | `folder` resolvido; PII redigida |
+| CV-12 | Busca full-text em conversas/turnos | Viewer/Repo B | 5/6 | v1 | Não iniciado (Viewer: `_search_text` = título+thread+texto+tags; sidebar `search`). Omni tem só `q` em título/thread_id | CV-05 | termo acha no conteúdo |
+| CV-13 | Filtro por fonte + badge de origem | Viewer/Repo B | 5 | v1 | 🟡 Parcial (Omni: filtro `source` na lista; Viewer: multiselect de fontes + `_source_badge` colorido por origem) | CV-04 | filtra por fonte; badge por origem |
+| CV-14 | Exportação de conversa (JSON v1.0 / ZIP / salvar no workspace) | Viewer | 6 | v1 | Não iniciado (Viewer: `build_session_json` schema v1.0 + `tab_export` ZIP em lote + salvar em `_chatsession`) | CV-05 | export determinístico (uuid5) |
+| CV-15 | Timeline diária (mensagens do dia, cross-sessão) | Viewer | 6 | v1 | Não iniciado (Viewer: `tab_timeline` por data c/ navegação ◀▶). Distinta do diário UI-06 (lista de sessões/dia) | CV-02 | mensagens do dia agregadas |
+| CV-16 | Telemetria de edição (`chat_editing_state`) | Viewer/Repo B | 6 | v1 | Não iniciado (Viewer: `_render_edit_event` — checkpoint/operation/snapshot por `requestId`/`model_id`/`agent_id`) | CV-05 | eventos de edição visíveis |
+
+> **Nota (Viewer modelo, avaliado em `_origem/_repob/pipeline/viewer/app.py` — 2026-06-19):** o Viewer é um app **Streamlit** (referência, **não migra**; Omni reconstrói a UI lendo `output/normalized/`). Telas/`views` (radio `active_view`): **Conversa** (`tab_conversa` → header + stat-bar + render de turnos user/assistant/tool com markdown, janela "últimos N", "copiar texto", export JSON) → CV-05/CV-07/CV-08/CV-14; **Diário** (`tab_diario`, sessões por dia + busca/datas) → UI-06; **Timeline** (`tab_timeline`) → CV-15; **Workspaces** (`tab_workspaces`, cards/lista + tags) → CV-11/CV-10; **Tags** (`tab_tags`, CRUD) → CV-10; **Exportar** (`tab_export`, ZIP em lote) → CV-14. **Sidebar:** busca full-text (CV-12), filtro por fonte + badge (CV-13), filtro por tag (CV-10), "ocultar vazias", seletor de sessão, **recarregar dados** e **rodar pipeline** (`run_pipeline.py` → OP-01/OP-02), idioma (i18n) e tema claro/escuro. Itens de conforto do Viewer (i18n/tema/copiar/janela) = **não migrar/baixa prioridade**, salvo decisão futura.
 
 ## Vínculos
 
