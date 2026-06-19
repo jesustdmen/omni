@@ -35,6 +35,13 @@ Fatia mínima entregue (consome o `LazyLoader`; **sem** markdown/scorer/UI rica)
 - **Limitação:** raw HTML perigoso é **neutralizado por escape** (texto inerte), não apagado; sem imagens (remotas/markdown); sem syntax highlight.
 - **Validação:** suíte 257/966/0; rubocop 129/0; brakeman 0; bundler-audit 0; smoke real `/conversations/cd086107…` 200, markdown visível, 0 tag viva perigosa, 0 vazamento de PII.
 
+## F5.3 — criar tarefa a partir da conversa (UI-10) (ENTREGUE 2026-06-18)
+- **Rota aninhada** `conversations/:conversation_id/tasks` (`new`/`create`) → `ConversationTasksController` (novo); fecha o loop Conversa→Tarefa (antes só vínculo a tarefa existente).
+- **Transação:** `Task.save!` + `ConversationLink.save!` (`primary`/`manual`, `created_by`) na mesma `transaction` → falha do link faz **rollback total** (sem tarefa órfã); counters via `after_create` do link.
+- **Conversa já com `primary`:** `new` redireciona à conversa com alert; `create` com backstop pela validação `single_primary_per_conversation`; ação "Criar tarefa desta conversa" **oculta** quando há `primary`. Mantido o fluxo de vincular tarefa existente.
+- **Autorização:** `authorize @conversation (show?)` + `@task (create?)` + `@link (create?)` (ADR-014; **sem policies novas**). Reusa `tasks/_form` (`url:` opcional) com título sugerido (`conversation.title` ou `"Conversa <8>"`).
+- **Validação:** suíte 264/1016/0; rubocop 131/0; brakeman 0; bundler-audit 0; smoke real (gating + form + visões dos dois lados) sem mutar dados.
+
 ## Status da Fase 5 (P0, 2026-06-18)
 - **F5.1 = sub-entrega CONCLUÍDA** (read-only); **a Fase 5 permanece ABERTA**. Suíte atual: **225 runs / 811 assertions / 0**; rubocop 125/0; brakeman 0; bundler-audit 0.
 - **Pendências F5.2+:** syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04). *(Markdown sanitizado + code blocks entregues na F5.2; redação de PII na F5.1.5.)*

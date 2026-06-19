@@ -1,0 +1,22 @@
+<% content_for :title, "Nova tarefa da conversa" %>
+
+<nav class="breadcrumb">
+  <%= link_to "Conversas", conversations_path %>
+  <span class="sep">/</span>
+  <%= link_to (@conversation.title.presence || "Conversa"), conversation_path(@conversation) %>
+  <span class="sep">/</span>
+  <span>Nova tarefa</span>
+</nav>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Criar tarefa desta conversa</h1>
+    <p class="muted">A tarefa será criada e vinculada a esta conversa como <strong>primária</strong>.</p>
+  </div>
+</div>
+
+<div class="card form-card">
+  <%= render "tasks/form", task: @task, url: conversation_tasks_path(@conversation) %>
+</div>
+
+<%= link_to "Voltar para a conversa", conversation_path(@conversation), class: "back-link" %>

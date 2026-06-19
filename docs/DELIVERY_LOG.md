@@ -9,6 +9,25 @@
 
 ## Entradas
 
+## 2026-06-18 — [Fase 5 · F5.3] Criar tarefa a partir da conversa (UI-10) — CONCLUÍDO
+### Resumo
+Fecha o loop **Conversa → Tarefa**: na conversa, ação "Criar tarefa desta conversa" abre form de nova tarefa (título pré-preenchido); ao salvar, cria a `Task` **e** o `ConversationLink` `primary`/`manual` **na mesma transação** (sem tarefa órfã). Antes só era possível vincular a tarefa **já existente**.
+### Entregue
+- **Rota aninhada:** `GET/POST /conversations/:conversation_id/tasks` (`new`/`create`) → `ConversationTasksController` (novo).
+- **`conversation_tasks/new.html.erb`** (novo): reusa `tasks/_form` com `url:` opcional + título sugerido (`conversation.title` ou `"Conversa <8 chars>"`).
+- **`tasks/_form.html.erb`**: aceita `url:` opcional (backward-compatible com `/tasks/new`).
+- **`conversations/show.html.erb`**: ação "Criar tarefa desta conversa" no bloco Vínculos, **oculta quando já há `primary`**; corrigido comentário obsoleto ("nenhum turno renderizado").
+- Teste de integração `conversation_tasks_test` (8 casos).
+### Transação e regras
+- `Task.save!` + `ConversationLink.save!` em `ActiveRecord::Base.transaction` → falha do link faz **rollback total**; counters da task atualizados pelo `after_create` (mesma transação).
+- **Conversa já com `primary`:** `new` redireciona à conversa com alert; `create` tem backstop pela validação `single_primary_per_conversation` (não cria 2ª task nem 2º primary).
+- **Autorização:** `authorize @conversation (show?)` + `authorize @task (create?)` + `authorize @link (create?)` (ADR-014; sem policies novas).
+- **Redireciona** para a task criada com notice "Tarefa criada e vinculada à conversa."
+### Testes/validações
+`bin/rails test` **264 runs / 1016 assertions / 0** falhas; rubocop **131/0**; brakeman **0**; bundler-audit **0**. Smoke real: `/conversations` 200; conversa com primary → ação oculta + `new` redireciona com alert; conversa sem vínculo → ação visível + `new` 200; `/tasks` 200; task vinculada mostra a conversa. **Sem mutação de dados reais no smoke** (apenas GET).
+### Fora de escopo (cumprido)
+Sem migration/schema/model/policy novos; sem alterar import/sync, markdown/render, PiiRedactor/MarkdownRenderer, `_origem/`/`_mockup/`.
+
 ## 2026-06-18 — [Fase 5 · F5.2] Markdown sanitizado no render read-only de turnos — CONCLUÍDO
 ### Resumo
 O `text` do turno passa a ser renderizado como **markdown (GFM) → HTML sanitizado server-side** (ADR-012), via novo `ConversationTurns::MarkdownRenderer` (defesa em profundidade: `commonmarker` em modo seguro + `Rails::HTML5::SafeListSanitizer` por allowlist + hardening de links). `tool_input` **continua** texto literal em `<pre>` (sem markdown). PII é redigida **antes** do markdown. O componente/template **não** usam `html_safe`/`raw`/`sanitize` (delegam ao renderer) — **grep-guard mantido verde**.

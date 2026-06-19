@@ -79,7 +79,8 @@
 - **F5.1.5 (2026-06-18, `821f495`) — CONCLUÍDA:** redação conservadora/idempotente de PII/segredos em `text`/`tool_input` no render (`ConversationTurns::PiiRedactor`) → `<EMAIL>`/`<SECRET>`/`<USER>`. Suíte 235/861/0.
 - **F5.2 (2026-06-18) — CONCLUÍDA:** markdown (GFM) sanitizado no `text` (CV-07) via `ConversationTurns::MarkdownRenderer` (`commonmarker 2.8.2` modo seguro + `Rails::HTML5::SafeListSanitizer` allowlist + hardening de links); `tool_input` segue em `<pre>`; `html_safe` só no renderer (grep-guard mantido). Suíte 257/966/0; brakeman 0; bundler-audit 0.
 - **F5.1 = sub-entrega CONCLUÍDA; a Fase 5 permanece ABERTA** (o grosso da UI unificada é F5.2+).
-- **Ainda FORA (F5.3+):** syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04). *(Markdown sanitizado + code blocks entregues na F5.2; redação de PII na F5.1.5.)*
+- **F5.3 (2026-06-18) — CONCLUÍDA (UI-10):** criar tarefa a partir da conversa — `ConversationTasksController` (rota aninhada `conversations/:id/tasks`) cria `Task` + `ConversationLink` `primary`/`manual` em transação (rollback sem órfã; counters via `after_create`); ação oculta quando já há `primary`. Suíte 264/1016/0.
+- **Ainda FORA (F5.4+):** syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), dashboard (UI-01), aba Conversas rica/abas reais (UI-04). *(Criar tarefa de conversa UI-10 entregue na F5.3; markdown sanitizado + code blocks na F5.2; redação de PII na F5.1.5.)*
 - **Entregáveis:** índice de turnos (ADR-021 ✓); aba Conversas; lista+detalhe de conversa (markdown sanitizado — ADR-012); modal vincular (Ctrl+L); criar tarefa de conversa; dashboard; empty/error states.
 - **Critérios de aceite:** abertura lazy sem full-scan; turnos ordenados; fluxos MVP; payload XSS neutralizado; `tool_input` nunca HTML; `personal` respeitado.
 - **Marco:** M5.

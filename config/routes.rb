@@ -24,6 +24,8 @@ Rails.application.routes.draw do
   # F4 — vínculo manual conversa↔tarefa (links aninhados; create/destroy).
   resources :conversations, only: %i[index show] do
     resources :links, controller: "conversation_links", only: %i[create destroy]
+    # F5.3 (UI-10) — criar tarefa a partir da conversa (vínculo primary/manual automático).
+    resources :tasks, controller: "conversation_tasks", only: %i[new create]
   end
   resources :sync_runs, only: %i[index show]
 

@@ -16,7 +16,8 @@
   </div>
 </div>
 
-<%# SOMENTE metadados — nenhum conteúdo/turno/mensagem é lido ou renderizado. %>
+<%# Metadados da conversa. Os turnos (conteúdo) são renderizados mais abaixo
+    (read-only, markdown sanitizado — F5.1/F5.2). %>
 <div class="card">
   <dl>
     <dt>Thread</dt><dd class="mono"><%= @conversation.thread_id %></dd>
@@ -47,9 +48,13 @@
         result: @turns, conversation: @conversation, page: @turn_page, total_pages: @turn_total_pages) %>
 <% end %>
 
-<%# F4 — Vínculos da conversa (manual). %>
+<%# F4 — Vínculos da conversa (manual). F5.3 — criar tarefa desta conversa. %>
 <div class="subhead">
   <h2>Vínculos</h2>
+  <% unless @has_primary %>
+    <%= link_to "Criar tarefa desta conversa", new_conversation_task_path(@conversation),
+          class: "btn btn--outline btn--sm" %>
+  <% end %>
 </div>
 
 <% if @links.any? %>

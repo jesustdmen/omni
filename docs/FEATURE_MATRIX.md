@@ -81,7 +81,7 @@
 | UI-07 | Settings de sync | Mockup | 6 | v1 | Não iniciado | OP-03 | parcial/erro visíveis |
 | UI-08 | Workspaces órfãos | Mockup | 6 | v1 | Não iniciado | CV-11 | órfão listável |
 | UI-09 | Modal de vínculo (Ctrl+L) | Mockup | 5 | MVP | Não iniciado | LK-01 | Turbo modal |
-| UI-10 | Criar tarefa de conversa | Mockup | 5 | MVP | Não iniciado | LK-01 | transação testada |
+| UI-10 | Criar tarefa de conversa | Mockup | 5 | MVP | ✅ Entregue (F5.3 — `ConversationTasksController`: cria Task + link primary/manual em transação) | LK-01 | transação testada |
 | UI-11 | Handoff IA externa | Mockup | 6 | v1 | Não iniciado | UI-03 | contexto correto |
 
 ## Operação
