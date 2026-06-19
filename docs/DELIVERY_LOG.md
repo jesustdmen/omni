@@ -9,6 +9,22 @@
 
 ## Entradas
 
+## 2026-06-19 — [Fase 5 · F5.5] Usabilidade da Task: navegação por âncoras/seções — CONCLUÍDO
+### Resumo
+As "abas" cosméticas de `tasks/show` (`span.tab`, `cursor:default`, sem troca) viram **navegação honesta por âncoras (sem JS)**: os itens reais são `<a class="tab" href="#tab-…">` que rolam até a seção (painéis seguem visíveis/empilhados). Resolve a afordância falsa que confundia no pós-vínculo (F5.3).
+### Entregue
+- **Itens reais → links de âncora:** Detalhes (`#tab-detalhes`), Conversas (`#tab-conversas`), Time entries (`#tab-time`).
+- **"Conversas (N)"**: contagem exibida quando há conversas vinculadas (destaca o vínculo recém-criado); ausente quando 0.
+- **"Histórico"/"Demanda"**: permanecem `span.tab.soon` **sem `href`** (`aria-disabled`) — não parecem ação.
+- **CSS escopado** (só `.tab*`, usado apenas na task): `a.tab` com cursor/hover de link; `scroll-margin-top` nas seções; realce `:target` (CSS puro); `.tab.soon { cursor: default }`.
+- Painel `#tab-conversas` mantém a lista de conversas vinculadas com "Ver" → conversa.
+### Sem JS / sem dinâmica
+Nenhum Stimulus/controller; sem hide/show de painéis — a melhoria é **navegação por âncoras**, não abas dinâmicas (essas seguem opcionais no roadmap).
+### Testes/validações
+`bin/rails test` **274 runs / 1068 assertions / 0** falhas; rubocop **132/0**; brakeman **0**; bundler-audit **0**. Smoke real: `/tasks` 200; task vinculada → âncoras + "Conversas (1)" + soon sem href + `#tab-conversas` com MedPlus e "Ver"; task sem vínculo → âncora presente, sem contagem, "Nenhuma conversa vinculada".
+### Fora de escopo (cumprido)
+Sem JS/abas dinâmicas, sem controller/model/policy/rota/schema; sem alterar fluxo/redirect da F5.3, ConversationLink, `/conversations`, MarkdownRenderer/PiiRedactor; sem dashboard/Ctrl+L/scorer/busca/tags/inbox; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-19 — [Fase 5 · F5.4] Lista de conversas acionável / status de vínculo (CV-04) — CONCLUÍDO
 ### Resumo
 `/conversations` ganha **status de vínculo por linha** e **filtro por vínculo**, virando uma lista de triagem leve (sem inbox/lote/atalhos — isso segue UI-05/v1). **Não carrega turnos** (LazyLoader não é chamado). Eager loading evita N+1.

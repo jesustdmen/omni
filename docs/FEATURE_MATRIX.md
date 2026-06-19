@@ -74,7 +74,7 @@
 |---|---|---|---|---|---|---|---|
 | UI-01 | Dashboard | Mockup/Repo A | 5 | MVP | Não iniciado | WD-04,CV-01 | zonas renderizam |
 | UI-02 | Lista de tarefas | Repo A | 2 | MVP | 🟡 Base entregue (`/tasks`, WD-04/F2); UI **unificada final** = F5 | WD-04 | paridade Repo A |
-| UI-03 | Página `/tasks/:id` | Mockup | 2/5 | MVP | 🟡 Base entregue (F2.3 abas + aba "Conversas" F4); UI **unificada final** = F5 | WD-04 | abas navegáveis |
+| UI-03 | Página `/tasks/:id` | Mockup | 2/5 | MVP | 🟡 Base entregue (F2.3 abas + aba "Conversas" F4); F5.5 navegação por âncoras (sem JS) + contagem; abas dinâmicas JS = opcional/roadmap | WD-04 | abas navegáveis |
 | UI-04 | Aba Conversas | Mockup | 5 | MVP | Não iniciado | LK-01 | lista por kind |
 | UI-05 | Inbox de triagem | Mockup | 6 | v1 | Não iniciado | LK-05 | lote + atalhos |
 | UI-06 | Diário (view sob demanda) | Mockup/Viewer | 6 | v1 | Não iniciado | LK-01 | `?day=` mix |

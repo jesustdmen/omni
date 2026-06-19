@@ -61,6 +61,35 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_select ".tab", /Demanda/
   end
 
+  # F5.5 — navegação honesta por âncoras (sem JS).
+  test "abas reais são links de âncora; 'em breve' não têm href" do
+    task = @client.tasks.create!(title: "Bug X", type: "support")
+    get task_path(task)
+    assert_response :success
+    assert_select "a.tab[href=?]", "#tab-detalhes", /Detalhes/
+    assert_select "a.tab[href=?]", "#tab-conversas", /Conversas/
+    assert_select "a.tab[href=?]", "#tab-time", /Time entries/
+    # Histórico/Demanda continuam como itens "em breve" sem href (não-link).
+    assert_select "span.tab.soon", /Histórico/
+    assert_select "span.tab.soon", /Demanda/
+    assert_select "a.tab", { text: /Histórico/, count: 0 }
+    assert_select "a.tab", { text: /Demanda/, count: 0 }
+  end
+
+  test "aba Conversas mostra contagem quando há vínculos e não mostra sem vínculo" do
+    task = @client.tasks.create!(title: "Bug X", type: "support")
+    get task_path(task)
+    assert_select "a.tab[href=?]", "#tab-conversas" do |els|
+      assert_no_match(/\(\d+\)/, els.text)
+    end
+
+    conv = Conversation.create!(thread_id: "t-c1", source: "x", title: "C1", last_ts: Time.current)
+    ConversationLink.create!(conversation: conv, task: task, link_type: "primary", origin: "manual")
+    get task_path(task)
+    assert_select "a.tab[href=?]", "#tab-conversas", /Conversas\s*\(1\)/
+    assert_select "#tab-conversas", /C1/
+  end
+
   test "aba Time entries mostra lista read-only e total de duração" do
     task = @client.tasks.create!(title: "Bug X", type: "support")
     task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 30)

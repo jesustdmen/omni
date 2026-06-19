@@ -23,14 +23,17 @@
   </div>
 </div>
 
-<%# Abas: "Detalhes" e "Time entries" têm conteúdo real; as demais são placeholders
-    intencionais (sinalizadas "em breve") até a Fase 5+. Sem troca dinâmica nesta fase. %>
+<%# F5.5 — navegação HONESTA por âncoras (sem JS): os itens reais são links que
+    rolam até a seção (todos os painéis ficam visíveis/empilhados). "Histórico" e
+    "Demanda" são placeholders "em breve" — sem href, não parecem ação. %>
 <nav class="tabs">
-  <span class="tab active">Detalhes</span>
-  <span class="tab">Conversas</span>
-  <span class="tab">Time entries</span>
-  <span class="tab soon">Histórico<span class="soon-flag">em breve</span></span>
-  <span class="tab soon">Demanda<span class="soon-flag">em breve</span></span>
+  <%= link_to "Detalhes", "#tab-detalhes", class: "tab" %>
+  <%= link_to "#tab-conversas", class: "tab" do %>
+    Conversas<% if @linked_conversations.any? %> <span class="tab__count">(<%= @linked_conversations.size %>)</span><% end %>
+  <% end %>
+  <%= link_to "Time entries", "#tab-time", class: "tab" %>
+  <span class="tab soon" aria-disabled="true">Histórico<span class="soon-flag">em breve</span></span>
+  <span class="tab soon" aria-disabled="true">Demanda<span class="soon-flag">em breve</span></span>
 </nav>
 
 <section class="tab-panel" id="tab-detalhes">

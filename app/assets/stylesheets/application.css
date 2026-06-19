@@ -453,10 +453,15 @@ dl dt:last-of-type, dl dd:last-of-type { border-bottom: none; }
   color: var(--text-subtle);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  cursor: default;
   -webkit-user-select: none;
   user-select: none;
 }
+/* F5.5 — itens reais são links de âncora (navegáveis): cursor/hover de link. */
+a.tab { color: var(--text-subtle); text-decoration: none; cursor: pointer; }
+a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(--accent); }
+.tab__count { color: var(--text-subtle); font-weight: 600; }
+/* "em breve": item desabilitado (não-link), sem afordância de ação. */
+.tab.soon { cursor: default; }
 .tab.active { color: var(--text); border-bottom-color: var(--accent); }
 /* abas ainda sem implementação: sinalizadas como "em breve" (não parecem quebradas) */
 .tab.soon { color: var(--text-subtle); }
@@ -471,6 +476,11 @@ dl dt:last-of-type, dl dd:last-of-type { border-bottom: none; }
   border-radius: var(--radius-pill);
   padding: 0 6px;
 }
+
+/* F5.5 — navegação por âncoras: a seção alvo não fica sob o cabeçalho e ganha
+   realce sutil ao ser apontada (sem JS). */
+.tab-panel { scroll-margin-top: 16px; }
+.tab-panel:target { border-left: 3px solid var(--accent); padding-left: 12px; }
 
 /* Painel de aba ainda sem implementação: placeholder VISÍVEL e intencional
    (Fase 5+) — nunca oculto/sem mensagem. */

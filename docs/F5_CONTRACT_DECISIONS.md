@@ -49,6 +49,13 @@ Fatia mínima entregue (consome o `LazyLoader`; **sem** markdown/scorer/UI rica)
 - **Fora desta fatia (segue v1/F5.5+):** inbox de triagem com lote/atalhos (UI-05), tags, arquivos alterados, dashboard, Ctrl+L, scorer, busca avançada, abas reais. Sem migration/schema/model/policy/rota.
 - **Validação:** suíte 272/1047/0; rubocop 132/0; brakeman 0; bundler-audit 0; smoke real dos filtros (`primary`=1, `none`=1634, `mention`=0) sem mutar dados.
 
+## F5.5 — usabilidade da task: navegação por âncoras (ENTREGUE 2026-06-19)
+- `tasks/show`: abas cosméticas (`span.tab`, `cursor:default`) → **links de âncora honestos (sem JS)** para `#tab-detalhes`/`#tab-time`/`#tab-conversas`; painéis seguem visíveis/empilhados (navegação por âncoras, **não** abas dinâmicas).
+- **"Conversas (N)"** mostra contagem quando há vínculos (ausente quando 0); **"Histórico"/"Demanda"** permanecem "em breve" **sem `href`** (`aria-disabled`).
+- **CSS escopado** (só `.tab*`, usado apenas na task): `a.tab` cursor/hover; `scroll-margin-top` nas seções; realce `:target`; `.tab.soon { cursor: default }`. Ids/classes preservados (compat. com testes/F5.3).
+- **Decisão: sem JS/Stimulus** — abas dinâmicas reais (hide/show) ficam como recorte opcional futuro. Não altera fluxo/redirect da F5.3.
+- **Validação:** suíte 274/1068/0; rubocop 132/0; brakeman 0; bundler-audit 0; smoke real (task vinculada com "Conversas (1)" + "Ver"; task sem vínculo sem contagem).
+
 ## Status da Fase 5 (P0, 2026-06-18)
 - **F5.1 = sub-entrega CONCLUÍDA** (read-only); **a Fase 5 permanece ABERTA**. Suíte atual: **225 runs / 811 assertions / 0**; rubocop 125/0; brakeman 0; bundler-audit 0.
 - **Pendências F5.2+:** syntax highlight, busca, virtualização, modal vincular (Ctrl+L, UI-09), criar tarefa de conversa (UI-10), dashboard (UI-01), aba Conversas rica (UI-04). *(Markdown sanitizado + code blocks entregues na F5.2; redação de PII na F5.1.5.)*
