@@ -501,6 +501,10 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .te-history .te-desc { white-space: normal; overflow-wrap: anywhere; max-width: 360px; color: var(--text); }
 .te-history .te-col-duration { text-align: right; white-space: nowrap; }
 .te-history .te-col-duration strong { font-variant-numeric: tabular-nums; }
+/* PB-003b — grupos por dia + subtotal diário. */
+.te-history .te-day__head th { text-align: left; background: var(--surface-subtle, #f6f7f9); color: var(--text-muted); font-size: .8rem; font-weight: 600; padding-top: 12px; }
+.te-history .te-day__subtotal td { border-top: 1px solid var(--border, #e2e5ea); color: var(--text-muted); font-size: .85rem; }
+.te-history .te-day__subtotal .te-col-duration strong { color: var(--text); }
 .te-actions { display: inline-flex; gap: 4px; flex-wrap: wrap; align-items: center; }
 .te-actions form.inline { display: inline; margin: 0; }
 

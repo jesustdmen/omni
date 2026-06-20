@@ -103,6 +103,60 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_select "#tab-time", /42/
   end
 
+  # PB-003b — agrupamento por dia: cada grupo validado isoladamente, ordem
+  # intradiária decrescente e timer em andamento no grupo correto (fora do subtotal).
+  test "histórico agrupa por dia: grupos isolados, ordem intradiária e timer no dia certo" do
+    task = @client.tasks.create!(title: "Bug X", type: "support")
+    hoje = Date.current
+    ontem = hoje - 1
+    h09   = Time.zone.local(hoje.year, hoje.month, hoje.day, 9, 0)
+    h1430 = Time.zone.local(hoje.year, hoje.month, hoje.day, 14, 30)
+    h16   = Time.zone.local(hoje.year, hoje.month, hoje.day, 16, 0)
+    o10   = Time.zone.local(ontem.year, ontem.month, ontem.day, 10, 0)
+
+    task.time_entries.create!(start_time: h09,   date: hoje,  duration: 600)   # 10 min
+    task.time_entries.create!(start_time: h1430, date: hoje,  duration: 1800)  # 30 min
+    task.time_entries.create!(start_time: h16,   date: hoje,  is_running: true, duration: 0) # 16:00 em andamento
+    task.time_entries.create!(start_time: o10,   date: ontem, duration: 300)   # 5 min (dia anterior)
+
+    get task_path(task)
+    assert_response :success
+
+    groups = css_select("#tab-time tbody.te-day")
+    assert_equal 2, groups.size, "deve haver exatamente um grupo por dia"
+
+    hoje_str  = hoje.strftime("%d/%m/%Y")
+    ontem_str = ontem.strftime("%d/%m/%Y")
+
+    # --- Grupo 1: data MAIS RECENTE (hoje), validado isoladamente ---
+    g0 = groups[0]
+    assert_match hoje_str, g0.at_css(".te-day__head").text
+    assert_no_match(/#{Regexp.escape(ontem_str)}/, g0.text, "grupo 1 não deve conter a data anterior")
+    # subtotal do grupo 1 = só as entradas de hoje, running excluído: 10+30 = 40 min
+    assert_match(/Subtotal do dia/, g0.at_css(".te-day__subtotal").text)
+    assert_match(/40 min/, g0.at_css(".te-day__subtotal").text)
+    assert_no_match(/5 min/, g0.at_css(".te-day__subtotal").text, "subtotal de hoje não inclui o dia anterior")
+    # timer em andamento visível NO grupo de hoje
+    assert_match(/em andamento/, g0.text)
+    assert_match("16:00", g0.text)
+    # ordem intradiária decrescente por horário (Início = 2ª célula das linhas de apontamento)
+    assert_equal %w[16:00 14:30 09:00], entry_start_times(g0)
+
+    # --- Grupo 2: data ANTERIOR (ontem), validado isoladamente ---
+    g1 = groups[1]
+    assert_match ontem_str, g1.at_css(".te-day__head").text
+    assert_no_match(/#{Regexp.escape(hoje_str)}/, g1.text, "grupo 2 não deve conter a data de hoje")
+    # subtotal do grupo 2 = só o dia anterior: 5 min
+    assert_match(/5 min/, g1.at_css(".te-day__subtotal").text)
+    assert_no_match(/40 min/, g1.at_css(".te-day__subtotal").text, "subtotal de ontem não inclui hoje")
+    # timer em andamento NÃO está no grupo de ontem
+    assert_no_match(/em andamento/, g1.text)
+    assert_equal %w[10:00], entry_start_times(g1)
+
+    # total geral (running=0): 40 + 5 = 45 min
+    assert_select "#tab-time .te-total", /45 min/
+  end
+
   # PB-003a — ações operacionais diretas na linha do histórico.
   test "linha do apontamento expõe Editar e Excluir diretamente" do
     task = @client.tasks.create!(title: "Bug X", type: "support")
@@ -141,5 +195,13 @@ class TasksTest < ActionDispatch::IntegrationTest
       delete task_path(task)
     end
     assert_redirected_to tasks_path
+  end
+
+  private
+
+  # PB-003b — horários de Início (2ª célula) das linhas de apontamento de um grupo
+  # `tbody.te-day`, em ordem de documento (ignora cabeçalho de data e linha de subtotal).
+  def entry_start_times(group)
+    group.css("tr").select { |tr| tr.at_css("td.te-desc") }.map { |tr| tr.css("td")[1].text.strip }
   end
 end

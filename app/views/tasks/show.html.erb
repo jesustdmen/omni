@@ -53,7 +53,8 @@
 
 <%# PB-003a — Histórico de Apontamentos (timer + registro de tempo). %>
 <section class="tab-panel" id="tab-time">
-  <% entries = @task.time_entries.order(start_time: :desc) %>
+  <%# PB-003b — carrega 1x e agrupa em memória (sem consulta por grupo/linha). %>
+  <% entries = @task.time_entries.order(start_time: :desc).to_a %>
   <div class="subhead">
     <div class="subhead__titles">
       <h2>Histórico de Apontamentos</h2>
@@ -61,7 +62,7 @@
     </div>
     <div class="page-head__actions">
       <%# Controle de timer da tarefa (1 aberto por tarefa). %>
-      <% running = @task.time_entries.running.order(start_time: :desc).first %>
+      <% running = entries.find(&:is_running) %>
       <% if running %>
         <span class="muted">⏱ em andamento desde <%= running.start_time&.strftime("%H:%M") %></span>
         <%= button_to stop_time_entry_path(running), method: :patch, class: "btn btn--primary btn--sm" do %>
@@ -80,46 +81,57 @@
     <table class="te-history">
       <thead>
         <tr>
-          <th>Data</th><th>Descrição</th><th>Início</th><th>Término</th>
+          <th>Descrição</th><th>Início</th><th>Término</th>
           <th class="te-col-duration">Duração</th><th>Ações</th>
         </tr>
       </thead>
-      <tbody>
-        <% entries.each do |entry| %>
-          <tr>
-            <td class="te-date"><%= entry.date&.strftime("%d/%m/%Y") %></td>
-            <td class="te-desc"><%= entry.description.presence || "—" %></td>
-            <td><%= entry.start_time&.strftime("%H:%M") || "—" %></td>
-            <td>
-              <% if entry.end_time %><%= entry.end_time.strftime("%H:%M") %>
-              <% elsif entry.is_running %><span class="badge badge--info">em andamento</span>
-              <% else %>—<% end %>
-            </td>
-            <td class="te-col-duration">
-              <% if entry.is_running %><span class="muted">—</span>
-              <% else %><strong><%= duration_label(entry.duration) %></strong><% end %>
-            </td>
-            <td>
-              <%# PB-003a — ações operacionais diretas na linha (rotas CRUD/stop existentes). %>
-              <div class="te-actions">
-                <%= link_to action_icon("eye"), entry, class: "btn btn--ghost btn--icon te-action--view",
-                      title: "Ver", "aria-label": "Ver apontamento" %>
-                <%= link_to action_icon("pencil"), edit_time_entry_path(entry), class: "btn btn--ghost btn--icon te-action--edit",
-                      title: "Editar", "aria-label": "Editar apontamento" %>
-                <% if entry.is_running %>
-                  <%= button_to action_icon("stop"), stop_time_entry_path(entry), method: :patch,
-                        class: "btn btn--ghost btn--icon te-action--stop", form_class: "inline",
-                        title: "Parar timer", "aria-label": "Parar timer deste apontamento" %>
-                <% end %>
-                <%= button_to action_icon("trash"), time_entry_path(entry), method: :delete,
-                      class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
-                      title: "Excluir", "aria-label": "Excluir apontamento",
-                      data: { turbo_confirm: "Excluir este apontamento?" } %>
-              </div>
-            </td>
+      <%# PB-003b — um grupo por data (mais recente → mais antiga); itens por horário (desc). %>
+      <% entries.group_by(&:date).sort_by { |date, _| date }.reverse.each do |date, day_entries| %>
+        <% day_total = day_entries.reject(&:is_running).sum(&:duration) %>
+        <tbody class="te-day">
+          <tr class="te-day__head">
+            <th colspan="5"><%= date&.strftime("%d/%m/%Y") %> · <%= day_entries.size %> apontamento(s)</th>
           </tr>
-        <% end %>
-      </tbody>
+          <% day_entries.each do |entry| %>
+            <tr>
+              <td class="te-desc"><%= entry.description.presence || "—" %></td>
+              <td><%= entry.start_time&.strftime("%H:%M") || "—" %></td>
+              <td>
+                <% if entry.end_time %><%= entry.end_time.strftime("%H:%M") %>
+                <% elsif entry.is_running %><span class="badge badge--info">em andamento</span>
+                <% else %>—<% end %>
+              </td>
+              <td class="te-col-duration">
+                <% if entry.is_running %><span class="muted">—</span>
+                <% else %><strong><%= duration_label(entry.duration) %></strong><% end %>
+              </td>
+              <td>
+                <%# PB-003a — ações operacionais diretas na linha (rotas CRUD/stop existentes). %>
+                <div class="te-actions">
+                  <%= link_to action_icon("eye"), entry, class: "btn btn--ghost btn--icon te-action--view",
+                        title: "Ver", "aria-label": "Ver apontamento" %>
+                  <%= link_to action_icon("pencil"), edit_time_entry_path(entry), class: "btn btn--ghost btn--icon te-action--edit",
+                        title: "Editar", "aria-label": "Editar apontamento" %>
+                  <% if entry.is_running %>
+                    <%= button_to action_icon("stop"), stop_time_entry_path(entry), method: :patch,
+                          class: "btn btn--ghost btn--icon te-action--stop", form_class: "inline",
+                          title: "Parar timer", "aria-label": "Parar timer deste apontamento" %>
+                  <% end %>
+                  <%= button_to action_icon("trash"), time_entry_path(entry), method: :delete,
+                        class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                        title: "Excluir", "aria-label": "Excluir apontamento",
+                        data: { turbo_confirm: "Excluir este apontamento?" } %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+          <tr class="te-day__subtotal">
+            <td colspan="3">Subtotal do dia</td>
+            <td class="te-col-duration"><strong><%= duration_label(day_total) %></strong></td>
+            <td></td>
+          </tr>
+        </tbody>
+      <% end %>
     </table>
     <p class="te-total">Total de duração: <strong><%= duration_label(@task.total_duration) %></strong></p>
   <% else %>
