@@ -5,7 +5,7 @@
 ## Visão geral do projeto
 Omni unifica o domínio de trabalho (clientes/projetos/tarefas/demandas/apontamentos) com as **conversas de IA** (saída normalizada do pipeline Python externo) numa aplicação **Rails 8 / Hotwire / ViewComponent**, tratando conversas como evidência vinculável a tarefas. O pipeline Python permanece externo e intocado; o Rails consome `output/normalized/` (ADR-007/008) e lê turnos de forma **lazy** por índice de offsets (ADR-021).
 
-**Estado (2026-06-19):** M1/M2 ✅ · M3 🟢 MVP de metadados · M4 🟢 MVP manual · M5 ✅ MVP interno concluído (F5.1 render + F5.1.5 PII + F5.2 markdown + F5.3 criar tarefa + F5.4 lista acionável + F5.5 navegação por âncoras; UI-01/04/09, CV-03/05/06/10, scorer, inbox = roadmap/v1) · M6/M7 ⬜. Produção (F7) **não exercida** — ver readiness no `PROJECT_STATUS.md`. Suíte: 274/1068/0.
+**Estado (2026-06-20):** M1/M2 ✅ · M3 🟢 MVP de metadados · M4 🟢 MVP manual · M5 ✅ MVP interno concluído (F5.1 render + F5.1.5 PII + F5.2 markdown + F5.3 criar tarefa + F5.4 lista acionável + F5.5 navegação por âncoras; UI-01/04/09, CV-03/05/06/10, scorer, inbox = roadmap/v1) · M6/M7 ⬜. **Trilha ativa: Produto Operacional** (PB-003a entregue; PB-003b/c, listas, PB-013/014 pendentes). **F7.1 entregue** (endurecimento de `production.rb` + admin seed), mas **deploy/produção real NUNCA foi exercido**. **Métricas correntes: ver `PROJECT_STATUS.md`** (fonte única; não duplicadas aqui).
 
 ## Documentos oficiais
 | Documento | Função | Fonte de verdade para |
@@ -22,19 +22,29 @@ Omni unifica o domínio de trabalho (clientes/projetos/tarefas/demandas/apontame
 | Contratos de fase: [F3_CONTRACT_DECISIONS.md](F3_CONTRACT_DECISIONS.md) · [F4_CONTRACT_DECISIONS.md](F4_CONTRACT_DECISIONS.md) · [F5_CONTRACT_DECISIONS.md](F5_CONTRACT_DECISIONS.md) | Decisões/contrato de cada fase | **Detalhe técnico/contrato** da fase respectiva |
 | [UI_COMPLIANCE_AUDIT.md](UI_COMPLIANCE_AUDIT.md) | Régua de conformidade visual | Padrões de UI/hi-fi |
 | [PRODUCT_GAP_REVIEW.md](PRODUCT_GAP_REVIEW.md) | Diagnóstico de lacunas de produto | Revisão de paridade operacional TaskManager/Viewer/Mockup/Omni; não autoriza execução por si só |
-| [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md) | Backlog oficial de produto | Priorização P0/P1/P2/P3, status dos itens e fila autorizável da próxima onda |
+| [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md) | Backlog oficial de produto | Priorização P0/P1/P2/P3, **status/autorização** dos itens (PB-NNN) e fila autorizável |
+| Auditorias/contratos de produto: [PB-001_PARITY_AUDIT.md](PB-001_PARITY_AUDIT.md) · [PB-003_TIME_CONTRACT.md](PB-003_TIME_CONTRACT.md) | Auditoria/contrato técnico de itens PB | **Detalhe técnico/contrato** do item PB respectivo |
 
 ## Fonte de verdade por assunto (resumo)
 - **Decisão arquitetural:** o `ADR-NNN` específico → indexado em `ARCHITECTURE_DECISIONS_INDEX.md`.
 - **Status macro (fase/marco):** `ROADMAP.md`.
 - **Status granular (feature):** `FEATURE_MATRIX.md`.
-- **Estado atual / semáforos / readiness:** `PROJECT_STATUS.md`.
-- **Histórico de entregas:** `DELIVERY_LOG.md` (não reescrever).
+- **Status/autorização de item de produto (PB):** `PRODUCT_BACKLOG.md`.
+- **Contrato técnico de uma fase / item PB:** `F{n}_CONTRACT_DECISIONS.md` / `PB-NNN_*.md`.
+- **Estado atual / semáforos / readiness / métricas correntes:** `PROJECT_STATUS.md` (**fonte única das métricas**; demais docs referenciam, não duplicam).
+- **Histórico de entregas:** `DELIVERY_LOG.md` (append-only; não reescrever).
 - **Fronteiras/restrições:** `CONSTRAINTS.md` (prevalece em conflito de implementação).
-- **Contrato técnico de uma fase:** `F{n}_CONTRACT_DECISIONS.md`.
+- **Conversa de coordenação/PO (outro chat) NÃO é fonte permanente:** decisões aprovadas só valem quando registradas nos docs oficiais acima.
 
-## Ordem de atualização (a cada entrega/decisão)
-`ARCHITECTURE_DECISIONS_INDEX` → `ROADMAP` → `MIGRATION_PLAN` → `FEATURE_MATRIX` → `DELIVERY_LOG` → `PROJECT_STATUS` (**sempre por último**). *(Espelha a "Governança da documentação" do `PROJECT_STATUS.md`.)*
+## Ordem de atualização (condicional — atualizar só o que mudou)
+- **`ADR` + `ARCHITECTURE_DECISIONS_INDEX`:** somente quando houver **decisão arquitetural**.
+- **Contrato (`F{n}_CONTRACT` / `PB-NNN_*`):** somente quando o **contrato/escopo daquele item** mudar.
+- **`PRODUCT_BACKLOG`:** para **autorização/status** de item de produto (PB).
+- **`FEATURE_MATRIX`:** para **status granular** de feature.
+- **`MIGRATION_PLAN`:** somente se afetar **dados/estratégia de migração**.
+- **`ROADMAP`:** somente se **marco/fase** mudar.
+- **`DELIVERY_LOG`:** **append-only**, a cada entrega real (nunca reescrever histórico).
+- **`PROJECT_STATUS`:** **sempre por último** (consolida estado/métricas correntes).
 
 ## Gatilhos de atualização
 - **A cada entrega real:** `DELIVERY_LOG` + `FEATURE_MATRIX` + `PROJECT_STATUS` (e `ROADMAP` se fechou marco).

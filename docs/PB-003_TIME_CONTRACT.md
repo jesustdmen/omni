@@ -148,7 +148,8 @@ get "running_time_entries", to: "time_entries#running", as: :running_time_entrie
 
 ## 17. Gate antes da implementação
 
-- **PB-003a tem gate de schema** (índice único parcial): implementar → checks → **PARAR e apresentar relatório ANTES do commit** (perguntar "Posso commitar?"). Migration/schema nunca commitada sem autorização.
-- **Decisões residuais (menores)** a confirmar no início da 003a: forma exata da rota (`resource :timer` vs `post :start`); confirmação de que `duration_label`/testes assumem minutos hoje (e ajuste para segundos).
-- **PB-003b/003c** = código pequeno: implementar → checks → commit local se verde → pedir autorização só para push.
-- Push **sempre** sob autorização. Docs (`DELIVERY_LOG`/`FEATURE_MATRIX`/`PROJECT_STATUS`/`PRODUCT_BACKLOG`) atualizados ao fim de cada fatia entregue.
+- **PB-003a — ENTREGUE (`d11f099`, histórico).** Teve **gate de schema** (índice único parcial): implementado → checks → parou antes do commit → commit/push sob autorização → aceite manual do PO. *(Registrado como histórico; mantido aqui para rastreio.)*
+- **PB-003b / PB-003c — gate de integridade (feature visível ao usuário):**
+  `implementar → checks → PARAR sem commit → apresentar roteiro/evidências ao PO → aceite manual do PO → autorização de commit → revisão → autorização de push`.
+  Nenhum commit antes do aceite manual; nenhum push sem autorização separada. (Mesmo sem schema, são UI visível → exigem aceite manual, conforme gate de integridade do `PRODUCT_BACKLOG.md`.)
+- Docs (`DELIVERY_LOG`/`FEATURE_MATRIX`/`PROJECT_STATUS`/`PRODUCT_BACKLOG`) atualizados ao fim de cada fatia **aceita**.

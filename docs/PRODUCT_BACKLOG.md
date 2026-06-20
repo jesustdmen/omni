@@ -54,10 +54,19 @@ Este backlog deve ser usado para evitar perda de contexto, escopo implícito e e
 | Em análise | Item em revisão de produto/técnica |
 | Aprovado | Item aceito como parte do produto, mas ainda sem autorização de execução |
 | Pronto para execução | Pode ser enviado ao agente executor mediante prompt específico |
-| Em execução | Agente autorizado está trabalhando no item |
-| Entregue | Implementado/validado/documentado |
+| Em execução | **Agente atualmente autorizado trabalhando no item** |
+| Parcialmente entregue | **Algumas fatias entregues (e aceitas) e outras ainda pendentes** |
+| Entregue | Passou pelo **gate de integridade** abaixo (não basta commit/teste/doc isolado) |
 | Descartado | Decisão explícita de não fazer |
 | Bloqueado | Depende de decisão, dado, técnica ou outro item |
+
+### Gate de integridade (para marcar "Entregue")
+
+`Planejada → Implementada → Aceita pelo PO → Publicada → Documentada → Entregue`
+
+- **Feature visível ao usuário:** "Entregue" exige **aceite manual explícito do PO** (além de implementação publicada + docs).
+- **Entrega puramente técnica/docs** (sem UI visível): registrar **qual evidência substitui o teste manual** (ex.: teste automatizado verde + smoke + revisão), pois não há aceite visual.
+- **Commit, testes OU documentação isoladamente NÃO bastam** para "Entregue".
 
 ---
 
@@ -112,7 +121,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | **Em execução (parcial)** — **PB-003a ENTREGUE** (commit `d11f099`, aceite manual do PO no fluxo principal); **PB-003b e PB-003c pendentes**. |
+| Status | **Parcialmente entregue** — **PB-003a ENTREGUE** (commit `d11f099`, aceite manual do PO no fluxo principal + checks verdes); **PB-003b e PB-003c pendentes**. |
 | Problema que resolve | O uso diário depende de registrar tempo com fluidez, não apenas CRUD de `time_entries`. |
 | Origem/evidência | Telas mostram timer, status parado, descrição do trabalho, registro retroativo, histórico por dia, duração e ações de manutenção. Contrato em `PB-003_TIME_CONTRACT.md`. |
 | Critério de aceite | Usuário consegue iniciar/parar tempo, registrar retroativo, visualizar histórico por tarefa, ver totais por dia e editar/excluir apontamentos. |
