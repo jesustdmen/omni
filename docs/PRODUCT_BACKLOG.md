@@ -121,7 +121,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | **Parcialmente entregue** — **PB-003a** (`d11f099`) e **PB-003b** (`5fcf125`) **ENTREGUES** (aceite manual do PO + checks verdes); **PB-003c pendente**. |
+| Status | **Entregue** — **PB-003a** (`d11f099`), **PB-003b** (`5fcf125`) e **PB-003c** (`0f2bc9c`) **ENTREGUES, ACEITAS e PUBLICADAS** (aceite manual do PO + checks verdes). PB-003 **integralmente concluída**. |
 | Problema que resolve | O uso diário depende de registrar tempo com fluidez, não apenas CRUD de `time_entries`. |
 | Origem/evidência | Telas mostram timer, status parado, descrição do trabalho, registro retroativo, histórico por dia, duração e ações de manutenção. Contrato em `PB-003_TIME_CONTRACT.md`. |
 | Critério de aceite | Usuário consegue iniciar/parar tempo, registrar retroativo, visualizar histórico por tarefa, ver totais por dia e editar/excluir apontamentos. |
@@ -133,7 +133,9 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 - **PB-003a — ENTREGUE (`d11f099`, 2026-06-19):** iniciar/parar timer; **cálculo automático de duração em segundos**; **paralelismo configurável** (`ALLOW_PARALLEL_RUNNING_TIMERS`, default `true`); **bloqueio de timer duplicado na mesma tarefa** (índice único parcial + validação); **histórico de apontamentos** operacional (título PT, contador, colunas Data/Descrição/Início/Término/Duração/Ações) com **ações inline** (ver/editar/excluir + parar) com ícones e cores. Aceite manual do PO no fluxo principal + paralelismo default. Modo `=false` coberto por teste automatizado.
 - **PB-003b — ENTREGUE (`5fcf125`, 2026-06-20):** agrupamento de apontamentos **por data** (grupos em ordem decrescente; itens por horário decrescente), **subtotal diário** (exclui timers em andamento), total geral e ações inline preservados. Aceite manual do PO; checks verdes (295/1181/0; rubocop 135/0; brakeman 0).
-- **PB-003c — PENDENTE:** registro retroativo assistido.
+- **PB-003c — ENTREGUE (`0f2bc9c`, 2026-06-20):** **registro retroativo assistido** (início + término → **duração derivada em segundos** no model; `date` derivada de `start_time`); **proteção do timer running** (`end_time` nil, `duration = 0`, edição genérica só altera descrição); **aviso global de timers** na topbar + **lista global** `/time_entries/running` (tarefa/cliente/início/tempo decorrido/abrir/parar, sem N+1); **nota de sobreposição** (totais = tempo lançado) e **ajuste visual final** do histórico (cabeçalho de data, subtotal alinhado, total geral no `tfoot`). Aceite manual do PO; checks verdes (métricas correntes: ver `PROJECT_STATUS.md`).
+
+**PB-003 integralmente concluída** (a/b/c entregues, aceitas e publicadas). Escopos avançados — **timesheet/relatórios e faturamento** — permanecem **fora da PB-003** (futuro).
 
 ### PB-004 — Detalhe de tarefa utilizável no dia a dia
 
@@ -282,6 +284,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 ## 7. Próxima ação recomendada
 
-**PB-001/PB-002 entregues**; **PB-003a** (`d11f099`) e **PB-003b** (`5fcf125`) **entregues e aceitas**. **PB-003 segue parcial** — falta apenas **PB-003c**.
+**PB-001/PB-002 entregues**; **PB-003a** (`d11f099`), **PB-003b** (`5fcf125`) e **PB-003c** (`0f2bc9c`) **entregues, aceitas e publicadas** — **PB-003 integralmente concluída**.
 
-Próxima decisão do PO: **PB-003c** (retroativo assistido) para fechar a PB-003; ou a camada de **busca/filtros/paginação** das listas (PB-004/005/006); ou **PB-013** (UX de navegação) / **PB-014** (código legível). Nada será implementado sem autorização explícita.
+Próxima decisão do PO: a camada de **busca/filtros/paginação** das listas (PB-004/005/006); ou **PB-013** (UX de navegação) / **PB-014** (código legível). Nada será implementado sem autorização explícita.

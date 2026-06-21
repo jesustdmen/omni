@@ -9,6 +9,24 @@
 
 ## Entradas
 
+## 2026-06-20 — [Produto Operacional · PB-003c] Apontamento retroativo assistido + timers globais — ENTREGUE (`0f2bc9c`)
+### Resumo
+Fatia **c** (final) da PB-003. **Aceite manual do PO concluído.** Com PB-003a + PB-003b + PB-003c, a **PB-003 — Controle de tempo operacional — está INTEGRALMENTE CONCLUÍDA** (entregue, aceita e publicada). Apresentação + regras de model; **sem schema/migração/dependência**.
+### Entregue
+- **Registro retroativo assistido:** formulário por **início + término** (defaults: tarefa pré-selecionada quando vem de `/tasks/:id`, início = agora sem segundos, término em branco); labels "Início (data e hora)" / "Término (data e hora)"; títulos/links "Novo apontamento retroativo".
+- **Duração derivada no model:** `duration = término − início` em **segundos**; `date` **sempre** derivada de `start_time.to_date`. Campos `duration`/`date`/`is_running` removidos do formulário e dos strong params; `conversation_id` segue não atribuível. `end_time` **obrigatório** para apontamento não running; `end_time ≥ start_time` (erro claro, sem mascarar).
+- **Proteção do timer running:** running deve ter `end_time` nil e `duration = 0` (validações); CRUD genérico em running só altera **descrição** (tarefa/início/término/data/duração intactos); timers seguem geridos exclusivamente por `start_for`/`stop!`.
+- **Aviso global de timers:** banner na topbar "N timer(s) em andamento" (renderiza só com N>0; **1 query COUNT** memoizada) com link para a lista.
+- **Lista global de timers** `/time_entries/running`: tarefa, cliente, início, tempo decorrido estático, **Abrir tarefa** e **Parar**; autenticada/autorizada; `policy_scope.running.includes(task: :client)`; **sem N+1**.
+- **Nota de sobreposição** (Histórico e lista): "Os totais representam tempo lançado. Com apontamentos ou timers paralelos, podem exceder o tempo cronológico."
+- **Ajuste visual final do histórico:** cabeçalho de data com padding alinhado à 1ª coluna; subtotal diário alinhado por padding (sem margin); **total geral movido para `<tfoot>`** dentro da tabela (rótulo nas 3 primeiras colunas, valor na coluna Duração, alinhado aos subtotais), classe `.te-total` preservada.
+### Validação
+`bin/rails test` **308 runs / 1246 assertions / 0** falhas/erros/skips; rubocop **135/0**; brakeman **0**; `git diff --check` limpo. Cobertura nova: defaults do new; create retroativo calcula duração em segundos; date derivada; end_time obrigatório p/ não running; término anterior bloqueado; duration/date/is_running ignorados via params; conversation_id bloqueado; edição retroativa recalcula; edição de running não altera campos temporais/tarefa; running exige end_time nil + duration 0; aviso global presente/ausente; lista só running + tarefa/cliente/ações; anônimo redirecionado; sem N+1; sobreposição soma normalmente; nota presente; estrutura visual (cabeçalho/subtotais/`tfoot`); regressões PB-003a/PB-003b verdes. **Aceite manual do PO concluído.**
+### PB-003 — conclusão
+**PB-003 integralmente entregue** (a/b/c entregues, aceitas e publicadas). 16 caminhos no commit `0f2bc9c` (14 modificados + 2 novos: `app/views/shared/_running_timers_banner.html.erb`, `app/views/time_entries/running.html.erb`).
+### Fora de escopo (cumprido)
+Sem migration/schema/dependência; sem timesheet/relatórios/faturamento (futuro, fora da PB-003); sem PB-013/PB-014/F7.2; sem alterar ROADMAP/`PB-003_TIME_CONTRACT`; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-20 — [Produto Operacional · PB-003b] Histórico de apontamentos: agrupamento e subtotal por dia — ENTREGUE (`5fcf125`)
 ### Resumo
 Fatia **b** da PB-003: o "Histórico de Apontamentos" (`/tasks/:id`) passa a **agrupar por data**, com **subtotal diário**. **Aceite manual do PO.** Apresentação apenas (sem schema/migração); PB-003c (retroativo assistido) **pendente** — PB-003 segue **parcialmente entregue**.
