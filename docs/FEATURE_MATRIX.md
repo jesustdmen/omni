@@ -39,7 +39,7 @@
 >
 > **Nota (F3.0→F3.2.1, 2026-06-17 · commit `bd0a9ce`):** Sync de **metadados de conversa** entregue e publicado. F3.0 (contrato/corpus — ADR-018, `F3_CONTRACT_DECISIONS.md`); F3.1 (tabelas + `Sync::ImportSummaries` + rake `sync:summaries`, idempotente); **F3.2 = primeiro sync real controlado** de `summaries.jsonl` (1635 conversas; backup + allowlist `:ro`); **F3.2.1 = correção do merge** de escalares com `last_ts` nulo (`source_nil` 1069→0, `workspace_hash_nil`=13, `title_nil`=1067 por limitação do dado). **Turnos (`sessions.jsonl`/shards), UI, vínculo conversa↔tarefa e triagem ficam FORA** (ADR-018; F4/F5).
 >
-> **Nota (P0 readiness, 2026-06-18):** **M3 = MVP de metadados CONCLUÍDO** (sync real idempotente + folders + índice de turnos/loader lazy). Pendências do "módulo completo de conversas" movidas para roadmap: **OP-01** (sync manual via UI), **OP-03** (histórico de sync na UI), **CV-03** (títulos de sessão), **CV-10** (tags). **M4 = MVP manual CONCLUÍDO** (LK-01/02/03/07/08); LK-04/05/06 + `time_entry_id` = v1. **Fase 5 = MVP interno CONCLUÍDO** — F5.1 render + F5.1.5 PII + F5.2 markdown + F5.3 criar tarefa + F5.4 lista acionável + F5.5 navegação por âncoras; pendências (UI-01/04/09, CV-03/05/06/10, scorer, inbox) = roadmap/v1. **Produto Operacional:** PB-003a, PB-003b e PB-003c (controle de tempo) entregues — **PB-003 concluída**; listas (PB-004/005/006), **PB-013** e **PB-014** pendentes. Deploy/produção (F7) **em progresso** — **F7.1**: `production.rb` endurecido por ENV (TLS/hosts/mailer) + admin seed opt-in/idempotente; **deploy real nunca exercido**. Restante (Solid cache/cable, Kamal, worker, `/normalized` prod, runbook) — ver "Readiness de produção" no PROJECT_STATUS e [`F7_CONTRACT_DECISIONS.md`](F7_CONTRACT_DECISIONS.md). **Métricas correntes: ver `PROJECT_STATUS.md`.**
+> **Nota (P0 readiness, 2026-06-18):** **M3 = MVP de metadados CONCLUÍDO** (sync real idempotente + folders + índice de turnos/loader lazy). Pendências do "módulo completo de conversas" movidas para roadmap: **OP-01** (sync manual via UI), **OP-03** (histórico de sync na UI), **CV-03** (títulos de sessão), **CV-10** (tags). **M4 = MVP manual CONCLUÍDO** (LK-01/02/03/07/08); LK-04/05/06 + `time_entry_id` = v1. **Fase 5 = MVP interno CONCLUÍDO** — F5.1 render + F5.1.5 PII + F5.2 markdown + F5.3 criar tarefa + F5.4 lista acionável + F5.5 navegação por âncoras; pendências (UI-01/04/09, CV-03/05/06/10, scorer, inbox) = roadmap/v1. **Produto Operacional:** PB-003 concluída (controle de tempo); **PB-015 entregue** (sync operacional de conversas — OP-01/OP-03; lê `normalized`, não dispara pipeline); listas (PB-004/005/006), **PB-013**, **PB-014** e **PB-016** (agendador interno de importação) pendentes. Deploy/produção (F7) **em progresso** — **F7.1**: `production.rb` endurecido por ENV (TLS/hosts/mailer) + admin seed opt-in/idempotente; **deploy real nunca exercido**. Restante (Solid cache/cable, Kamal, worker, `/normalized` prod, runbook) — ver "Readiness de produção" no PROJECT_STATUS e [`F7_CONTRACT_DECISIONS.md`](F7_CONTRACT_DECISIONS.md). **Métricas correntes: ver `PROJECT_STATUS.md`.**
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
@@ -88,7 +88,7 @@
 | UI-04 | Aba Conversas | Mockup | 5 | MVP | Não iniciado | LK-01 | lista por kind |
 | UI-05 | Inbox de triagem | Mockup | 6 | v1 | Não iniciado | LK-05 | lote + atalhos |
 | UI-06 | Diário (view sob demanda) | Mockup/Viewer | 6 | v1 | Não iniciado | LK-01 | `?day=` mix |
-| UI-07 | Settings de sync | Mockup | 6 | v1 | Não iniciado | OP-03 | parcial/erro visíveis |
+| UI-07 | Settings de sync | Mockup | 6 | v1 | 🟡 Pendente → **PB-016** (agendador interno em Configurações; intervalos; sem Tarefa do Windows) | OP-03 | parcial/erro visíveis |
 | UI-08 | Workspaces órfãos | Mockup | 6 | v1 | Não iniciado | CV-11 | órfão listável |
 | UI-09 | Modal de vínculo (Ctrl+L) | Mockup | 5 | MVP | Não iniciado | LK-01 | Turbo modal |
 | UI-10 | Criar tarefa de conversa | Mockup | 5 | MVP | ✅ Entregue (F5.3 — `ConversationTasksController`: cria Task + link primary/manual em transação) | LK-01 | transação testada |
@@ -98,9 +98,9 @@
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
 |---|---|---|---|---|---|---|---|
-| OP-01 | Sync manual (lê normalized) | Mockup | 3 | MVP→roadmap | Não iniciado (roadmap pós-MVP F3; hoje sync via rake `sync:summaries`/`sync:turn_refs`) | CV-01 | lê sem disparar pipeline |
-| OP-02 | Sync agendado (agendador externo) | Mockup | 6 | v1 | Não iniciado | OP-01 | agenda dispara + Rails lê |
-| OP-03 | Histórico de sync | Mockup | 3 | MVP→roadmap | Não iniciado (roadmap; `sync_runs`/`sync_run_items` gravados; UI de histórico pendente) | CV-01 | parcial/erro registrados |
+| OP-01 | Sync manual (lê normalized) | Mockup | 3 | MVP | ✅ **Entregue (PB-015):** botão "Atualizar conversas no Omni" em `/sync_runs` enfileira job em background; lê só `/normalized` (allowlist); **não dispara pipeline** | CV-01 | lê sem disparar pipeline |
+| OP-02 | Sync agendado (agendador externo) | Mockup | 6 | v1 | 🟡 Parcial: script externo `SyncOmniConversations_PB015_v1.ps1` (PB-015); **agendador interno** do Omni → **PB-016** | OP-01 | agenda dispara + Rails lê |
+| OP-03 | Histórico de sync | Mockup | 3 | MVP | ✅ **Entregue (PB-015):** `/sync_runs` mostra status/contadores/erro seguro + execução agregada (`SyncExecution`) e histórico de `sync_runs` | CV-01 | parcial/erro registrados |
 | OP-04 | Logs (redação de conteúdo) | Repo A/Novo | 1 | MVP | ✅ Entregue (M1) | M1 | filter_parameter_logging (passw/secret/token/email/…) |
 | OP-05 | Retenção (>30d) | Mockup | 6 | v1 | Não iniciado | CV-01 | vinculadas preservadas |
 | OP-06 | Backup (pg_dump pré-carga) | Novo | 2/7 | MVP | 🟡 Parcial (`pg_dump` manual usado pré-carga em F3.2/F4/F5/F5.1.4; automação + backup de produção = F7) | M1 | backup antes de import |

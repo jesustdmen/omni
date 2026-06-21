@@ -9,6 +9,25 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-015] Sincronização operacional de conversas — ENTREGUE (MVP)
+### Resumo
+Importação operacional de conversas pela UI, **sem o usuário depender de comandos Rails** e **sem o Rails executar o pipeline** (ADR-011). **Aceite manual do PO + validação ponta a ponta.** Migration aditiva; pipeline externo intocado.
+### Entregue
+- **UI `/sync_runs` operacional:** botão **"Atualizar conversas no Omni"** enfileira `SyncConversationsJob` (CSRF/Pundit); **botão desabilitado**, **barra de progresso por etapa** e **auto-refresh** durante execução ativa; status/contadores/erro seguro da última execução; bloqueio de nova solicitação com execução ativa.
+- **`Sync::RunConversationsSync`:** lê **apenas** `config.x.normalized_dir` (allowlist, default `/normalized` `:ro`; nunca path do usuário); ordem **ImportSummaries → BuildConversationTurnRefs**; **advisory lock** (Postgres) anti-concorrência; **settle/verify** de fingerprint antes/depois (aborta e **preserva o índice anterior** se o arquivo mudar durante a leitura). `ResolveWorkspaceFolders` fora do MVP (workspaceStorage não montado).
+- **Status agregado `SyncExecution`** (orquestra os `SyncRun` por etapa, sem confundir com o run individual); índice único parcial de 1 execução ativa.
+- **Correção técnica:** falso no-op do fingerprint de `turn_refs` — `source_mtime` na chave do `find_by` + hash de **cabeça+miolo+cauda**.
+- **Worker `omni_jobs`** isolado no devstack (`.devstack/jobs.sh`; sem `SOLID_QUEUE_IN_PUMA`), `/normalized` `:ro` no web e no worker.
+- **Orquestração externa** `app/script/SyncOmniConversations_PB015_v1.ps1`: roda o pipeline e enfileira a importação (mutex global, exit codes, sem logar segredos/conteúdo). **O Rails não executa Python.**
+- **Preservação:** upsert por `thread_id`; **nunca deleta** conversas ausentes; `tasks` e `conversation_links` intactos.
+### Validação
+Suíte **332 runs / 1350 assertions / 0** falhas/erros/skips; rubocop **145/0**; brakeman **0**; `git diff --check` limpo; PowerShell validado por parser (não executado nos testes). **Ponta a ponta (2026-06-21):** o script rodou o **pipeline real** (regenerou `output/normalized`) e a importação trouxe **12 conversas novas** → **conversations 1635 → 1647**, **turn_refs → 134653**; `conversation_links` e `tasks` preservados; status agregado **partial** (skips esperados de linhas sem thread/conversa). Validação visual do PO: OK.
+### Pendências / direção
+- **PB-016 — agendador interno de importação** (Configurações; intervalos; processo da app; sem Tarefa do Windows; disparo do pipeline sob allowlist/timeout) — **proposto** (addendum ao ADR-011).
+- **PB-004 liberada para retomada** (dependência operacional destravada).
+### Fora de escopo (cumprido)
+Rails não dispara o pipeline; sem agendamento automático; sem timesheet/relatórios; `_origem/` intocado.
+
 ## 2026-06-20 — [Produto Operacional · PB-003c] Apontamento retroativo assistido + timers globais — ENTREGUE (`0f2bc9c`)
 ### Resumo
 Fatia **c** (final) da PB-003. **Aceite manual do PO concluído.** Com PB-003a + PB-003b + PB-003c, a **PB-003 — Controle de tempo operacional — está INTEGRALMENTE CONCLUÍDA** (entregue, aceita e publicada). Apresentação + regras de model; **sem schema/migração/dependência**.

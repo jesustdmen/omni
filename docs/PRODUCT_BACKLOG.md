@@ -280,10 +280,38 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Dependências | ADR-016. |
 | Relacionado | WD-04, UI-03. |
 
+### PB-015 — Sincronização operacional de conversas
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P0 |
+| Status | **Entregue (MVP)** — validada ponta a ponta + aceite manual do PO (2026-06-21). |
+| Problema que resolve | Trazer novas conversas do VS Code (`output/normalized/`) para o Omni **sem depender de comandos Rails conhecidos pelo usuário**. |
+| Origem/evidência | ADR-008/011; auditoria PB-015 (sync via rake era a única via). |
+| Critério de aceite | Botão na UI enfileira importação em background, status/progresso/erros visíveis, sem o Rails executar o pipeline. |
+| Fora de escopo | Disparo do pipeline pelo Rails; agendamento automático (→ PB-016). Sem timesheet/relatórios. |
+| Dependências | ADR-008, ADR-011, ADR-021, ADR-005 (SolidQueue). |
+| Relacionado | OP-01, OP-03, PB-004. |
+
+**Entregue:** tela operacional `/sync_runs` com **"Atualizar conversas no Omni"** (enfileira `SyncConversationsJob`); serviço `Sync::RunConversationsSync` lê **apenas** `/normalized` (allowlist `config.x.normalized_dir`, nunca path do usuário), ordem **ImportSummaries → BuildConversationTurnRefs**, **advisory lock** anti-concorrência, **settle/verify** de fingerprint antes/depois (preserva índice anterior em falha), status agregado `SyncExecution`, **botão desabilitado + barra de progresso por etapa + auto-refresh** durante execução. Worker **`omni_jobs`** isolado no devstack (sem `SOLID_QUEUE_IN_PUMA`). Script externo `app/script/SyncOmniConversations_PB015_v1.ps1` (pipeline + enfileira import; mutex; exit codes; sem logar segredos). **Correção técnica:** falso no-op do fingerprint de turn_refs (mtime na chave + hash de cabeça/miolo/cauda). **Preservação:** upsert por `thread_id`; nunca deleta conversas; tarefas e `conversation_links` intactos. **Validação ponta a ponta (2026-06-21):** pipeline real regenerou o output → importação trouxe **12 conversas novas** (1635 → **1647 conversations**, **134653 turn_refs**); `conversation_links` e `tasks` preservados. Métricas: ver `PROJECT_STATUS.md`.
+
+### PB-016 — Agendador interno de importação (Configurações)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Proposto** (direção de produto do PO, 2026-06-21). |
+| Problema que resolve | Uso diário: o Omni deve **orquestrar a importação sozinho**, em intervalos configuráveis, **sem depender do Agendador de Tarefas do Windows**. |
+| Origem/evidência | Decisão do PO; addendum ao **ADR-011**. |
+| Critério de aceite | Página **Configurações** com agendador (ex.: 5/15/30/60 min) rodando como **processo da própria aplicação** (SolidQueue `recurring.yml` + worker); para trazer conversas novas, **disparo do pipeline pelo Omni** sob **allowlist de binário/caminho fixo + timeout + sem input do usuário + sem logar credenciais**. |
+| Fora de escopo | Não implementar nesta etapa; substitui a dependência do script externo/Tarefa do Windows. |
+| Dependências | PB-015, ADR-011 (addendum), F7.2/F7.3 (worker em produção). |
+| Relacionado | OP-01, OP-03, WD-10 (Configurações). |
+
 ---
 
 ## 7. Próxima ação recomendada
 
-**PB-001/PB-002 entregues**; **PB-003a** (`d11f099`), **PB-003b** (`5fcf125`) e **PB-003c** (`0f2bc9c`) **entregues, aceitas e publicadas** — **PB-003 integralmente concluída**.
+**PB-001/PB-002 entregues**; **PB-003 integralmente concluída** (a/b/c); **PB-015 entregue (MVP)** e validada ponta a ponta (sync operacional de conversas).
 
-Próxima decisão do PO: a camada de **busca/filtros/paginação** das listas (PB-004/005/006); ou **PB-013** (UX de navegação) / **PB-014** (código legível). Nada será implementado sem autorização explícita.
+Próxima decisão do PO: **PB-004** (detalhe de tarefa) **liberada para retomada** — sua dependência operacional (trazer conversas novas) foi destravada pela PB-015; ou a camada de **busca/filtros/paginação** das listas (PB-004/005/006); ou **PB-013** (UX de navegação) / **PB-014** (código legível); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
