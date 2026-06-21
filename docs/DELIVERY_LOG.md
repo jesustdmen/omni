@@ -9,6 +9,22 @@
 
 ## Entradas
 
+## 2026-06-20 — [Produto Operacional · PB-003b] Histórico de apontamentos: agrupamento e subtotal por dia — ENTREGUE (`5fcf125`)
+### Resumo
+Fatia **b** da PB-003: o "Histórico de Apontamentos" (`/tasks/:id`) passa a **agrupar por data**, com **subtotal diário**. **Aceite manual do PO.** Apresentação apenas (sem schema/migração); PB-003c (retroativo assistido) **pendente** — PB-003 segue **parcialmente entregue**.
+### Entregue
+- **Agrupamento por data:** um `tbody.te-day` por dia; **grupos em ordem decrescente** (mais recente primeiro); **itens por horário decrescente** dentro do dia; data em **PT-BR** no cabeçalho do grupo.
+- **Subtotal diário** (via `duration_label`, em segundos) **excluindo timers em andamento** (`reject(&:is_running)`); **total geral** e **ações inline** (ver/editar/excluir/parar) preservados; timer em andamento permanece visível no grupo da sua data.
+- **Sem N+1:** entradas carregadas 1× (`.to_a`) e agrupadas em memória; `running` derivado da coleção (eliminou 1 query).
+- Arquivos: `app/views/tasks/show.html.erb`, `app/assets/stylesheets/application.css`, `test/integration/tasks_test.rb`.
+### Validação
+`bin/rails test` **295 runs / 1181 assertions / 0** falhas; rubocop **135/0**; brakeman **0**. Teste reforçado valida cada grupo isoladamente (data correta + subtotal só daquele dia), ordem intradiária decrescente e timer no grupo correto/fora do subtotal. **Aceite manual do PO** no fluxo.
+### Pendências
+- **PB-003c:** registro retroativo assistido.
+- (roadmap) PB-013 UX de navegação; PB-014 código legível de tarefa.
+### Fora de escopo (cumprido)
+Sem PB-003c/retroativo; sem migration/schema; sem alterar start/stop/paralelismo (`ALLOW_PARALLEL_RUNNING_TIMERS`); sem `conversation_id`; sem dashboard/relatórios; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-19 — [Produto Operacional · PB-003a] Controle de tempo: timer + histórico de apontamentos — ENTREGUE (`d11f099`)
 ### Resumo
 Núcleo do controle de tempo operacional na tarefa (fatia **a** da PB-003). **Aceite manual do PO** no fluxo principal. **PB-003b/PB-003c permanecem pendentes** — PB-003 não está concluída.
