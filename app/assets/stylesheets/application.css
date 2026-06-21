@@ -569,6 +569,11 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .companies-list__name a, .contacts-list a { font-weight: 600; }
 .companies-list .te-actions, .contacts-list .te-actions { flex-wrap: nowrap; }
 
+/* PB-007 — lista operacional de projetos (mesmo padrão das demais listas). */
+.projects-list__name a { font-weight: 600; }
+.projects-list__excerpt { display: block; font-size: .82rem; margin-top: 2px; overflow-wrap: anywhere; }
+.projects-list .te-actions { flex-wrap: nowrap; }
+
 /* PB-005 — lista operacional de demandas (mesmo padrão da lista de tarefas). */
 .demands-list__title a { font-weight: 600; }
 .demands-list__excerpt { display: block; font-size: .82rem; margin-top: 2px; overflow-wrap: anywhere; }

@@ -7,26 +7,70 @@
   </div>
 </div>
 
-<% if @projects.any? %>
-  <table>
+<%# PB-007 — busca + filtros combináveis (GET; preserva via query params). %>
+<%= form_with url: projects_path, method: :get, class: "filters" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Buscar nome ou descrição" %>
+  <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
+  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ Project::STATUS_LABELS[s], s ] }, params[:status]) %>
+  <%= f.select :per_page, options_for_select(ProjectsController::PER_PAGE_OPTIONS.map { |n| [ "#{n}/página", n ] }, @per_page) %>
+  <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
+  <%= link_to "Limpar filtros", projects_path, class: "btn btn--ghost btn--sm" %>
+<% end %>
+
+<% projects = @projects.to_a %>
+<% if projects.any? %>
+  <table class="projects-list">
     <thead>
-      <tr><th>Nome</th><th>Cliente</th><th>Status</th><th>Período</th><th>Ações</th></tr>
+      <tr><th>Projeto</th><th>Cliente</th><th>Status</th><th>Período</th><th>Orçamento</th><th>Ações</th></tr>
     </thead>
     <tbody>
-      <% @projects.each do |project| %>
+      <% projects.each do |project| %>
         <tr>
-          <td><%= link_to project.name, project %></td>
+          <td class="projects-list__name">
+            <%= link_to project.name, project %>
+            <% if project.description.present? %>
+              <span class="muted projects-list__excerpt"><%= truncate(project.description, length: 80) %></span>
+            <% end %>
+          </td>
           <td><%= project.client.name %></td>
-          <td><%= status_badge(project.status) %></td>
-          <td><%= [project.start_date, project.end_date].compact.join(" → ").presence || "—" %></td>
-          <td><%= link_to "Editar", edit_project_path(project), class: "btn btn--ghost btn--sm" %></td>
+          <td><%= status_badge(project.status_label) %></td>
+          <td><%= [ project.start_date, project.end_date ].compact.map { |d| d.strftime("%d/%m/%Y") }.join(" → ").presence || "—" %></td>
+          <td><%= project.budget.presence || "—" %></td>
+          <td>
+            <div class="te-actions">
+              <%= link_to action_icon("eye"), project, class: "btn btn--ghost btn--icon te-action--view",
+                    title: "Ver", "aria-label": "Ver projeto" %>
+              <%= link_to action_icon("pencil"), edit_project_path(project), class: "btn btn--ghost btn--icon te-action--edit",
+                    title: "Editar", "aria-label": "Editar projeto" %>
+              <%= button_to "Duplicar", duplicate_project_path(project), method: :post,
+                    class: "btn btn--ghost btn--sm", form_class: "inline",
+                    data: { turbo_confirm: "Duplicar o projeto “#{project.name}”?" } %>
+              <%= button_to action_icon("trash"), project, method: :delete,
+                    class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                    title: "Excluir", "aria-label": "Excluir projeto",
+                    data: { turbo_confirm: "Excluir o projeto “#{project.name}”?" } %>
+            </div>
+          </td>
         </tr>
       <% end %>
     </tbody>
   </table>
+
+  <div class="pagination">
+    <span class="muted"><%= @total_count %> projeto(s) · página <%= @page %>/<%= @total_pages %></span>
+    <span class="actions">
+      <% if @page > 1 %><%= link_to "← Anterior", projects_path(request.query_parameters.merge(page: @page - 1)), class: "btn btn--ghost btn--sm" %><% end %>
+      <% if @page < @total_pages %><%= link_to "Próxima →", projects_path(request.query_parameters.merge(page: @page + 1)), class: "btn btn--ghost btn--sm" %><% end %>
+    </span>
+  </div>
+<% elsif @filters_active %>
+  <div class="empty">
+    <p>Nenhum projeto para os filtros atuais.</p>
+    <%= link_to "Limpar filtros", projects_path, class: "btn btn--outline btn--sm" %>
+  </div>
 <% else %>
   <div class="empty">
-    <p>Nenhum projeto ainda.</p>
+    <p>Nenhum projeto cadastrado ainda.</p>
     <%= link_to "Novo projeto", new_project_path, class: "btn btn--primary" %>
   </div>
 <% end %>
