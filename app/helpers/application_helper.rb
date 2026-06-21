@@ -60,6 +60,14 @@ module ApplicationHelper
     "play" => [ [ :polygon, { points: "6 3 20 12 6 21 6 3" } ] ]
   }.freeze
 
+  # PB-006 — formata CNPJ (14 dígitos) como NN.NNN.NNN/NNNN-NN; senão devolve cru/—.
+  def format_cnpj(value)
+    digits = value.to_s.gsub(/\D/, "")
+    return value.presence || "—" unless digits.length == 14
+
+    digits.sub(/\A(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})\z/, '\1.\2.\3/\4-\5')
+  end
+
   # PB-003c — contagem de timers em andamento (no máximo 1 query COUNT por página;
   # memoizada). Sem consulta por item.
   def running_timers_count

@@ -7,25 +7,117 @@
   </div>
 </div>
 
-<% if @clients.any? %>
-  <table>
-    <thead>
-      <tr><th>Nome</th><th>CNPJ</th><th>Status</th><th>Ações</th></tr>
-    </thead>
-    <tbody>
-      <% @clients.each do |client| %>
-        <tr>
-          <td><%= link_to client.name, client %></td>
-          <td><%= client.cnpj || "—" %></td>
-          <td><%= status_badge(client.status) %></td>
-          <td><%= link_to "Editar", edit_client_path(client), class: "btn btn--ghost btn--sm" %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+<%# PB-006 — abas server-side (tab=companies|contacts; default companies). %>
+<nav class="tabs">
+  <%= link_to "Empresas", clients_path(tab: "companies"), class: "tab#{' tab--active' if @tab == 'companies'}" %>
+  <%= link_to "Contatos", clients_path(tab: "contacts"), class: "tab#{' tab--active' if @tab == 'contacts'}" %>
+</nav>
+
+<% if @tab == "contacts" %>
+  <%# ===================== CONTATOS ===================== %>
+  <%= form_with url: clients_path, method: :get, class: "filters" do |f| %>
+    <%= hidden_field_tag :tab, "contacts" %>
+    <%= f.search_field :q, value: params[:q], placeholder: "Buscar nome, e-mail, telefone ou cargo" %>
+    <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients_for_filter, params[:client_id]) %>
+    <%= f.select :status, options_for_select([ [ "Status do cliente: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
+    <%= f.select :primary, options_for_select([ [ "Principal: todos", "" ], [ "Principal: sim", "yes" ], [ "Principal: não", "no" ] ], params[:primary]) %>
+    <%= f.select :per_page, options_for_select(ClientsController::PER_PAGE_OPTIONS.map { |n| [ "#{n}/página", n ] }, @per_page) %>
+    <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
+    <%= link_to "Limpar filtros", clients_path(tab: "contacts"), class: "btn btn--ghost btn--sm" %>
+  <% end %>
+
+  <% contacts = @contacts.to_a %>
+  <% if contacts.any? %>
+    <table class="contacts-list">
+      <thead>
+        <tr><th>Contato</th><th>Cliente</th><th>E-mail</th><th>Telefone</th><th>Cargo</th><th>Principal</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        <% contacts.each do |c| %>
+          <tr>
+            <td><%= c.name %></td>
+            <td><%= link_to c.client.name, c.client %></td>
+            <td><%= c.email %></td>
+            <td><%= c.phone.presence || "—" %></td>
+            <td><%= c.position.presence || "—" %></td>
+            <td><%= c.is_primary ? tag.span("Principal", class: "badge badge--info") : "—" %></td>
+            <td>
+              <div class="te-actions">
+                <%= link_to action_icon("pencil"), edit_client_contact_path(c.client, c), class: "btn btn--ghost btn--icon te-action--edit",
+                      title: "Editar", "aria-label": "Editar contato" %>
+                <%= button_to action_icon("trash"), client_contact_path(c.client, c), method: :delete,
+                      class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                      title: "Excluir", "aria-label": "Excluir contato",
+                      data: { turbo_confirm: "Excluir o contato “#{c.name}”?" } %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%= render "pagination" %>
+  <% elsif @contacts_filters_active %>
+    <div class="empty">
+      <p>Nenhum contato para os filtros atuais.</p>
+      <%= link_to "Limpar filtros", clients_path(tab: "contacts"), class: "btn btn--outline btn--sm" %>
+    </div>
+  <% else %>
+    <div class="empty"><p>Nenhum contato cadastrado ainda.</p></div>
+  <% end %>
+
 <% else %>
-  <div class="empty">
-    <p>Nenhum cliente ainda.</p>
-    <%= link_to "Novo cliente", new_client_path, class: "btn btn--primary" %>
-  </div>
+  <%# ===================== EMPRESAS ===================== %>
+  <%= form_with url: clients_path, method: :get, class: "filters" do |f| %>
+    <%= hidden_field_tag :tab, "companies" %>
+    <%= f.search_field :q, value: params[:q], placeholder: "Buscar razão social, nome fantasia ou CNPJ" %>
+    <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
+    <%= f.select :per_page, options_for_select(ClientsController::PER_PAGE_OPTIONS.map { |n| [ "#{n}/página", n ] }, @per_page) %>
+    <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
+    <%= link_to "Limpar filtros", clients_path(tab: "companies"), class: "btn btn--ghost btn--sm" %>
+  <% end %>
+
+  <% companies = @companies.to_a %>
+  <% if companies.any? %>
+    <table class="companies-list">
+      <thead>
+        <tr><th>Nome / Razão social</th><th>Nome fantasia</th><th>CNPJ</th><th>Telefone</th><th>Status</th><th>Contato principal</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        <% companies.each do |client| %>
+          <% primary = client.contacts.find(&:is_primary) %>
+          <tr>
+            <td class="companies-list__name"><%= link_to client.name, client %></td>
+            <td><%= client.trade_name.presence || "—" %></td>
+            <td><%= format_cnpj(client.cnpj) %></td>
+            <td><%= client.phone.presence || "—" %></td>
+            <td><%= status_badge(client.status) %></td>
+            <td><%= primary&.name || tag.span("—", class: "muted") %></td>
+            <td>
+              <div class="te-actions">
+                <%= link_to action_icon("eye"), client, class: "btn btn--ghost btn--icon te-action--view",
+                      title: "Ver", "aria-label": "Ver cliente" %>
+                <%= link_to action_icon("pencil"), edit_client_path(client), class: "btn btn--ghost btn--icon te-action--edit",
+                      title: "Editar", "aria-label": "Editar cliente" %>
+                <%= button_to action_icon("trash"), client, method: :delete,
+                      class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                      title: "Excluir", "aria-label": "Excluir cliente",
+                      data: { turbo_confirm: "Excluir o cliente “#{client.name}”?" } %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%= render "pagination" %>
+  <% elsif @companies_filters_active %>
+    <div class="empty">
+      <p>Nenhuma empresa para os filtros atuais.</p>
+      <%= link_to "Limpar filtros", clients_path(tab: "companies"), class: "btn btn--outline btn--sm" %>
+    </div>
+  <% else %>
+    <div class="empty">
+      <p>Nenhum cliente cadastrado ainda.</p>
+      <%= link_to "Novo cliente", new_client_path, class: "btn btn--primary" %>
+    </div>
+  <% end %>
 <% end %>

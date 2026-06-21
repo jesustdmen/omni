@@ -564,6 +564,11 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 /* ações em linha única (não empilhar os 3 ícones). */
 .tasks-list .te-actions { flex-wrap: nowrap; }
 
+/* PB-006 — abas Empresas/Contatos + listas de clientes/contatos. */
+.tab--active { font-weight: 700; border-bottom: 2px solid var(--accent); }
+.companies-list__name a, .contacts-list a { font-weight: 600; }
+.companies-list .te-actions, .contacts-list .te-actions { flex-wrap: nowrap; }
+
 /* PB-005 — lista operacional de demandas (mesmo padrão da lista de tarefas). */
 .demands-list__title a { font-weight: 600; }
 .demands-list__excerpt { display: block; font-size: .82rem; margin-top: 2px; overflow-wrap: anywhere; }
