@@ -5,7 +5,8 @@ class TimeEntryPolicyTest < ActiveSupport::TestCase
     @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
     @client = Client.create!(name: "ACME")
     @task = @client.tasks.create!(title: "T", type: "support")
-    @entry = @task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 10)
+    # PB-003c — apontamento não running exige end_time; date/duration derivados.
+    @entry = @task.time_entries.create!(start_time: Time.current, end_time: Time.current + 10.seconds)
   end
 
   test "usuário autenticado acessa" do

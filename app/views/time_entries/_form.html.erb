@@ -10,24 +10,27 @@
     </div>
   <% end %>
 
-  <div>
-    <%= f.label :task_id, "Tarefa" %><br>
-    <%= f.select :task_id,
-          options_for_select(
-            Task.includes(:client).order(:title).map { |t| ["#{t.title} (#{t.client.name})", t.id] },
-            time_entry.task_id
-          ),
-          prompt: "Selecione a tarefa" %>
-  </div>
-  <div><%= f.label :date, "Data" %><br><%= f.date_field :date %></div>
-  <div><%= f.label :start_time, "Início" %><br><%= f.datetime_local_field :start_time %></div>
-  <div><%= f.label :end_time, "Término (opcional)" %><br><%= f.datetime_local_field :end_time %></div>
-  <div>
-    <%= f.label :duration, "Duração (inteiro — paridade com o RepoA)" %><br>
-    <%= f.number_field :duration, min: 0, step: 1 %>
-  </div>
-  <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
-  <div><%= f.label :is_running, "Em execução" %> <%= f.check_box :is_running %></div>
+  <% if time_entry.is_running %>
+    <%# PB-003c — timer em andamento: campos temporais read-only; só descrição é editável. %>
+    <p class="muted">Timer em andamento — os campos de tempo são geridos pelo cronômetro (iniciar/parar). Apenas a descrição é editável aqui.</p>
+    <div><strong>Tarefa:</strong> <%= time_entry.task&.title %></div>
+    <div><strong>Início:</strong> <%= time_entry.start_time&.strftime("%d/%m/%Y %H:%M") %></div>
+    <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
+  <% else %>
+    <div>
+      <%= f.label :task_id, "Tarefa" %><br>
+      <%= f.select :task_id,
+            options_for_select(
+              Task.includes(:client).order(:title).map { |t| [ "#{t.title} (#{t.client.name})", t.id ] },
+              time_entry.task_id
+            ),
+            prompt: "Selecione a tarefa" %>
+    </div>
+    <div><%= f.label :start_time, "Início (data e hora)" %><br><%= f.datetime_local_field :start_time %></div>
+    <div><%= f.label :end_time, "Término (data e hora)" %><br><%= f.datetime_local_field :end_time %></div>
+    <p class="muted">A duração é calculada automaticamente a partir de início e término.</p>
+    <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
+  <% end %>
 
   <div><%= f.submit %></div>
 <% end %>

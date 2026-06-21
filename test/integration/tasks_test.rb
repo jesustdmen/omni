@@ -92,8 +92,9 @@ class TasksTest < ActionDispatch::IntegrationTest
 
   test "aba Time entries mostra lista read-only e total de duração" do
     task = @client.tasks.create!(title: "Bug X", type: "support")
-    task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 30)
-    task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 12)
+    t = Time.current
+    task.time_entries.create!(start_time: t, end_time: t + 30.seconds)
+    task.time_entries.create!(start_time: t, end_time: t + 12.seconds)
     get task_path(task)
     assert_response :success
     assert_select "#tab-time table"
@@ -114,10 +115,10 @@ class TasksTest < ActionDispatch::IntegrationTest
     h16   = Time.zone.local(hoje.year, hoje.month, hoje.day, 16, 0)
     o10   = Time.zone.local(ontem.year, ontem.month, ontem.day, 10, 0)
 
-    task.time_entries.create!(start_time: h09,   date: hoje,  duration: 600)   # 10 min
-    task.time_entries.create!(start_time: h1430, date: hoje,  duration: 1800)  # 30 min
+    task.time_entries.create!(start_time: h09,   end_time: h09 + 600.seconds)   # 10 min
+    task.time_entries.create!(start_time: h1430, end_time: h1430 + 1800.seconds) # 30 min
     task.time_entries.create!(start_time: h16,   date: hoje,  is_running: true, duration: 0) # 16:00 em andamento
-    task.time_entries.create!(start_time: o10,   date: ontem, duration: 300)   # 5 min (dia anterior)
+    task.time_entries.create!(start_time: o10,   end_time: o10 + 300.seconds)   # 5 min (dia anterior)
 
     get task_path(task)
     assert_response :success
@@ -157,10 +158,43 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_select "#tab-time .te-total", /45 min/
   end
 
+  # PB-003c — estrutura visual: cabeçalho de data, subtotais nos grupos, total
+  # geral DENTRO da tabela (tfoot), alinhado à coluna Duração; ações na última coluna.
+  test "estrutura do histórico: cabeçalho de data, subtotais nos grupos e total no tfoot alinhado à duração" do
+    task = @client.tasks.create!(title: "Bug X", type: "support")
+    hoje = Date.current
+    h09 = Time.zone.local(hoje.year, hoje.month, hoje.day, 9, 0)
+    h10 = Time.zone.local(hoje.year, hoje.month, hoje.day, 10, 0)
+    task.time_entries.create!(start_time: h09, end_time: h09 + 600.seconds)  # 10 min
+    task.time_entries.create!(start_time: h10, end_time: h10 + 1800.seconds) # 30 min
+
+    get task_path(task)
+    assert_response :success
+
+    # 1) cabeçalho de data presente, dentro do grupo
+    assert_select "#tab-time table tbody.te-day tr.te-day__head th", /#{Regexp.escape(hoje.strftime("%d/%m/%Y"))}/
+
+    # 2) subtotal permanece DENTRO do grupo (tbody.te-day)
+    assert_select "#tab-time table tbody.te-day tr.te-day__subtotal td", /Subtotal do dia/
+    assert_select "#tab-time table tbody.te-day tr.te-day__subtotal td.te-col-duration", /40 min/
+
+    # 3) total geral está DENTRO da tabela, no tfoot, com a classe .te-total
+    assert_select "#tab-time table tfoot tr.te-total"
+    assert_select "#tab-time p.te-total", count: 0 # não há mais <p> externo
+
+    # 4) total geral ocupa as 3 primeiras colunas e o valor cai na coluna Duração
+    assert_select "#tab-time table tfoot tr.te-total td[colspan=3]", /Total de duração/
+    assert_select "#tab-time table tfoot tr.te-total td.te-col-duration strong", /40 min/
+
+    # 5) ações permanecem na última coluna das linhas de apontamento
+    assert_select "#tab-time table tbody.te-day tr td:last-child .te-actions"
+  end
+
   # PB-003a — ações operacionais diretas na linha do histórico.
   test "linha do apontamento expõe Editar e Excluir diretamente" do
     task = @client.tasks.create!(title: "Bug X", type: "support")
-    entry = task.time_entries.create!(start_time: Time.current, date: Date.current, duration: 30)
+    t = Time.current
+    entry = task.time_entries.create!(start_time: t, end_time: t + 30.seconds)
     get task_path(task)
     assert_response :success
     assert_select "#tab-time .te-actions a[href=?]", edit_time_entry_path(entry)

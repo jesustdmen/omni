@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   end
   resources :time_entries do
     patch :stop, on: :member # PB-003a — parar um timer em andamento.
+    get :running, on: :collection # PB-003c — lista global de timers em andamento.
   end
 
   # F3.UI.1 — console read-only de validação da Fase 3 (somente leitura).

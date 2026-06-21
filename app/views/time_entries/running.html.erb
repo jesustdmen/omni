@@ -1,0 +1,39 @@
+<% content_for :title, "Timers em andamento" %>
+
+<%# PB-003c — carrega a relação 1x (size/any?/each operam sobre o array; sem
+    consulta por item nem COUNT extra além do banner). %>
+<% entries = @time_entries.to_a %>
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Timers em andamento</h1>
+    <p class="muted"><%= entries.size %> timer(s) em andamento</p>
+  </div>
+</div>
+
+<% if entries.any? %>
+  <table>
+    <thead>
+      <tr><th>Tarefa</th><th>Cliente</th><th>Início</th><th>Tempo decorrido</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% entries.each do |entry| %>
+        <tr>
+          <td><%= link_to entry.task.title, entry.task %></td>
+          <td><%= entry.task.client.name %></td>
+          <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
+          <td><%= duration_label([ (Time.current - entry.start_time).to_i, 0 ].max) %></td>
+          <td>
+            <div class="te-actions">
+              <%= link_to "Abrir tarefa", entry.task, class: "btn btn--ghost btn--sm" %>
+              <%= button_to "Parar", stop_time_entry_path(entry), method: :patch,
+                    class: "btn btn--primary btn--sm", form_class: "inline" %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="muted te-overlap-note">Os totais representam tempo lançado. Com apontamentos ou timers paralelos, podem exceder o tempo cronológico.</p>
+<% else %>
+  <div class="empty"><p>Nenhum timer em andamento.</p></div>
+<% end %>

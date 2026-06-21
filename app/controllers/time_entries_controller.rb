@@ -5,11 +5,18 @@ class TimeEntriesController < ApplicationController
     @time_entries = policy_scope(TimeEntry).includes(task: :client).order(start_time: :desc)
   end
 
+  # PB-003c — lista global de timers em andamento (sem dashboard/tick ao vivo).
+  def running
+    authorize TimeEntry, :index?
+    @time_entries = policy_scope(TimeEntry).running.includes(task: :client).order(start_time: :desc)
+  end
+
   def show; end
 
   def new
-    # task_id pode vir pré-selecionado quando criado a partir de /tasks/:id.
-    @time_entry = TimeEntry.new(task_id: params[:task_id])
+    # PB-003c — apontamento retroativo assistido: defaults (tarefa pré-selecionada
+    # quando vier de /tasks/:id; início = agora sem segundos; término em branco).
+    @time_entry = TimeEntry.new(task_id: params[:task_id], start_time: Time.current.change(sec: 0))
     authorize @time_entry
   end
 
@@ -26,7 +33,10 @@ class TimeEntriesController < ApplicationController
   def edit; end
 
   def update
-    if @time_entry.update(time_entry_params)
+    # PB-003c — em timer running, CRUD genérico só altera descrição (campos
+    # temporais/tarefa são geridos por start_for/stop!).
+    attrs = @time_entry.is_running ? time_entry_params.slice(:description) : time_entry_params
+    if @time_entry.update(attrs)
       redirect_to @time_entry, notice: "Apontamento atualizado."
     else
       render :edit, status: :unprocessable_entity
@@ -55,9 +65,10 @@ class TimeEntriesController < ApplicationController
     authorize @time_entry
   end
 
-  # conversation_id é deliberadamente OMITIDO: é coluna de preparação para fase
-  # futura (F3/F4), sem FK/lógica/formulário — não atribuível via params.
+  # PB-003c — apenas campos editáveis pelo usuário no apontamento retroativo.
+  # OMITIDOS de propósito: `date` e `duration` (derivados no model), `is_running`
+  # (controlado só por start_for/stop!) e `conversation_id` (preparação futura).
   def time_entry_params
-    params.require(:time_entry).permit(:task_id, :description, :start_time, :end_time, :duration, :date, :is_running)
+    params.require(:time_entry).permit(:task_id, :description, :start_time, :end_time)
   end
 end

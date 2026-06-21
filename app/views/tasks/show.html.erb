@@ -73,7 +73,7 @@
           <%= action_icon("play") %> Iniciar timer
         <% end %>
       <% end %>
-      <%= link_to "Novo apontamento", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+      <%= link_to "Novo apontamento retroativo", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
     </div>
   </div>
 
@@ -132,12 +132,21 @@
           </tr>
         </tbody>
       <% end %>
+      <%# PB-003c — total geral DENTRO da tabela (mesma grade dos subtotais):
+          rótulo nas 3 primeiras colunas, valor na coluna Duração, Ações vazia. %>
+      <tfoot>
+        <tr class="te-total">
+          <td colspan="3">Total de duração</td>
+          <td class="te-col-duration"><strong><%= duration_label(@task.total_duration) %></strong></td>
+          <td></td>
+        </tr>
+      </tfoot>
     </table>
-    <p class="te-total">Total de duração: <strong><%= duration_label(@task.total_duration) %></strong></p>
+    <p class="muted te-overlap-note">Os totais representam tempo lançado. Com apontamentos ou timers paralelos, podem exceder o tempo cronológico.</p>
   <% else %>
     <div class="empty">
       <p>Nenhum apontamento nesta tarefa.</p>
-      <%= link_to "Novo apontamento", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+      <%= link_to "Novo apontamento retroativo", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
     </div>
   <% end %>
 </section>

@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="page-head__titles"><h1>Time entries</h1></div>
   <div class="page-head__actions">
-    <%= link_to "Novo apontamento", new_time_entry_path, class: "btn btn--primary" %>
+    <%= link_to "Novo apontamento retroativo", new_time_entry_path, class: "btn btn--primary" %>
   </div>
 </div>
 
@@ -28,6 +28,6 @@
 <% else %>
   <div class="empty">
     <p>Nenhum apontamento ainda.</p>
-    <%= link_to "Novo apontamento", new_time_entry_path, class: "btn btn--primary" %>
+    <%= link_to "Novo apontamento retroativo", new_time_entry_path, class: "btn btn--primary" %>
   </div>
 <% end %>

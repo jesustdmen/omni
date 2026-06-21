@@ -1,0 +1,8 @@
+<%# PB-003c — aviso global de timers em andamento. Renderiza só quando há ≥1
+    (1 query COUNT via helper memoizado; sem consulta por item). %>
+<% count = running_timers_count %>
+<% if count.positive? %>
+  <%= link_to running_time_entries_path, class: "topbar__timers" do %>
+    ⏱ <%= pluralize(count, "timer") %> em andamento
+  <% end %>
+<% end %>

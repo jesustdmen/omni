@@ -60,6 +60,12 @@ module ApplicationHelper
     "play" => [ [ :polygon, { points: "6 3 20 12 6 21 6 3" } ] ]
   }.freeze
 
+  # PB-003c — contagem de timers em andamento (no máximo 1 query COUNT por página;
+  # memoizada). Sem consulta por item.
+  def running_timers_count
+    @running_timers_count ||= TimeEntry.running.count
+  end
+
   def action_icon(name)
     children = ACTION_ICONS.fetch(name.to_s, [])
     tag.svg(

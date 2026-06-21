@@ -1,13 +1,19 @@
 class TimeEntry < ApplicationRecord
   belongs_to :task
 
-  # `duration` é persistido em SEGUNDOS (PB-003a). Timer parado calcula a duração
-  # a partir de start_time/end_time; apontamento manual informa o valor direto.
+  # `duration` é persistido em SEGUNDOS e **derivado** (PB-003c): timer via stop!;
+  # apontamento retroativo via início+término. Nunca é informado direto pelo form.
+  before_validation :derive_date_and_duration
+
   validates :start_time, presence: true
   validates :date, presence: true
   validates :duration, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :is_running, inclusion: { in: [ true, false ] }
+  # PB-003c — apontamento NÃO running exige término; running NÃO pode ter término.
+  validates :end_time, presence: true, unless: :is_running
   validate :end_time_not_before_start_time
+  validate :running_has_no_end_time
+  validate :running_has_zero_duration
   validate :running_timer_rules
 
   scope :running, -> { where(is_running: true) }
@@ -37,10 +43,35 @@ class TimeEntry < ApplicationRecord
 
   private
 
+  # PB-003c — centraliza derivações no model:
+  #  - `date` SEMPRE deriva de `start_time.to_date` (inclusive em running) — a data
+  #    nunca diverge do início;
+  #  - `duration` só é derivada para apontamento NÃO running com início+término
+  #    coerentes (running é gerido por start_for/stop!: fica 0 até parar);
+  #  - NÃO computa duration quando término < início (deixa a validação acusar erro).
+  def derive_date_and_duration
+    self.date = start_time.to_date if start_time.present?
+
+    return if is_running
+    return if start_time.blank? || end_time.blank?
+    return if end_time < start_time
+
+    self.duration = (end_time - start_time).to_i
+  end
+
   def end_time_not_before_start_time
     return if end_time.blank? || start_time.blank?
 
     errors.add(:end_time, "deve ser igual ou posterior ao início") if end_time < start_time
+  end
+
+  def running_has_no_end_time
+    errors.add(:end_time, "deve ficar vazio em timer em andamento") if is_running && end_time.present?
+  end
+
+  # PB-003c — timer em andamento não acumula duração até stop! (duração 0).
+  def running_has_zero_duration
+    errors.add(:duration, "deve ser 0 em timer em andamento") if is_running && duration.to_i != 0
   end
 
   # Regras de timer aberto (só quando este registro está running):
