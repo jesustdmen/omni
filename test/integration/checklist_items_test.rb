@@ -137,6 +137,14 @@ class ChecklistItemsTest < ActionDispatch::IntegrationTest
     assert_select ".checklist__content", /pendente/
   end
 
+  test "edição fica sob demanda: lápis (summary) revela o campo via <details>, sem JS" do
+    item(content: "editável")
+    get task_path(@task)
+    # o campo de edição vive dentro de <details> (fechado por padrão), aberto pelo summary.
+    assert_select "details.checklist__edit-toggle > summary"
+    assert_select "details.checklist__edit-toggle form.checklist__edit input[name=?]", "checklist_item[content]"
+  end
+
   # --- regressão da página da tarefa + PB-003 ------------------------------
 
   test "regressão: página da tarefa segue renderizando abas e histórico de apontamentos" do

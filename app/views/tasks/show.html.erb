@@ -76,11 +76,15 @@
             <span class="checklist__content"><%= item.content %></span>
 
             <div class="checklist__actions">
-              <%# edição simples inline (form de texto; sem modal). %>
-              <%= form_with model: item, url: task_checklist_item_path(@task, item), method: :patch, class: "checklist__edit" do |f| %>
-                <%= f.text_field :content, "aria-label": "Editar texto do item" %>
-                <%= f.submit "Salvar", class: "btn btn--ghost btn--sm" %>
-              <% end %>
+              <%# edição sob demanda: o lápis (<summary>) revela o campo. <details> é
+                  nativo (abre/fecha SEM JS); Turbo é só melhoria progressiva. %>
+              <details class="checklist__edit-toggle">
+                <summary class="btn btn--ghost btn--icon te-action--edit" title="Editar item" aria-label="Editar item"><%= action_icon("pencil") %></summary>
+                <%= form_with model: item, url: task_checklist_item_path(@task, item), method: :patch, class: "checklist__edit" do |f| %>
+                  <%= f.text_field :content, "aria-label": "Editar texto do item" %>
+                  <%= f.submit "Salvar", class: "btn btn--ghost btn--sm" %>
+                <% end %>
+              </details>
               <%= button_to action_icon("trash"), task_checklist_item_path(@task, item),
                     method: :delete, class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
                     title: "Excluir item", "aria-label": "Excluir item",

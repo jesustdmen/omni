@@ -542,7 +542,12 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .checklist__content { flex: 1; overflow-wrap: anywhere; }
 .checklist__item--done .checklist__content { text-decoration: line-through; color: var(--text-muted); }
 .checklist__actions { display: inline-flex; align-items: center; gap: 6px; }
-.checklist__edit { display: inline-flex; align-items: center; gap: 4px; margin: 0; }
+/* edição sob demanda via <details>: o lápis (summary) abre o campo. */
+.checklist__edit-toggle { position: relative; }
+.checklist__edit-toggle > summary { list-style: none; cursor: pointer; }
+.checklist__edit-toggle > summary::-webkit-details-marker { display: none; }
+.checklist__edit-toggle[open] > summary { background: var(--tone-info-bg); border-color: var(--tone-info-border); }
+.checklist__edit { display: inline-flex; align-items: center; gap: 4px; margin: 6px 0 0; }
 .checklist__add { display: flex; gap: 8px; margin-top: 12px; }
 .checklist__add input[type="text"] { flex: 1; }
 
