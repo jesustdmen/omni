@@ -39,6 +39,9 @@ Rails.application.routes.draw do
     # F5.3 (UI-10) — criar tarefa a partir da conversa (vínculo primary/manual automático).
     resources :tasks, controller: "conversation_tasks", only: %i[new create]
   end
+  # PB-013 — busca global (read-only) sobre os dados funcionais.
+  get "search", to: "search#index"
+
   resources :sync_runs, only: %i[index show]
   # PB-015 — disparo da sincronização operacional (enfileira job; lê só /normalized).
   resources :sync_executions, only: %i[create]
