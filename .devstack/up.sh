@@ -38,3 +38,10 @@ MSYS_NO_PATHCONV=1 docker run -d --name omni_web \
 echo "omni_web no ar em http://localhost:${PORT}"
 echo "  /normalized montado :ro de ${NORMALIZED_DIR}"
 echo "  (turnos lazy-load — ADR-021 — dependem deste mount; ele é read-only)"
+
+# PB-015 — sobe também o worker de jobs isolado (a menos que OMNI_SKIP_JOBS=1).
+if [ "${OMNI_SKIP_JOBS:-0}" != "1" ]; then
+  bash "$(dirname "$0")/jobs.sh"
+else
+  echo "  (omni_jobs não iniciado — OMNI_SKIP_JOBS=1)"
+fi
