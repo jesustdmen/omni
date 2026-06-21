@@ -9,6 +9,25 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-005] Lista operacional de demandas — ENTREGUE (+ PB-004 concluída)
+### Resumo
+`/demands` utilizável no dia a dia (busca, filtros, paginação, ações, conversão pela lista). **Aceite do PO.** Registra também a **conclusão da PB-004** (a/b/c). Sem migration/schema/dependência; reutiliza `ConvertDemand` + vínculo 1:1 (PB-004c).
+### Entregue
+- **Busca** (`q`) por **título / descrição / observações** — `ILIKE` case-insensitive; `%` e `_` escapados (texto, não curinga).
+- **Filtros combináveis** prioridade/origem/status/cliente (allowlist; inválidos ignorados).
+- **Paginação** `page`/`per_page` (10/25/50/100, default 50; total antes de limit/offset; ordem estável `created_at desc, id desc`; links preservam params; página inválida → 1).
+- **Tabela:** Demanda (título+trecho), Cliente, Origem, Prioridade, Status, Criada em, Ações.
+- **Conversão por estado (PB-004c):** pending+cliente → **Converter** (confirmação); pending **sem cliente** → "sem cliente" (não convertível); **converted** → "Abrir tarefa" (sem nova conversão). + Ver/Editar/Excluir (confirmação); "Nova demanda" destacada.
+- **Estados vazios:** nenhuma cadastrada / nenhum resultado (+ "Limpar filtros").
+- **Integridade:** `policy_scope`; `includes(:client, :converted_task)` **sem N+1** (carrega página 1×); filtros no banco.
+### Validação
+Suíte **426 runs / 1691 assertions / 0** falhas/erros/skips; rubocop **157/0**; brakeman **0**; `git diff --check` limpo. 25 testes novos (busca título/descrição/observações/case/`%`/`_`; filtros; combinações; inválidos; paginação/per_page/página-inválida; links preservam params; conversão pela lista; pending sem cliente; converted→link; 2ª conversão bloqueada; ações; vazios; auth; N+1). Validação visual do PO: OK. Banco dev sem massa artificial.
+### Decisão / pendências
+- **PB-004 concluída** (a/b/c) — sem PB-004d genérica (decisão do PO).
+- **Busca global da topbar** ("Buscar… (em breve)") permanece placeholder; decisão/implementação → **PB-013** (afeta layout global).
+### Fora de escopo (cumprido)
+Sem cards complexos (tabela resolveu); sem Projetos/Clientes (PB-006); sem PB-013/014/016; sem migration/dependência; sem alterar schema/models de vínculo/regras de exclusão; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-004c] Vínculo demanda↔tarefa — ENTREGUE
 ### Resumo
 Fatia **c** da PB-004: persistir e exibir a demanda que originou uma tarefa (relação opcional 1:1) com ciclo de exclusão coerente. **Aceite do PO.** Migration **aditiva**; não toca PB-003/checklist/conversas.

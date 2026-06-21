@@ -142,7 +142,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | **Parcialmente entregue** — **PB-004a** (lista operacional de `/tasks`), **PB-004b** (checklist persistente) e **PB-004c** (vínculo demanda↔tarefa) **ENTREGUES** + aceite do PO (2026-06-21); demais melhorias do detalhe `/tasks/:id` pendentes. |
+| Status | **Entregue (concluída)** — **PB-004a** (lista operacional de `/tasks`), **PB-004b** (checklist persistente) e **PB-004c** (vínculo demanda↔tarefa) **ENTREGUES e ACEITAS** (2026-06-21). Decisão do PO: **PB-004 está funcionalmente concluída com as fatias a/b/c** — não haverá PB-004d genérica; melhorias pontuais futuras entram como itens próprios. |
 | Problema que resolve | A tarefa precisa ser o centro operacional: detalhes, tempo, conversas, demanda/histórico e ações claras. |
 | Origem/evidência | `/tasks/:id` já existe, mas a navegação por âncoras foi reconhecida como melhoria mínima; algumas abas/fluxos podem ainda estar pobres. |
 | Critério de aceite | Página da tarefa permite acompanhar status/tipo/cliente/projeto, tempo, conversas vinculadas e ações principais sem ambiguidade. |
@@ -162,13 +162,17 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | Proposto |
+| Status | **Entregue** — lista operacional de `/demands` + aceite do PO (2026-06-21). |
 | Problema que resolve | Demandas precisam servir como entrada rápida de trabalho e virar tarefa sem perda de contexto. |
 | Origem/evidência | Telas mostram cards, busca, filtro por prioridade, origem, cliente, prioridade, data/hora e botão converter. |
 | Critério de aceite | Usuário registra demanda, filtra por prioridade/origem, edita/exclui e converte em tarefa com transação clara. |
 | Fora de escopo | Automação de triagem por IA; SLA; integrações externas. |
 | Dependências | WD-05, WD-06, WD-04. |
 | Relacionado | WD-05, WD-06. |
+
+**Entregue (2026-06-21):** `/demands` operacional (mesmo padrão da PB-004a) — **busca** por título/descrição/observações (case-insensitive; `%`/`_` escapados); **filtros** combináveis prioridade/origem/status/cliente (allowlist; inválidos ignorados); **paginação** 10/25/50/100 (default 50; total antes de limit/offset; ordem estável `created_at desc, id desc`; links preservam params; página inválida → 1); tabela (título+trecho/cliente/origem/prioridade/status/criada em/ações); **conversão pela lista** quando pending+cliente (confirmação), **pending sem cliente** mostra "sem cliente" (não convertível), **converted** mostra "Abrir tarefa" (sem nova conversão); estados vazios (sem demandas / sem resultado com "Limpar filtros"). `includes(:client, :converted_task)` sem N+1; reutiliza `ConvertDemand` + vínculo 1:1 (PB-004c); sem migration/dependência. Aceite do PO; checks verdes (ver `PROJECT_STATUS.md`).
+
+> **Nota (busca global da topbar):** o campo "Buscar… (em breve)" da topbar é **placeholder global não-funcional** (baseline visual), fora do escopo da PB-005. Sua implementação/decisão pertence à **PB-013** (UX de navegação/contexto), por afetar o layout de todas as telas.
 
 ### PB-006 — Clientes e contatos com busca e dados completos
 
@@ -274,6 +278,8 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Dependências | — |
 | Relacionado | UI-03, WD-04, WD-07. |
 
+> **Inclui (decisão do PO, 2026-06-21):** a **busca global da topbar** ("Buscar… (em breve)") — hoje placeholder não-funcional na baseline visual — será **decidida e implementada aqui** (afeta o layout de todas as telas). As listas operacionais (PB-004a/PB-005) já têm busca/filtros próprios; a busca global é navegação transversal.
+
 ### PB-014 — Código legível de tarefa
 
 | Campo | Valor |
@@ -319,6 +325,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 ## 7. Próxima ação recomendada
 
-**PB-001/PB-002 entregues**; **PB-003 integralmente concluída** (a/b/c); **PB-015 entregue (MVP)** e validada ponta a ponta (sync operacional de conversas).
+**PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c — lista/checklist/vínculo demanda↔tarefa); **PB-005 entregue** (lista operacional de demandas).
 
-Próxima decisão do PO: **PB-004** (detalhe de tarefa) **liberada para retomada** — sua dependência operacional (trazer conversas novas) foi destravada pela PB-015; ou a camada de **busca/filtros/paginação** das listas (PB-004/005/006); ou **PB-013** (UX de navegação) / **PB-014** (código legível); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
+Próxima decisão do PO: **PB-006** (mesma camada de busca/filtros/paginação em `/clients`·`/projects`); **PB-013** (UX de navegação — inclui a busca global da topbar); **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
