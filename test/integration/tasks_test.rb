@@ -61,19 +61,18 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_select ".tab", /Demanda/
   end
 
-  # F5.5 — navegação honesta por âncoras (sem JS).
-  test "abas reais são links de âncora; 'em breve' não têm href" do
+  # F5.5 — navegação honesta por âncoras (sem JS). PB-004c tornou "Demanda" um link real.
+  test "abas reais são links de âncora; 'em breve' (Histórico) não tem href" do
     task = @client.tasks.create!(title: "Bug X", type: "support")
     get task_path(task)
     assert_response :success
     assert_select "a.tab[href=?]", "#tab-detalhes", /Detalhes/
     assert_select "a.tab[href=?]", "#tab-conversas", /Conversas/
     assert_select "a.tab[href=?]", "#tab-time", /Time entries/
-    # Histórico/Demanda continuam como itens "em breve" sem href (não-link).
+    assert_select "a.tab[href=?]", "#tab-demanda", /Demanda/ # PB-004c — agora é link
+    # Histórico continua "em breve" (sem href, não-link).
     assert_select "span.tab.soon", /Histórico/
-    assert_select "span.tab.soon", /Demanda/
     assert_select "a.tab", { text: /Histórico/, count: 0 }
-    assert_select "a.tab", { text: /Demanda/, count: 0 }
   end
 
   test "aba Conversas mostra contagem quando há vínculos e não mostra sem vínculo" do
