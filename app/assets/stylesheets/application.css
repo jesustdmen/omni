@@ -537,6 +537,8 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 /* PB-004a — lista operacional de tarefas: título + trecho da descrição. */
 .tasks-list__title a { font-weight: 600; }
 .tasks-list__excerpt { display: block; font-size: .82rem; margin-top: 2px; overflow-wrap: anywhere; }
+/* ações em linha única (não empilhar os 3 ícones). */
+.tasks-list .te-actions { flex-wrap: nowrap; }
 
 /* PB-015 — painel operacional de sincronização. */
 .sync-panel { margin-bottom: 18px; }
