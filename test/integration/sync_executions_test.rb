@@ -62,6 +62,32 @@ class SyncExecutionsTest < ActionDispatch::IntegrationTest
     assert_select "button[type=submit][disabled]"
   end
 
+  test "UI: progresso por etapa e auto-refresh aparecem só durante execução ativa" do
+    # sem ativa: sem barra de progresso, sem meta refresh
+    get sync_runs_path
+    assert_select ".sync-progress", count: 0
+    assert_select "meta[http-equiv=refresh]", count: 0
+
+    exec = SyncExecution.create!(status: "running", trigger: "manual", started_at: Time.current)
+    SyncRun.create!(source_label: "summaries.jsonl", schema_version: "4", status: "ok",
+                    started_at: Time.current, finished_at: Time.current, sync_execution_id: exec.id)
+    get sync_runs_path
+    assert_select ".sync-progress"                       # barra presente
+    assert_select ".sync-progress__fill"
+    assert_select ".sync-progress__pct", /1\/2/          # 1 de 2 etapas concluídas
+    assert_select "meta[http-equiv=refresh]"             # auto-refresh ligado
+  end
+
+  test "UI: progress_percent reflete etapas concluídas" do
+    exec = SyncExecution.create!(status: "running", trigger: "manual", started_at: Time.current)
+    assert_equal 0, exec.progress_percent
+    SyncRun.create!(source_label: "summaries.jsonl", schema_version: "4", status: "ok",
+                    started_at: Time.current, finished_at: Time.current, sync_execution_id: exec.id)
+    assert_equal 50, exec.reload.progress_percent
+    exec.update!(status: "partial", finished_at: Time.current)
+    assert_equal 100, exec.progress_percent
+  end
+
   test "UI mostra status e contadores da última execução" do
     exec = SyncExecution.create!(status: "ok", trigger: "manual",
                                  started_at: Time.current, finished_at: Time.current)

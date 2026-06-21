@@ -1,5 +1,11 @@
 <% content_for :title, "Sincronização de conversas" %>
 
+<%# PB-015 — enquanto há execução ativa, atualiza a página sozinha (sem JS) para
+    refletir progresso/conclusão; ao terminar, o refresh para. %>
+<% if @active_execution %>
+  <% content_for :head do %><meta http-equiv="refresh" content="3"><% end %>
+<% end %>
+
 <div class="page-head">
   <div class="page-head__titles">
     <h1>Sincronização de conversas</h1>
@@ -20,6 +26,20 @@
       <span class="muted">Há uma sincronização <strong><%= active.status %></strong> em andamento — aguarde concluir.</span>
     <% end %>
   </div>
+
+  <%# PB-015 — indicador de progresso por etapa (só durante execução ativa). %>
+  <% if active %>
+    <div class="sync-progress" role="status" aria-live="polite">
+      <div class="sync-progress__head">
+        <span><%= active.queued? ? "Aguardando processamento…" : "Etapa: #{active.current_step_title || '—'}" %></span>
+        <span class="sync-progress__pct"><%= active.steps_done %>/<%= active.steps_total %> · <%= active.progress_percent %>%</span>
+      </div>
+      <div class="sync-progress__bar" aria-hidden="true">
+        <div class="sync-progress__fill" style="width: <%= active.progress_percent %>%"></div>
+      </div>
+      <p class="muted sync-progress__hint">Esta página atualiza sozinha enquanto a sincronização roda.</p>
+    </div>
+  <% end %>
 
   <% last = @last_execution %>
   <% if last %>
