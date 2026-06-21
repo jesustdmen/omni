@@ -132,6 +132,28 @@ class GlobalSearchTest < ActionDispatch::IntegrationTest
     assert_select ".search-result__title", { text: /sem cifra/, count: 0 }
   end
 
+  # --- voltar (PB-013) ------------------------------------------------------
+
+  test "Voltar usa o referer interno (tela de onde busquei)" do
+    get search_path(q: "acme"), headers: { "HTTP_REFERER" => "http://www.example.com/tasks?status=todo" }
+    assert_select "a.back-link[href=?]", "/tasks?status=todo", /Voltar/
+  end
+
+  test "Voltar cai no Dashboard sem referer" do
+    get search_path(q: "acme")
+    assert_select "a.back-link[href=?]", root_path
+  end
+
+  test "Voltar ignora referer externo (outra origem) → Dashboard" do
+    get search_path(q: "acme"), headers: { "HTTP_REFERER" => "https://evil.example.org/tasks" }
+    assert_select "a.back-link[href=?]", root_path
+  end
+
+  test "Voltar não aponta para a própria busca (anti-loop) → Dashboard" do
+    get search_path(q: "acme"), headers: { "HTTP_REFERER" => "http://www.example.com/search?q=outra" }
+    assert_select "a.back-link[href=?]", root_path
+  end
+
   # --- N+1 ------------------------------------------------------------------
 
   test "sem N+1 no workspace das conversas (mapa pré-carregado)" do

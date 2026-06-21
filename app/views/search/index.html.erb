@@ -1,5 +1,8 @@
 <% content_for :title, @query.present? ? "Busca: #{@query}" : "Busca" %>
 
+<%# PB-013 — voltar para a tela de onde a busca foi acionada (referer; fallback Dashboard). %>
+<p><%= link_to "← Voltar", @back_path, class: "back-link" %></p>
+
 <div class="page-head">
   <div class="page-head__titles">
     <h1>Busca</h1>
