@@ -9,6 +9,20 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-004b] Checklist persistente da tarefa — ENTREGUE
+### Resumo
+Fatia **b** da PB-004: checklist persistente na seção Detalhes de `/tasks/:id`. **Aceite do PO.** Migration **aditiva** (não altera/remove dados existentes); não toca PB-003/PB-005/006/013/014/016.
+### Entregue
+- **Model `ChecklistItem`:** uuid; `task_id` FK **ON DELETE CASCADE**; `content` text (trim via `normalizes` + presence); `completed` boolean NOT NULL default false; ordem explícita `created_at, id` (scope `ordered`; **sem** `position`/`default_scope`). `Task has_many :checklist_items, dependent: :delete_all`.
+- **Rotas aninhadas** em `tasks` (create/update/destroy) + **`ChecklistItemPolicy`** (ADR-014). Itens **sempre escopados pela tarefa da URL** (cruzar IDs → 404). Strong params só **`content`/`completed`** (`task_id` vem da URL).
+- **UI** na seção Detalhes: contador concluído/total, estado vazio, **adicionar** (form sempre visível), **marcar/desmarcar** (☐/☑), **editar in-place** (a linha alterna exibição↔edição via `<details>` nativo, **sem JS**; Salvar/Cancelar; altura estável), **excluir** com confirmação. Item concluído tachado/esmaecido.
+### Validação
+Suíte **379 runs / 1503 assertions / 0** falhas/erros/skips; rubocop **152/0**; brakeman **0**; `git diff --check` limpo. 24 testes novos (criação/trim/vazio/edição/marcar-desmarcar/exclusão/ordem/cascade/isolamento entre tarefas/auth/params não permitidos/estado vazio+contador/edição in-place + regressão da página da tarefa e PB-003). Validação visual do PO: OK. Banco dev sem massa artificial.
+### Pendências
+- **PB-004c+:** vínculo demanda↔tarefa; demais melhorias do detalhe `/tasks/:id`.
+### Fora de escopo (cumprido)
+Sem drag-and-drop/reordenação/subtarefas/prazo/responsável/prioridade por item; sem histórico auditável; sem vínculo demanda↔tarefa; sem alterar PB-003; sem PB-005/006/013/014/016; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-004a] Lista operacional de /tasks — ENTREGUE
 ### Resumo
 Fatia **a** da PB-004: `/tasks` utilizável no dia a dia (busca, filtros, paginação, ações). **Aceite do PO.** Sem migration/schema/dependência; sem alterar regras de criação/edição/exclusão da tarefa.

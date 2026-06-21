@@ -142,7 +142,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0 |
-| Status | **Parcialmente entregue** — **PB-004a** (lista operacional de `/tasks`) **ENTREGUE** + aceite do PO (2026-06-21); PB-004b+ (checklist, vínculo demanda↔tarefa, detalhe) pendentes. |
+| Status | **Parcialmente entregue** — **PB-004a** (lista operacional de `/tasks`) e **PB-004b** (checklist persistente) **ENTREGUES** + aceite do PO (2026-06-21); PB-004c+ (vínculo demanda↔tarefa, demais melhorias do detalhe) pendentes. |
 | Problema que resolve | A tarefa precisa ser o centro operacional: detalhes, tempo, conversas, demanda/histórico e ações claras. |
 | Origem/evidência | `/tasks/:id` já existe, mas a navegação por âncoras foi reconhecida como melhoria mínima; algumas abas/fluxos podem ainda estar pobres. |
 | Critério de aceite | Página da tarefa permite acompanhar status/tipo/cliente/projeto, tempo, conversas vinculadas e ações principais sem ambiguidade. |
@@ -153,7 +153,8 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 **Fatias:**
 
 - **PB-004a — ENTREGUE (2026-06-21):** lista operacional de `/tasks` — **busca** por título/descrição (case-insensitive; `%`/`_` escapados), **filtros** combináveis (status/tipo/cliente; inválidos ignorados), **paginação** (10/25/50/100, default 50; total antes de limit/offset; ordenação estável `created_at desc, id desc`; links preservam params; página inválida → 1), tabela (título+trecho, cliente, projeto, status, tipo, criada em, ações), **ações** ver/editar/excluir (confirmação) + "Nova tarefa", **estados vazios** (sem tarefas / sem resultado com "Limpar filtros"). `policy_scope`; `includes` sem N+1; sem migration/dependência. Aceite do PO; checks verdes (ver `PROJECT_STATUS.md`).
-- **PB-004b+ — PENDENTE:** checklist persistente; vínculo demanda↔tarefa; melhorias do detalhe `/tasks/:id`. (Ver auditoria técnica PB-004 e decisões em aberto.)
+- **PB-004b — ENTREGUE (2026-06-21):** **checklist persistente** na seção Detalhes de `/tasks/:id` — adicionar/marcar/desmarcar/editar/excluir (com confirmação), contador concluído/total, estado vazio; **edição in-place** da linha via `<details>` (sem JS; Turbo só melhoria progressiva). Model `ChecklistItem` (uuid; `task_id` FK **ON DELETE CASCADE**; `content` com trim/presence; `completed` default false; ordem `created_at, id`, sem `position`/`default_scope`); rotas aninhadas + Pundit (ADR-014); itens sempre escopados pela tarefa da URL; strong params só `content`/`completed`. Aceite do PO; checks verdes (ver `PROJECT_STATUS.md`).
+- **PB-004c+ — PENDENTE:** vínculo demanda↔tarefa; demais melhorias do detalhe `/tasks/:id`. (Ver auditoria técnica PB-004 e decisões em aberto.)
 
 ### PB-005 — Demandas e conversão usável
 
