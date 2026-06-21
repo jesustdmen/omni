@@ -538,16 +538,23 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .checklist { margin-top: 14px; }
 .checklist__list { list-style: none; margin: 8px 0 0; padding: 0; }
 .checklist__item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--border, #e2e5ea); }
-.checklist__toggle { font-size: 1rem; line-height: 1; }
+.checklist__toggle { font-size: 1rem; line-height: 1; flex: 0 0 auto; }
 .checklist__content { flex: 1; overflow-wrap: anywhere; }
 .checklist__item--done .checklist__content { text-decoration: line-through; color: var(--text-muted); }
-.checklist__actions { display: inline-flex; align-items: center; gap: 6px; }
-/* edição sob demanda via <details>: o lápis (summary) abre o campo. */
-.checklist__edit-toggle { position: relative; }
-.checklist__edit-toggle > summary { list-style: none; cursor: pointer; }
-.checklist__edit-toggle > summary::-webkit-details-marker { display: none; }
-.checklist__edit-toggle[open] > summary { background: var(--tone-info-bg); border-color: var(--tone-info-border); }
-.checklist__edit { display: inline-flex; align-items: center; gap: 4px; margin: 6px 0 0; }
+
+/* miolo da linha: <details> ocupa o espaço central; alterna exibição↔edição
+   no MESMO lugar (sem deslocar checkbox/lixeira nem brotar campo ao lado). */
+.checklist__row { flex: 1; min-width: 0; }
+.checklist__row > summary { display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; }
+.checklist__row > summary::-webkit-details-marker { display: none; }
+.checklist__display .checklist__content { flex: 1; }
+/* lápis só aparece ao passar o mouse / foco na linha (affordance discreta). */
+.checklist__edit-affordance { opacity: 0; transition: opacity .12s; }
+.checklist__item:hover .checklist__edit-affordance,
+.checklist__row:focus-within .checklist__edit-affordance { opacity: 1; }
+.checklist__row[open] > summary { display: none; } /* em edição, esconde o texto */
+.checklist__edit { display: flex; align-items: center; gap: 6px; margin: 0; }
+.checklist__edit input[type="text"] { flex: 1; }
 .checklist__add { display: flex; gap: 8px; margin-top: 12px; }
 .checklist__add input[type="text"] { flex: 1; }
 

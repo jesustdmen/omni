@@ -63,8 +63,10 @@
     <% if @checklist_items.any? %>
       <ul class="checklist__list">
         <% @checklist_items.each do |item| %>
+          <%# Linha = flex de 3 partes que NÃO se movem: [✓ toggle] [conteúdo/edição] [🗑].
+              O miolo é um <details> (nativo, sem JS): summary = texto (modo exibição);
+              aberto = input no mesmo lugar (modo edição), mantendo a linha estável. %>
           <li class="checklist__item <%= 'checklist__item--done' if item.completed %>">
-            <%# marcar/desmarcar — botão que alterna `completed` (sem JS). %>
             <%= button_to task_checklist_item_path(@task, item),
                   method: :patch, params: { checklist_item: { completed: !item.completed } },
                   class: "btn btn--ghost btn--icon checklist__toggle", form_class: "inline",
@@ -73,23 +75,24 @@
               <%= item.completed ? "☑" : "☐" %>
             <% end %>
 
-            <span class="checklist__content"><%= item.content %></span>
+            <details class="checklist__row">
+              <summary class="checklist__display">
+                <span class="checklist__content"><%= item.content %></span>
+                <span class="btn btn--ghost btn--icon te-action--edit checklist__edit-affordance"
+                      title="Editar item" aria-label="Editar item"><%= action_icon("pencil") %></span>
+              </summary>
+              <%= form_with model: item, url: task_checklist_item_path(@task, item), method: :patch, class: "checklist__edit" do |f| %>
+                <%= f.text_field :content, "aria-label": "Editar texto do item" %>
+                <%= f.submit "Salvar", class: "btn btn--primary btn--sm" %>
+                <%# "Cancelar" = volta para a tarefa (fecha a edição sem salvar). %>
+                <%= link_to "Cancelar", task_path(@task, anchor: "tab-detalhes"), class: "btn btn--ghost btn--sm" %>
+              <% end %>
+            </details>
 
-            <div class="checklist__actions">
-              <%# edição sob demanda: o lápis (<summary>) revela o campo. <details> é
-                  nativo (abre/fecha SEM JS); Turbo é só melhoria progressiva. %>
-              <details class="checklist__edit-toggle">
-                <summary class="btn btn--ghost btn--icon te-action--edit" title="Editar item" aria-label="Editar item"><%= action_icon("pencil") %></summary>
-                <%= form_with model: item, url: task_checklist_item_path(@task, item), method: :patch, class: "checklist__edit" do |f| %>
-                  <%= f.text_field :content, "aria-label": "Editar texto do item" %>
-                  <%= f.submit "Salvar", class: "btn btn--ghost btn--sm" %>
-                <% end %>
-              </details>
-              <%= button_to action_icon("trash"), task_checklist_item_path(@task, item),
-                    method: :delete, class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
-                    title: "Excluir item", "aria-label": "Excluir item",
-                    data: { turbo_confirm: "Excluir este item do checklist?" } %>
-            </div>
+            <%= button_to action_icon("trash"), task_checklist_item_path(@task, item),
+                  method: :delete, class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                  title: "Excluir item", "aria-label": "Excluir item",
+                  data: { turbo_confirm: "Excluir este item do checklist?" } %>
           </li>
         <% end %>
       </ul>
