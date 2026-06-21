@@ -9,6 +9,20 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-007] Projetos operacionais + duplicação — ENTREGUE
+### Resumo
+`/projects` utilizável (busca, filtros, paginação, ações, duplicação). **Aceite do PO.** Com PB-004a/PB-005/PB-006/PB-007, as **4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas** — lacuna operacional da PB-001 fechada. Migration aditiva.
+### Entregue
+- **Busca** (`q`) por nome/descrição (`ILIKE`; `%`/`_` escapados); **filtros** cliente + status (allowlist; inválidos ignorados); **paginação** 10/25/50/100 (default 50; ordem `name asc, id asc`; total antes de limit/offset; params preservados; página inválida → 1).
+- **Status fechado** em 4 valores (`planning`/`in_progress`/`completed`/`on_hold`) com **CHECK no banco** (ETAPA ZERO: só `planning` no dev → guarda aborta se houver inválido) + `STATUSES`/inclusion no model + **labels PT-BR** + **select no form** (substituiu o campo livre).
+- **Lista:** Projeto (nome+trecho) / Cliente / Status / Período (datas) / Orçamento / Ações **ver/editar/duplicar/excluir** (confirmação); "Novo projeto" destacado.
+- **Duplicação** (`DuplicateProject`, transacional): cria "Nome (cópia)" copiando **só** cliente + descrição; status → **planning**; **não** copia orçamento/início/término/tarefas/vínculos; redireciona à **edição** da cópia; Pundit (`duplicate?`); rollback em falha.
+- **Campos/regras:** `end_date` = prazo/fim (sem `due_date` adicional); término **≥** início; orçamento permanece informativo/textual (sem cálculos). `policy_scope`; `includes(:client)` sem N+1; estados vazios + "Limpar filtros".
+### Validação
+Suíte **483 runs / 1924 assertions / 0** falhas/erros/skips; rubocop **167/0**; brakeman **0**; `git diff --check` limpo. Testes novos cobrem busca/`%`/`_`/filtros/combinações/inválidos, paginação/ordem/página-inválida/links, período+orçamento na lista, form com **select** (não campo livre), validação do período, **duplicação** (copia só autorizados; não copia datas/orçamento/tarefas; rollback), auth/Pundit, N+1, regressão CRUD. Validação visual do PO: OK. Banco dev sem massa artificial.
+### Fora de escopo (cumprido)
+Sem Gantt/equipe/alocação/gestão financeira; sem `due_date` novo; sem cálculos de orçamento; não tocou Clientes/Demandas/Tarefas; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-006] Clientes e contatos operacionais + busca de CNPJ — ENTREGUE
 ### Resumo
 `/clients` utilizável no dia a dia (abas Empresas/Contatos) + cadastro via busca de CNPJ. **Aceite do PO.** Migration aditiva. Decisão de produto: a busca de CNPJ — antes fora de escopo na PB-006 — foi **incluída** pelo PO, via **proxy no Rails** (ver **ADR-022**).

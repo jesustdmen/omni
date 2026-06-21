@@ -194,13 +194,15 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | Proposto |
+| Status | **Entregue** — `/projects` operacional + duplicação; aceite do PO (2026-06-21). |
 | Problema que resolve | Projetos precisam organizar tarefas por cliente, período, status e orçamento; duplicação acelera criação de projetos similares. |
 | Origem/evidência | Telas mostram busca, filtro por cliente/status, início/fim, prazo, orçamento e ação duplicar/copiar. |
 | Critério de aceite | Projeto possui campos/ações necessários ou decisão explícita do que fica para v1. Duplicação cria projeto novo sem copiar indevidamente dados sensíveis. |
 | Fora de escopo | Gestão financeira completa do projeto; alocação de equipe; Gantt. |
 | Dependências | WD-03. |
 | Relacionado | WD-03. |
+
+**Entregue (2026-06-21):** `/projects` operacional (mesmo padrão das demais listas) — busca por nome/descrição (`%`/`_` escapados); filtros cliente + status; paginação 10/25/50/100 (default 50; ordem `name asc, id asc`; params preservados; página inválida → 1); colunas Projeto(nome+trecho)/Cliente/Status/Período/Orçamento/Ações (ver/editar/**duplicar**/excluir). **Status fechado** em 4 valores (`planning`/`in_progress`/`completed`/`on_hold`) com **CHECK no banco** + **labels PT-BR** + **select no form** (substituiu campo livre). **Duplicação** (`DuplicateProject`, transacional): "Nome (cópia)" copiando só cliente/descrição; status → planning; **não** copia orçamento/datas/tarefas/vínculos; leva à edição; rollback em falha. `end_date` = prazo/fim (sem `due_date` novo); término ≥ início; orçamento informativo (sem cálculos). `policy_scope`; `includes(:client)` sem N+1; estados vazios + "Limpar filtros". Aceite do PO; checks verdes (ver `PROJECT_STATUS.md`). **Com PB-004a/PB-005/PB-006/PB-007, as 4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas — lacuna operacional da PB-001 fechada.**
 
 ### PB-008 — Revisão API/contratos TaskManager → Rails
 
@@ -327,6 +329,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 ## 7. Próxima ação recomendada
 
-**PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c); **PB-005 entregue** (demandas); **PB-006 entregue** (clientes/contatos operacionais + busca de CNPJ por proxy — ADR-022).
+**PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c); **PB-005** (demandas), **PB-006** (clientes/contatos + CNPJ — ADR-022) e **PB-007** (projetos + duplicação) entregues. **As 4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas — lacuna operacional da PB-001 fechada.**
 
-Próxima decisão do PO: **WD-03/projetos** (mesma camada de busca/filtros/paginação em `/projects`); **PB-013** (UX de navegação — inclui a busca global da topbar); **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
+Próxima decisão do PO: **PB-013** (UX de navegação — inclui a busca global da topbar); **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
