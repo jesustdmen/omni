@@ -41,7 +41,13 @@
     <%= button_to "Converter em tarefa", convert_demand_path(@demand), method: :post %>
   </div>
 <% else %>
-  <p class="converted-state"><span aria-hidden="true">✓</span> Demanda já convertida.</p>
+  <%# PB-004c — convertida: link claro para a tarefa criada; sem oferecer nova conversão. %>
+  <div class="converted-state">
+    <p><span aria-hidden="true">✓</span> Demanda convertida em tarefa.</p>
+    <% if @converted_task %>
+      <%= link_to "Abrir tarefa", task_path(@converted_task), class: "btn btn--outline btn--sm" %>
+    <% end %>
+  </div>
 <% end %>
 
 <%= link_to "Voltar", demands_path, class: "back-link" %>

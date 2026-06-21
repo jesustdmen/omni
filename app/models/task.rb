@@ -7,6 +7,9 @@ class Task < ApplicationRecord
 
   belongs_to :client
   belongs_to :project, optional: true
+  # PB-004c — demanda que ORIGINOU esta tarefa (opcional; 1:1 garantido por índice
+  # único parcial + validação). FK ON DELETE RESTRICT no banco.
+  belongs_to :origin_demand, class_name: "Demand", foreign_key: :demand_id, optional: true
   has_many :time_entries, dependent: :destroy
   # PB-004b — checklist persistente. delete_all: itens sem callbacks; a FK no banco
   # (ON DELETE CASCADE) também garante a remoção ao excluir a tarefa.
@@ -27,6 +30,8 @@ class Task < ApplicationRecord
   validates :title, presence: true
   validates :type, presence: true, inclusion: { in: TYPES }
   validates :status, presence: true
+  # PB-004c — no máximo 1 tarefa por demanda (espelha o índice único parcial).
+  validates :demand_id, uniqueness: true, allow_nil: true
   validate :project_belongs_to_same_client
 
   # Soma read-only das durações dos apontamentos desta tarefa (F2.5).

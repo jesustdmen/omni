@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_21_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_21_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -320,6 +320,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_21_130000) do
     t.uuid "client_id", null: false
     t.integer "conversation_count", default: 0, null: false
     t.datetime "created_at", null: false
+    t.uuid "demand_id"
     t.text "description"
     t.datetime "last_conversation_at"
     t.uuid "project_id"
@@ -329,6 +330,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_21_130000) do
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_tasks_on_client_id"
     t.index ["created_at"], name: "index_tasks_on_created_at"
+    t.index ["demand_id"], name: "idx_tasks_one_per_demand", unique: true, where: "(demand_id IS NOT NULL)"
     t.index ["project_id"], name: "index_tasks_on_project_id"
     t.index ["status"], name: "index_tasks_on_status"
     t.index ["type"], name: "index_tasks_on_type"
@@ -413,6 +415,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_21_130000) do
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "sync_run_items", "sync_runs", on_delete: :cascade
   add_foreign_key "tasks", "clients", on_delete: :cascade
+  add_foreign_key "tasks", "demands", on_delete: :restrict
   add_foreign_key "tasks", "projects", on_delete: :nullify
   add_foreign_key "time_entries", "tasks", on_delete: :cascade
 end

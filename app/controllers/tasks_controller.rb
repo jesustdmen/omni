@@ -34,6 +34,8 @@ class TasksController < ApplicationController
     # PB-004b — checklist persistente (ordem estável; carregado 1x).
     @checklist_items = @task.checklist_items.ordered.to_a
     @checklist_item = ChecklistItem.new
+    # PB-004c — demanda de origem (0 ou 1) para a aba "Demanda".
+    @origin_demand = @task.origin_demand
   end
 
   def new
@@ -62,8 +64,14 @@ class TasksController < ApplicationController
   end
 
   def destroy
-    @task.destroy
-    redirect_to tasks_path, notice: "Tarefa removida."
+    # PB-004c — via serviço: se houver demanda de origem, devolve-a a "pending".
+    result = DeleteTask.call(@task)
+    if result.success?
+      notice = @task.origin_demand ? "Tarefa removida. A demanda de origem voltou para pendente." : "Tarefa removida."
+      redirect_to tasks_path, notice: notice
+    else
+      redirect_to @task, alert: "Não foi possível remover a tarefa."
+    end
   end
 
   private

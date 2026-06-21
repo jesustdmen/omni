@@ -5,7 +5,10 @@ class DemandsController < ApplicationController
     @demands = policy_scope(Demand).includes(:client).order(created_at: :desc)
   end
 
-  def show; end
+  def show
+    # PB-004c — tarefa criada a partir desta demanda (0 ou 1), para link/estado.
+    @converted_task = @demand.converted_task
+  end
 
   def new
     @demand = Demand.new
@@ -33,8 +36,15 @@ class DemandsController < ApplicationController
   end
 
   def destroy
-    @demand.destroy
-    redirect_to demands_path, notice: "Demanda removida."
+    # PB-004c — bloqueio amigável: demanda com tarefa de origem não é excluível
+    # (a FK RESTRICT é a proteção final; aqui damos a mensagem clara).
+    if @demand.converted_task.present?
+      redirect_to @demand, alert: "Esta demanda gerou uma tarefa e não pode ser excluída. Exclua a tarefa primeiro (a demanda voltará a pendente)."
+    elsif @demand.destroy
+      redirect_to demands_path, notice: "Demanda removida."
+    else
+      redirect_to @demand, alert: "Não foi possível remover a demanda."
+    end
   end
 
   def convert

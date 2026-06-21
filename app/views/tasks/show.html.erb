@@ -33,7 +33,9 @@
   <% end %>
   <%= link_to "Time entries", "#tab-time", class: "tab" %>
   <span class="tab soon" aria-disabled="true">Histórico<span class="soon-flag">em breve</span></span>
-  <span class="tab soon" aria-disabled="true">Demanda<span class="soon-flag">em breve</span></span>
+  <%= link_to "#tab-demanda", class: "tab" do %>
+    Demanda<% if @origin_demand %> <span class="tab__count">(1)</span><% end %>
+  <% end %>
 </nav>
 
 <section class="tab-panel" id="tab-detalhes">
@@ -237,8 +239,25 @@
 <section class="tab-panel placeholder" id="tab-historico">
   Histórico operacional será exibido aqui em fase futura.
 </section>
-<section class="tab-panel placeholder" id="tab-demanda">
-  Dados da demanda relacionada aparecerão aqui quando aplicável.
+<%# PB-004c — demanda de ORIGEM da tarefa (0 ou 1). %>
+<section class="tab-panel" id="tab-demanda">
+  <h2>Demanda de origem</h2>
+  <% if @origin_demand %>
+    <% d = @origin_demand %>
+    <div class="card">
+      <dl>
+        <dt>Título</dt><dd><%= link_to d.title, demand_path(d) %></dd>
+        <dt>Descrição</dt><dd><%= d.description.presence || "—" %></dd>
+        <dt>Origem</dt><dd><%= d.origin&.humanize || "—" %></dd>
+        <dt>Prioridade</dt><dd><%= status_badge(d.priority) %></dd>
+        <dt>Status</dt><dd><%= status_badge(d.status) %></dd>
+        <dt>Convertida em</dt><dd><%= d.converted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
+      </dl>
+      <%= link_to "Abrir demanda", demand_path(d), class: "btn btn--outline btn--sm" %>
+    </div>
+  <% else %>
+    <p class="muted">Esta tarefa não foi criada a partir de uma demanda.</p>
+  <% end %>
 </section>
 
 <p><%= link_to "Voltar", tasks_path, class: "back-link" %></p>
