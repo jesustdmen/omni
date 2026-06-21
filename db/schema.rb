@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_21_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_21_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -146,6 +146,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_21_150000) do
     t.index ["client_id"], name: "index_projects_on_client_id"
     t.index ["created_at"], name: "index_projects_on_created_at"
     t.index ["status"], name: "index_projects_on_status"
+    t.check_constraint "status::text = ANY (ARRAY['planning'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'on_hold'::character varying]::text[])", name: "projects_status_check"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
