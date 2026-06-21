@@ -7,27 +7,83 @@
   </div>
 </div>
 
-<% if @demands.any? %>
-  <table>
+<%# PB-005 — busca + filtros combináveis (GET; preserva via query params). %>
+<%= form_with url: demands_path, method: :get, class: "filters" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Buscar título, descrição ou observações" %>
+  <%= f.select :priority, options_for_select([ [ "Prioridade: todas", "" ] ] + @priorities.map { |p| [ p.humanize, p ] }, params[:priority]) %>
+  <%= f.select :origin, options_for_select([ [ "Origem: todas", "" ] ] + @origins.map { |o| [ o.humanize, o ] }, params[:origin]) %>
+  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
+  <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
+  <%= f.select :per_page, options_for_select(DemandsController::PER_PAGE_OPTIONS.map { |n| [ "#{n}/página", n ] }, @per_page) %>
+  <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
+  <%= link_to "Limpar filtros", demands_path, class: "btn btn--ghost btn--sm" %>
+<% end %>
+
+<%# PB-005 — carrega a página 1x (any?/each sobre o array; sem query EXISTS extra). %>
+<% demands = @demands.to_a %>
+<% if demands.any? %>
+  <table class="demands-list">
     <thead>
-      <tr><th>Título</th><th>Cliente</th><th>Origem</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr>
+      <tr><th>Demanda</th><th>Cliente</th><th>Origem</th><th>Prioridade</th><th>Status</th><th>Criada em</th><th>Ações</th></tr>
     </thead>
     <tbody>
-      <% @demands.each do |demand| %>
+      <% demands.each do |demand| %>
         <tr>
-          <td><%= link_to demand.title, demand %></td>
+          <td class="demands-list__title">
+            <%= link_to demand.title, demand %>
+            <% if demand.description.present? %>
+              <span class="muted demands-list__excerpt"><%= truncate(demand.description, length: 80) %></span>
+            <% end %>
+          </td>
           <td><%= demand.client&.name || "—" %></td>
           <td><%= demand.origin&.humanize || "—" %></td>
           <td><%= status_badge(demand.priority) %></td>
           <td><%= status_badge(demand.status) %></td>
-          <td><%= link_to "Editar", edit_demand_path(demand), class: "btn btn--ghost btn--sm" %></td>
+          <td><%= demand.created_at.strftime("%d/%m/%Y") %></td>
+          <td>
+            <div class="te-actions">
+              <%= link_to action_icon("eye"), demand, class: "btn btn--ghost btn--icon te-action--view",
+                    title: "Ver", "aria-label": "Ver demanda" %>
+              <%= link_to action_icon("pencil"), edit_demand_path(demand), class: "btn btn--ghost btn--icon te-action--edit",
+                    title: "Editar", "aria-label": "Editar demanda" %>
+              <%# Conversão depende do estado da demanda (PB-004c). %>
+              <% if demand.converted? %>
+                <% if demand.converted_task %>
+                  <%= link_to "Abrir tarefa", task_path(demand.converted_task), class: "btn btn--ghost btn--sm" %>
+                <% end %>
+              <% elsif demand.client_id.present? %>
+                <%= button_to "Converter", convert_demand_path(demand), method: :post,
+                      class: "btn btn--ghost btn--sm", form_class: "inline",
+                      data: { turbo_confirm: "Converter a demanda “#{demand.title}” em tarefa?" } %>
+              <% else %>
+                <span class="muted demands-list__no-client" title="Defina um cliente na demanda para poder converter">sem cliente</span>
+              <% end %>
+              <%= button_to action_icon("trash"), demand, method: :delete,
+                    class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                    title: "Excluir", "aria-label": "Excluir demanda",
+                    data: { turbo_confirm: "Excluir a demanda “#{demand.title}”?" } %>
+            </div>
+          </td>
         </tr>
       <% end %>
     </tbody>
   </table>
+
+  <div class="pagination">
+    <span class="muted"><%= @total_count %> demanda(s) · página <%= @page %>/<%= @total_pages %></span>
+    <span class="actions">
+      <% if @page > 1 %><%= link_to "← Anterior", demands_path(request.query_parameters.merge(page: @page - 1)), class: "btn btn--ghost btn--sm" %><% end %>
+      <% if @page < @total_pages %><%= link_to "Próxima →", demands_path(request.query_parameters.merge(page: @page + 1)), class: "btn btn--ghost btn--sm" %><% end %>
+    </span>
+  </div>
+<% elsif @filters_active %>
+  <div class="empty">
+    <p>Nenhuma demanda para os filtros atuais.</p>
+    <%= link_to "Limpar filtros", demands_path, class: "btn btn--outline btn--sm" %>
+  </div>
 <% else %>
   <div class="empty">
-    <p>Nenhuma demanda ainda.</p>
+    <p>Nenhuma demanda cadastrada ainda.</p>
     <%= link_to "Nova demanda", new_demand_path, class: "btn btn--primary" %>
   </div>
 <% end %>

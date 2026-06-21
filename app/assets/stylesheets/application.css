@@ -564,6 +564,12 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 /* ações em linha única (não empilhar os 3 ícones). */
 .tasks-list .te-actions { flex-wrap: nowrap; }
 
+/* PB-005 — lista operacional de demandas (mesmo padrão da lista de tarefas). */
+.demands-list__title a { font-weight: 600; }
+.demands-list__excerpt { display: block; font-size: .82rem; margin-top: 2px; overflow-wrap: anywhere; }
+.demands-list .te-actions { flex-wrap: nowrap; }
+.demands-list__no-client { font-size: .8rem; font-style: italic; }
+
 /* PB-015 — painel operacional de sincronização. */
 .sync-panel { margin-bottom: 18px; }
 .sync-panel__action { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
