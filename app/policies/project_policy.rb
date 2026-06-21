@@ -12,6 +12,12 @@ class ProjectPolicy < ApplicationPolicy
     user.present?
   end
 
+  # PB-007 — duplicar é uma criação (mesma regra). `set_project` autoriza por nome
+  # da action (duplicate?) antes de o controller chamar create? explicitamente.
+  def duplicate?
+    create?
+  end
+
   def new?
     create?
   end

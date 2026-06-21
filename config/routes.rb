@@ -15,7 +15,9 @@ Rails.application.routes.draw do
     get :cnpj_lookup, on: :collection
     resources :contacts, only: %i[new create edit update destroy]
   end
-  resources :projects
+  resources :projects do
+    post :duplicate, on: :member # PB-007 — duplica o projeto (campos autorizados).
+  end
   resources :tasks do
     # PB-003a — iniciar timer a partir da tarefa (contexto explícito na URL).
     resource :timer, only: %i[create], controller: "task_timers"
