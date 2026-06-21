@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_19_215951) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -259,6 +259,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_19_215951) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "sync_executions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.datetime "finished_at"
+    t.bigint "requested_by_id"
+    t.datetime "started_at"
+    t.string "status", default: "queued", null: false
+    t.string "trigger", default: "manual", null: false
+    t.datetime "updated_at", null: false
+    t.index "(((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying])::text[])))", name: "idx_sync_executions_one_active", unique: true, where: "((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying])::text[]))"
+    t.index ["created_at"], name: "index_sync_executions_on_created_at"
+    t.index ["status"], name: "index_sync_executions_on_status"
+  end
+
   create_table "sync_run_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "line_number"
@@ -285,8 +299,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_19_215951) do
     t.timestamptz "source_mtime"
     t.timestamptz "started_at"
     t.text "status", default: "ok", null: false
+    t.uuid "sync_execution_id"
     t.integer "updated", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["sync_execution_id"], name: "index_sync_runs_on_sync_execution_id"
     t.check_constraint "lines_processed >= 0 AND imported >= 0 AND updated >= 0 AND skipped >= 0 AND error_lines >= 0", name: "sync_runs_counts_non_negative"
     t.check_constraint "status = ANY (ARRAY['ok'::text, 'partial'::text, 'error'::text])", name: "sync_runs_status_check"
   end
