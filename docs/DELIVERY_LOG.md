@@ -9,6 +9,24 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-004c] Vínculo demanda↔tarefa — ENTREGUE
+### Resumo
+Fatia **c** da PB-004: persistir e exibir a demanda que originou uma tarefa (relação opcional 1:1) com ciclo de exclusão coerente. **Aceite do PO.** Migration **aditiva**; não toca PB-003/checklist/conversas.
+### Entregue
+- **Schema:** `tasks.demand_id` uuid null + FK `demands` **ON DELETE RESTRICT** + **índice único parcial** (`WHERE demand_id IS NOT NULL`) → ≤1 tarefa por demanda; ≤1 demanda por tarefa.
+- **Associações:** `Task belongs_to :origin_demand` (opcional); `Demand has_one :converted_task` (`dependent: :restrict_with_error`); validação de unicidade no model + barreira no banco.
+- **Conversão (`ConvertDemand`):** transação única, **lock pessimista + revalidação pós-lock**, cria a tarefa **já vinculada** (`demand_id`), marca `converted`/`converted_at`; 2ª conversão falha sem criar tarefa; concorrência não gera 2ª tarefa.
+- **Exclusão da tarefa (`DeleteTask`, serviço explícito — sem callback oculto):** transação + lock (task+demand); se originada por demanda, devolve-a a **pending** e limpa `converted_at` antes de excluir a tarefa; rollback integral em falha; tarefa sem demanda exclui normal. `TasksController#destroy` usa o serviço (mensagem clara).
+- **Exclusão da demanda:** vinculada → **bloqueio amigável** na app + FK RESTRICT como proteção final; pending sem vínculo continua excluível.
+- **UI:** aba **Demanda** funcional na tarefa (título/descrição/origem/prioridade/status/convertida em/abrir; estado vazio honesto) — virou link de âncora real; na demanda convertida, **link p/ a tarefa** e **sem** oferecer nova conversão.
+- **Reconciliação do banco dev (transacional, fora da migration):** validadas 9 condições e aplicado o vínculo histórico **Demand `4549551a…` ↔ Task `8bcbbcb5…`** (título/descrição/cliente idênticos, type=support, status=pending, sem outra tarefa apontando); associação bidirecional confirmada; as 2 demandas pending **intactas**.
+### Validação
+Suíte **401 runs / 1601 assertions / 0** falhas/erros/skips; rubocop **156/0**; brakeman **0**; `git diff --check` limpo. 22 testes novos (conversão cria vínculo + bidirecional; unicidade model/banco; conversão repetida; concorrência; exclusão da tarefa devolve demanda a pending + converted_at limpo; rollback; tarefa sem demanda; demanda vinculada não-excluível; demanda livre excluível; UI tarefa/demanda; auth; regressão checklist/conversas/PB-003). Validação visual do PO: OK.
+### Pendências
+- **PB-004d+:** demais melhorias do detalhe `/tasks/:id`, conforme priorização do PO.
+### Fora de escopo (cumprido)
+Sem várias tarefas por demanda; sem progresso agregado/outras tarefas da demanda; sem histórico auditável/atividade recente; sem alterar PB-003/checklist; sem PB-005/006/013/014/016; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-004b] Checklist persistente da tarefa — ENTREGUE
 ### Resumo
 Fatia **b** da PB-004: checklist persistente na seção Detalhes de `/tasks/:id`. **Aceite do PO.** Migration **aditiva** (não altera/remove dados existentes); não toca PB-003/PB-005/006/013/014/016.
