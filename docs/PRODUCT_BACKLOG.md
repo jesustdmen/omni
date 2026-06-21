@@ -179,13 +179,15 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P0/P1 |
-| Status | Proposto |
+| Status | **Entregue** — listas operacionais Empresas/Contatos + cadastro via busca de CNPJ; aceite do PO (2026-06-21). |
 | Problema que resolve | Clientes/contatos precisam ser práticos para consulta diária e relacionamento com tarefas/projetos/demandas. |
 | Origem/evidência | Telas mostram abas Empresas/Contatos, busca por razão social/fantasia/CNPJ, filtro status, contatos por cliente e contato principal. |
 | Critério de aceite | Usuário encontra cliente/contato rapidamente, mantém contato principal e filtra por cliente/status. Decisão explícita sobre busca de CNPJ. |
 | Fora de escopo | Integração obrigatória com serviço externo de CNPJ sem decisão de fornecedor. |
 | Dependências | WD-01, WD-02, ADR-017. |
 | Relacionado | WD-01, WD-02. |
+
+**Entregue (2026-06-21):** `/clients` com **abas server-side** (`tab=companies|contacts`). **Empresas:** busca razão social/nome fantasia/**CNPJ com ou sem pontuação** (`%`/`_` escapados); filtro status; paginação 10/25/50/100 (default 50; ordem `name asc, id asc`; params preservados; página inválida → 1); colunas nome/fantasia/CNPJ/telefone/status/**contato principal**/ações (ver/editar/excluir). **Contatos:** busca nome/e-mail/telefone/cargo; filtros cliente/status do cliente/principal; ações editar/excluir + link p/ cliente. **Contato principal:** índice único parcial `contacts(client_id) WHERE is_primary` + regra transacional (salvar principal desmarca o anterior do mesmo cliente; isola outros; concorrência barrada). **Cadastro via busca de CNPJ:** decisão do PO de **incluir** (a restrição original "sem CNPJ externo" foi revista) — **proxy no Rails** (`GET /clients/cnpj_lookup` → `Cnpj::Lookup` consulta a BrasilAPI no servidor; host fixo allowlist + timeout + falha graciosa, sem persistir resposta crua) autopreenche o form via Stimulus (melhoria progressiva). Ver **ADR-022**. `policy_scope`; `includes` sem N+1; estados vazios + "Limpar filtros"; sem alterar/excluir dados dev. Aceite do PO; checks verdes (ver `PROJECT_STATUS.md`).
 
 ### PB-007 — Projetos com status, período, orçamento e duplicação
 
@@ -325,6 +327,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 ## 7. Próxima ação recomendada
 
-**PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c — lista/checklist/vínculo demanda↔tarefa); **PB-005 entregue** (lista operacional de demandas).
+**PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c); **PB-005 entregue** (demandas); **PB-006 entregue** (clientes/contatos operacionais + busca de CNPJ por proxy — ADR-022).
 
-Próxima decisão do PO: **PB-006** (mesma camada de busca/filtros/paginação em `/clients`·`/projects`); **PB-013** (UX de navegação — inclui a busca global da topbar); **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
+Próxima decisão do PO: **WD-03/projetos** (mesma camada de busca/filtros/paginação em `/projects`); **PB-013** (UX de navegação — inclui a busca global da topbar); **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.

@@ -9,6 +9,23 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-006] Clientes e contatos operacionais + busca de CNPJ — ENTREGUE
+### Resumo
+`/clients` utilizável no dia a dia (abas Empresas/Contatos) + cadastro via busca de CNPJ. **Aceite do PO.** Migration aditiva. Decisão de produto: a busca de CNPJ — antes fora de escopo na PB-006 — foi **incluída** pelo PO, via **proxy no Rails** (ver **ADR-022**).
+### Entregue
+- **Abas server-side** (`tab=companies|contacts`, default companies).
+- **Empresas:** busca por nome/razão social, nome fantasia e **CNPJ com OU sem pontuação** (`%`/`_` escapados; sem chamada externa na busca); filtro status; paginação 10/25/50/100 (default 50; ordem `name asc, id asc`; params preservados; página inválida → 1); colunas nome/fantasia/CNPJ(formatado)/telefone/status/**contato principal**/ações (ver/editar/excluir + confirmação); "Novo cliente" destacado.
+- **Contatos:** busca por nome/e-mail/telefone/cargo; filtros cliente / status do cliente / principal (todos/sim/não); mesma paginação; ações editar/excluir + link p/ cliente.
+- **Contato principal:** **índice único parcial** `contacts(client_id) WHERE is_primary` (ETAPA ZERO confirmou 0 clientes com >1 principal) + regra **transacional** no model (salvar principal desmarca o anterior do mesmo cliente; isola outros clientes; concorrência barrada pelo índice; excluir o principal pode deixar sem principal).
+- **Cadastro via busca de CNPJ (proxy no Rails — ADR-022):** `GET /clients/cnpj_lookup` (Pundit) → `Cnpj::Lookup` consulta a **BrasilAPI no servidor** com **host fixo allowlist + timeout 5s + falha graciosa**, sem persistir resposta crua; mapeia razão social/nome fantasia/telefone/endereço. Autopreenchimento no form via Stimulus = **melhoria progressiva** (sem JS, cadastro segue manual). O usuário fornece só os 14 dígitos; URL/host nunca vêm do usuário.
+- **Integridade:** `policy_scope` (Client e Contact); `includes` sem N+1; filtros no banco; total antes de limit/offset; estados vazios + "Limpar filtros".
+### Validação
+Suíte **459 runs / 1813 assertions / 0** falhas/erros/skips; rubocop **163/0**; brakeman **0**; `git diff --check` limpo. Testes novos cobrem busca (nome/fantasia/CNPJ-fmt/`%`/`_`), filtros, paginação/inválidos, contato principal (substituição/isolamento/constraint concorrente), proxy de CNPJ (stub de rede; 422/404/timeout/host fixo), endpoint (auth/JSON), ações, vazios, N+1. Validação visual do PO: OK. Banco dev sem massa artificial.
+### Decisão / nota
+- **ADR-022** registra a fronteira de saída externa (proxy de CNPJ): allowlist + timeout + sem input do usuário + sem persistir resposta crua. Mesma filosofia do ADR-011, porém para chamada HTTP de saída.
+### Fora de escopo (cumprido)
+Sem Projetos (WD-03)/PB-007; sem PB-013/014/016; sem persistir/cachear a resposta crua do CNPJ; sem chamadas externas em outras telas; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-005] Lista operacional de demandas — ENTREGUE (+ PB-004 concluída)
 ### Resumo
 `/demands` utilizável no dia a dia (busca, filtros, paginação, ações, conversão pela lista). **Aceite do PO.** Registra também a **conclusão da PB-004** (a/b/c). Sem migration/schema/dependência; reutiliza `ConvertDemand` + vínculo 1:1 (PB-004c).
