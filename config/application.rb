@@ -29,5 +29,10 @@ module App
     # (ADR-014: domínio compartilhado, sem regra por usuário). Sem tela de config nesta fase.
     config.x.allow_parallel_running_timers =
       ActiveModel::Type::Boolean.new.cast(ENV.fetch("ALLOW_PARALLEL_RUNNING_TIMERS", "true"))
+
+    # PB-015 — diretório FIXO/allowlisted do output normalizado (montado :ro como
+    # /normalized no web e no worker). O sync NUNCA aceita path do usuário; só lê
+    # daqui. Configurável por ENV apenas para dev/CI, não exposto na UI.
+    config.x.normalized_dir = ENV.fetch("OMNI_NORMALIZED_DIR", "/normalized")
   end
 end
