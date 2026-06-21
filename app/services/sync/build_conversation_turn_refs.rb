@@ -33,8 +33,13 @@ module Sync
 
       fp = fingerprint
 
+      # PB-015 — `source_mtime` ENTRA na chave de no-op (antes ficava de fora): assim
+      # qualquer reescrita do arquivo (mtime muda) invalida o índice mesmo que size e
+      # as bordas coincidam. Combinado ao hash de cabeça+miolo+cauda (partial_hash),
+      # fecha o falso no-op de "miolo alterado com size/bordas iguais".
       existing = TurnSource.find_by(
         source_file: fp[:source_file], size_bytes: fp[:size_bytes],
+        source_mtime: fp[:source_mtime],
         content_hash: fp[:content_hash], schema_version: fp[:schema_version]
       )
       # Build concluído = ok|partial (partial = concluiu com skips/malformados; ainda é
@@ -137,16 +142,20 @@ module Sync
         content_hash: partial_hash(size), schema_version: CONTRACT_VERSION }
     end
 
-    # SHA-256 de (cabeça + cauda) — barato e suficiente com size+mtime (ADR-021 §3).
+    # SHA-256 de (cabeça + MIOLO + cauda) — barato (3 janelas de 64 KiB) e robusto:
+    # a amostra do meio (PB-015) elimina o falso no-op de "miolo alterado mantendo
+    # size e bordas". Combinado a size+mtime no find_by (ADR-021 §3 + PB-015).
     def partial_hash(size)
       digest = Digest::SHA256.new
       File.open(@path, "rb") do |f|
-        if size <= HASH_WINDOW * 2
+        if size <= HASH_WINDOW * 3
           digest.update(f.read)
         else
-          digest.update(f.read(HASH_WINDOW))
+          digest.update(f.read(HASH_WINDOW))           # cabeça
+          f.seek((size - HASH_WINDOW) / 2)
+          digest.update(f.read(HASH_WINDOW))           # miolo
           f.seek(size - HASH_WINDOW)
-          digest.update(f.read(HASH_WINDOW))
+          digest.update(f.read(HASH_WINDOW))           # cauda
         end
       end
       digest.hexdigest
