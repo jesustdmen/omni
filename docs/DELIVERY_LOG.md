@@ -9,6 +9,24 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-004a] Lista operacional de /tasks — ENTREGUE
+### Resumo
+Fatia **a** da PB-004: `/tasks` utilizável no dia a dia (busca, filtros, paginação, ações). **Aceite do PO.** Sem migration/schema/dependência; sem alterar regras de criação/edição/exclusão da tarefa.
+### Entregue
+- **Busca** (`q`) por **título ou descrição** — `ILIKE` case-insensitive; `%` e `_` **escapados** (tratados como texto, não curingas).
+- **Filtros combináveis** `status`/`type`/`client_id` (allowlist; valores inválidos **ignorados** sem quebrar).
+- **Paginação** `page`/`per_page` (10/25/50/100, default **50**); **total antes de limit/offset**; ordenação **estável** `created_at desc, id desc`; "N tarefa(s) · página X/Y"; Anterior/Próxima **preservam** busca+filtros+per_page; página inválida/negativa → 1.
+- **Tabela:** Tarefa (título + trecho da descrição), Cliente, Projeto, Status, Tipo, Criada em, Ações.
+- **Ações** ver/editar/excluir (ícones Omni; **confirmação** ao excluir); "Nova tarefa" destacada.
+- **Estados vazios:** nenhuma cadastrada (+ Nova tarefa) / nenhum resultado (+ **Limpar filtros**).
+- **Integridade:** `policy_scope` preservado; `includes(:client, :project)` **sem N+1** (carrega página 1×); filtros no banco.
+### Validação
+Suíte **355 runs / 1432 assertions / 0** falhas/erros/skips; rubocop **146/0**; brakeman **0**; `git diff --check` limpo. 23 testes novos (busca/`%`/`_`/filtros/combinações/inválidos/paginação/links/ações/vazios/auth/N+1). Validação visual do PO: OK. Banco dev intocado (sem massa artificial).
+### Pendências
+- **PB-004b+:** checklist persistente; vínculo demanda↔tarefa; melhorias do detalhe `/tasks/:id`.
+### Fora de escopo (cumprido)
+Sem checklist/demanda↔tarefa/detalhe; sem código legível (PB-014); sem PB-005/006/016; sem migration/dependência; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-015] Sincronização operacional de conversas — ENTREGUE (MVP)
 ### Resumo
 Importação operacional de conversas pela UI, **sem o usuário depender de comandos Rails** e **sem o Rails executar o pipeline** (ADR-011). **Aceite manual do PO + validação ponta a ponta.** Migration aditiva; pipeline externo intocado.
