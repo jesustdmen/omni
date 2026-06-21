@@ -531,6 +531,16 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .te-history tfoot .te-total td { border-top: 2px solid var(--border, #e2e5ea); font-size: .95rem; color: var(--text-muted); font-weight: 600; }
 .te-history tfoot .te-total td:first-child { padding-left: 16px; }
 .te-history tfoot .te-total .te-col-duration strong { color: var(--text); font-variant-numeric: tabular-nums; }
+/* PB-015 — painel operacional de sincronização. */
+.sync-panel { margin-bottom: 18px; }
+.sync-panel__action { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sync-status { margin-top: 14px; }
+.sync-status__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sync-status__label { font-weight: 600; }
+.sync-status__error { color: var(--tone-danger-text, #b42318); font-size: .9rem; margin-top: 6px; }
+.sync-status__counters { margin-top: 10px; font-size: .9rem; }
+.sync-history-title { margin-top: 22px; font-size: 1rem; color: var(--text-muted); }
+
 /* PB-003c — nota de sobreposição + aviso global de timers na topbar. */
 .te-overlap-note { font-size: .8rem; margin-top: 4px; }
 .topbar__timers { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--radius-pill, 999px); background: var(--tone-warning-bg, #fef3c7); color: var(--tone-warning-text, #8a5a08); font-size: .82rem; font-weight: 600; text-decoration: none; }

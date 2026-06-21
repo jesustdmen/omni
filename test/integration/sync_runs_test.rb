@@ -19,7 +19,7 @@ class SyncRunsTest < ActionDispatch::IntegrationTest
   test "index renderiza execuções" do
     get sync_runs_path
     assert_response :success
-    assert_select "h1", "Sync runs"
+    assert_select "h1", "Sincronização de conversas"
     assert_select "td", /summaries\.jsonl/
   end
 

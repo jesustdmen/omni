@@ -1,12 +1,65 @@
-<% content_for :title, "Sync runs" %>
+<% content_for :title, "Sincronização de conversas" %>
 
 <div class="page-head">
   <div class="page-head__titles">
-    <h1>Sync runs</h1>
-    <p class="page-head__sub">Console read-only de validação da Fase 3 — execuções de importação (auditoria).</p>
+    <h1>Sincronização de conversas</h1>
+    <p class="page-head__sub">Traz novas conversas do VS Code (output normalizado) para o Omni. Lê apenas a fonte fixa; não executa o pipeline.</p>
   </div>
 </div>
 
+<%# PB-015 — painel operacional: ação + status agregado da última execução. %>
+<div class="card sync-panel">
+  <% active = @active_execution %>
+  <div class="sync-panel__action">
+    <%= button_to "Atualizar conversas no Omni",
+          sync_executions_path, method: :post,
+          class: "btn btn--primary",
+          disabled: active.present?,
+          data: { turbo_confirm: "Iniciar a sincronização de conversas agora?" } %>
+    <% if active %>
+      <span class="muted">Há uma sincronização <strong><%= active.status %></strong> em andamento — aguarde concluir.</span>
+    <% end %>
+  </div>
+
+  <% last = @last_execution %>
+  <% if last %>
+    <div class="sync-status">
+      <div class="sync-status__row">
+        <span class="sync-status__label">Última execução</span>
+        <%= status_badge(last.status) %>
+        <span class="muted"><%= (last.finished_at || last.started_at || last.created_at)&.strftime("%d/%m/%Y %H:%M") %></span>
+        <% if last.duration_seconds %><span class="muted">· <%= duration_label(last.duration_seconds) %></span><% end %>
+      </div>
+      <% if last.status == "error" && last.error_message.present? %>
+        <p class="sync-status__error">Erro: <%= last.error_message %></p>
+      <% end %>
+      <%# Contadores agregados das etapas (SyncRun) desta execução. %>
+      <% runs = last.sync_runs.order(:created_at) %>
+      <% if runs.any? %>
+        <table class="sync-status__counters">
+          <thead><tr><th>Etapa</th><th>Status</th><th>Linhas</th><th>Importadas</th><th>Atualizadas</th><th>Puladas</th><th>Erros</th></tr></thead>
+          <tbody>
+            <% runs.each do |r| %>
+              <tr>
+                <td><%= r.source_label %></td>
+                <td><%= status_badge(r.status) %></td>
+                <td><%= r.lines_processed %></td>
+                <td><%= r.imported %></td>
+                <td><%= r.updated %></td>
+                <td><%= r.skipped %></td>
+                <td><%= r.error_lines %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="muted">Nenhuma sincronização operacional executada ainda.</p>
+  <% end %>
+</div>
+
+<h2 class="sync-history-title">Histórico de execuções (auditoria)</h2>
 <% if @sync_runs.any? %>
   <table>
     <thead>

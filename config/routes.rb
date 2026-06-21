@@ -34,6 +34,8 @@ Rails.application.routes.draw do
     resources :tasks, controller: "conversation_tasks", only: %i[new create]
   end
   resources :sync_runs, only: %i[index show]
+  # PB-015 — disparo da sincronização operacional (enfileira job; lê só /normalized).
+  resources :sync_executions, only: %i[create]
 
   get "settings", to: "pages#placeholder", as: :settings
 end
