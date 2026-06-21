@@ -534,6 +534,10 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .te-history tfoot .te-total td { border-top: 2px solid var(--border, #e2e5ea); font-size: .95rem; color: var(--text-muted); font-weight: 600; }
 .te-history tfoot .te-total td:first-child { padding-left: 16px; }
 .te-history tfoot .te-total .te-col-duration strong { color: var(--text); font-variant-numeric: tabular-nums; }
+/* PB-004a — lista operacional de tarefas: título + trecho da descrição. */
+.tasks-list__title a { font-weight: 600; }
+.tasks-list__excerpt { display: block; font-size: .82rem; margin-top: 2px; overflow-wrap: anywhere; }
+
 /* PB-015 — painel operacional de sincronização. */
 .sync-panel { margin-bottom: 18px; }
 .sync-panel__action { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
