@@ -17,6 +17,8 @@ Rails.application.routes.draw do
   resources :tasks do
     # PB-003a — iniciar timer a partir da tarefa (contexto explícito na URL).
     resource :timer, only: %i[create], controller: "task_timers"
+    # PB-004b — checklist persistente (sempre escopado pela tarefa da URL).
+    resources :checklist_items, only: %i[create update destroy]
   end
   resources :demands do
     post :convert, on: :member

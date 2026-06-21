@@ -534,6 +534,18 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .te-history tfoot .te-total td { border-top: 2px solid var(--border, #e2e5ea); font-size: .95rem; color: var(--text-muted); font-weight: 600; }
 .te-history tfoot .te-total td:first-child { padding-left: 16px; }
 .te-history tfoot .te-total .te-col-duration strong { color: var(--text); font-variant-numeric: tabular-nums; }
+/* PB-004b — checklist persistente da tarefa. */
+.checklist { margin-top: 14px; }
+.checklist__list { list-style: none; margin: 8px 0 0; padding: 0; }
+.checklist__item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--border, #e2e5ea); }
+.checklist__toggle { font-size: 1rem; line-height: 1; }
+.checklist__content { flex: 1; overflow-wrap: anywhere; }
+.checklist__item--done .checklist__content { text-decoration: line-through; color: var(--text-muted); }
+.checklist__actions { display: inline-flex; align-items: center; gap: 6px; }
+.checklist__edit { display: inline-flex; align-items: center; gap: 4px; margin: 0; }
+.checklist__add { display: flex; gap: 8px; margin-top: 12px; }
+.checklist__add input[type="text"] { flex: 1; }
+
 /* PB-004a — lista operacional de tarefas: título + trecho da descrição. */
 .tasks-list__title a { font-weight: 600; }
 .tasks-list__excerpt { display: block; font-size: .82rem; margin-top: 2px; overflow-wrap: anywhere; }

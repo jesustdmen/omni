@@ -31,6 +31,9 @@ class TasksController < ApplicationController
   def show
     # F4 — conversas vinculadas (read-only) para a aba "Conversas".
     @linked_conversations = @task.conversation_links.includes(:conversation).order(:created_at)
+    # PB-004b — checklist persistente (ordem estável; carregado 1x).
+    @checklist_items = @task.checklist_items.ordered.to_a
+    @checklist_item = ChecklistItem.new
   end
 
   def new

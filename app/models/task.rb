@@ -8,6 +8,9 @@ class Task < ApplicationRecord
   belongs_to :client
   belongs_to :project, optional: true
   has_many :time_entries, dependent: :destroy
+  # PB-004b — checklist persistente. delete_all: itens sem callbacks; a FK no banco
+  # (ON DELETE CASCADE) também garante a remoção ao excluir a tarefa.
+  has_many :checklist_items, dependent: :delete_all
   # delete_all: a tarefa some → não há por que recomputar counters dela (sem callbacks).
   has_many :conversation_links, dependent: :delete_all
   has_many :conversations, through: :conversation_links

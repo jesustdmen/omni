@@ -49,6 +49,56 @@
       <dt>Última conversa</dt><dd><%= @task.last_conversation_at || "—" %></dd>
     </dl>
   </div>
+
+  <%# PB-004b — checklist persistente da tarefa (sem JS; Turbo é melhoria progressiva). %>
+  <% done = @checklist_items.count(&:completed) %>
+  <div class="card checklist">
+    <div class="subhead">
+      <div class="subhead__titles">
+        <h2>Checklist</h2>
+        <p class="muted"><%= done %>/<%= @checklist_items.size %> concluído(s)</p>
+      </div>
+    </div>
+
+    <% if @checklist_items.any? %>
+      <ul class="checklist__list">
+        <% @checklist_items.each do |item| %>
+          <li class="checklist__item <%= 'checklist__item--done' if item.completed %>">
+            <%# marcar/desmarcar — botão que alterna `completed` (sem JS). %>
+            <%= button_to task_checklist_item_path(@task, item),
+                  method: :patch, params: { checklist_item: { completed: !item.completed } },
+                  class: "btn btn--ghost btn--icon checklist__toggle", form_class: "inline",
+                  title: (item.completed ? "Reabrir item" : "Concluir item"),
+                  "aria-label": (item.completed ? "Reabrir item" : "Concluir item") do %>
+              <%= item.completed ? "☑" : "☐" %>
+            <% end %>
+
+            <span class="checklist__content"><%= item.content %></span>
+
+            <div class="checklist__actions">
+              <%# edição simples inline (form de texto; sem modal). %>
+              <%= form_with model: item, url: task_checklist_item_path(@task, item), method: :patch, class: "checklist__edit" do |f| %>
+                <%= f.text_field :content, "aria-label": "Editar texto do item" %>
+                <%= f.submit "Salvar", class: "btn btn--ghost btn--sm" %>
+              <% end %>
+              <%= button_to action_icon("trash"), task_checklist_item_path(@task, item),
+                    method: :delete, class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                    title: "Excluir item", "aria-label": "Excluir item",
+                    data: { turbo_confirm: "Excluir este item do checklist?" } %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="muted">Nenhum item no checklist ainda.</p>
+    <% end %>
+
+    <%# adicionar item — formulário sempre visível. %>
+    <%= form_with model: @checklist_item, url: task_checklist_items_path(@task), class: "checklist__add" do |f| %>
+      <%= f.text_field :content, placeholder: "Novo item do checklist", "aria-label": "Novo item do checklist" %>
+      <%= f.submit "Adicionar", class: "btn btn--outline btn--sm" %>
+    <% end %>
+  </div>
 </section>
 
 <%# PB-003a — Histórico de Apontamentos (timer + registro de tempo). %>

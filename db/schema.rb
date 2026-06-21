@@ -10,9 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_21_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "checklist_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "completed", default: false, null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.uuid "task_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_checklist_items_on_task_id"
+  end
 
   create_table "clients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "address"
@@ -386,6 +395,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_20_120000) do
     t.index ["workspace_hash"], name: "index_workspace_maps_on_workspace_hash", unique: true
   end
 
+  add_foreign_key "checklist_items", "tasks", on_delete: :cascade
   add_foreign_key "contacts", "clients", on_delete: :cascade
   add_foreign_key "conversation_links", "conversations", on_delete: :cascade
   add_foreign_key "conversation_links", "tasks", on_delete: :cascade
