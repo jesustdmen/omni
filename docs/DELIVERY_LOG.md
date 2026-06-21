@@ -9,6 +9,23 @@
 
 ## Entradas
 
+## 2026-06-21 — [Produto Operacional · PB-013a] Busca global — ENTREGUE (PB-013 parcial)
+### Resumo
+Busca global sobre os dados funcionais do Omni (a topbar deixou de ser placeholder). **Aceite do PO.** Fatia **a** da PB-013 — **PB-013 segue parcialmente entregue**: PB-013b (breadcrumbs + preservação de filtros/contexto entre lista↔detalhe↔edição) **pendente**. Sem migration/dependência.
+### Entregue
+- **`GET /search`** (read-only; auth via Devise; `skip_pundit` p/ controller não-resourceful, ADR-014). `GlobalSearch` cobre **6 categorias** (Tarefas/Demandas/Projetos/Clientes/Contatos/Conversas), **top-5 por categoria + "ver todos"** (link à lista já filtrada).
+- **Todo resultado** mostra **badge do tipo**, **"Encontrado em: …"** (campo/origem) e **contexto** relevante.
+- **Tarefas** encontradas também por **conteúdo de checklist** e **descrição de apontamento** → abre a tarefa indicando "Encontrado em: Checklist/Apontamento". **DISTINCT**: tarefa que casa em título+checklist+apontamento aparece **uma vez**, listando todos os campos.
+- **Conversas:** badge de **source** + **workspace** (quando disponível); **sem pesquisar turnos** (ADR-021). Clientes por nome/fantasia/**CNPJ com-ou-sem pontuação**; contatos por nome/e-mail/telefone/cargo (resultado leva ao cliente).
+- **Navegação:** cada resultado é um **único link** cobrindo o card, com indicador **"Ir →"** (sem links aninhados); funciona **sem JS**, foco por teclado, hover/focus visível, responsivo (Ir→ à direita no desktop; não cobre o título em telas pequenas), **aria-label contextual** ("Ir para tarefa …"). **"← Voltar"** retorna à tela de origem (referer interno sanitizado; fallback Dashboard; anti-loop). Topbar virou **form GET** funcional.
+- **Integridade:** `%`/`_` escapados; sem N+1 (workspace das conversas pré-carregado).
+### Validação
+Suíte **502 runs / 2005 assertions / 0** falhas/erros/skips; rubocop **171/0**; brakeman **0** (incl. checks de Redirect/LinkToHref); `git diff --check` limpo. 19 testes (categorias, checklist/apontamento, DISTINCT, matched_in, conversa source/workspace, card-link/aria, ver-todos, escape, N+1, Voltar referer/fallback/externo/anti-loop). Validação visual do PO: OK. Banco dev sem massa artificial.
+### Pendências
+- **PB-013b:** breadcrumbs; preservação de filtros e contexto entre lista↔detalhe↔edição. **PB-013 NÃO integralmente concluída.**
+### Fora de escopo (cumprido)
+Sem conteúdo de turnos de conversa (ADR-021); sem breadcrumbs/preservação de contexto (PB-013b); sem migration/dependência; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-007] Projetos operacionais + duplicação — ENTREGUE
 ### Resumo
 `/projects` utilizável (busca, filtros, paginação, ações, duplicação). **Aceite do PO.** Com PB-004a/PB-005/PB-006/PB-007, as **4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas** — lacuna operacional da PB-001 fechada. Migration aditiva.

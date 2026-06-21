@@ -78,6 +78,8 @@
 ## UI unificada
 
 > **Nota (F2.UI, 2026-06-17):** as telas existentes receberam um **baseline visual hi-fi provisório** (shell/sidebar/topbar, dashboard com callout+cards, listas, detalhes, formulários, `/tasks/:id` com abas placeholder). Isso é apenas apresentação: **UI-01..UI-11 permanecem como Fase 5 (UI unificada real)** e seguem com o status abaixo. Sem conversas/sync/scorer/triage/TimeEntry/import.
+>
+> **Nota (busca global, PB-013a — 2026-06-21):** a topbar deixou de ser placeholder e virou **busca global funcional** (`GET /search`) sobre os dados do domínio — agrupada por categoria (Tarefas/Demandas/Projetos/Clientes/Contatos/Conversas), com badge de tipo, "Encontrado em", card-link "Ir →" (sem JS) e "Voltar". Tarefas também por checklist/apontamento (DISTINCT); conversas por título com source/workspace (sem turnos — distinta da CV-12). **PB-013 segue parcial** (PB-013b: breadcrumbs + preservação de filtros/contexto — pendente).
 > **Nota (F3.UI.1, 2026-06-17):** adicionado um **console read-only de validação da Fase 3** (`/conversations`, `/sync_runs` — só metadados, paginado). **Não é a UI-04/CV-05 da Fase 5**: não renderiza turnos/markdown, não lê `sessions.jsonl`/shards, não cria vínculo conversa↔tarefa, não executa sync e não altera dados. As features CV-*/UI-* da Fase 5 seguem com o status abaixo.
 
 | ID | Feature | Origem | Fase | Prioridade | Status | Dependências | Critério de aceite |
