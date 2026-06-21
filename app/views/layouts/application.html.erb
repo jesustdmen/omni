@@ -42,11 +42,12 @@
       <div class="app-body">
         <% if user_signed_in? %>
           <header class="topbar">
-            <%# Busca apenas visual nesta fase — sem backend de busca (placeholder). %>
-            <div class="topbar__search">
+            <%# PB-013 — busca global (GET /search). Funciona sem JS. %>
+            <%= form_with url: search_path, method: :get, class: "topbar__search", data: { turbo: false } do |f| %>
               <span class="search-icon" aria-hidden="true">⌕</span>
-              <input type="text" placeholder="Buscar… (em breve)" aria-label="Buscar" autocomplete="off">
-            </div>
+              <%= f.search_field :q, value: params[:q], placeholder: "Buscar tarefas, conversas, clientes…",
+                    "aria-label": "Buscar no Omni", autocomplete: "off" %>
+            <% end %>
             <div class="topbar__spacer"></div>
             <%= render "shared/running_timers_banner" %>
             <span class="topbar__hint">Baseline visual</span>

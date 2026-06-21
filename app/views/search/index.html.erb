@@ -1,0 +1,49 @@
+<% content_for :title, @query.present? ? "Busca: #{@query}" : "Busca" %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Busca</h1>
+    <% if @query.present? %><p class="muted">Resultados para “<%= @query %>”</p><% end %>
+  </div>
+</div>
+
+<% if @query.blank? %>
+  <div class="empty"><p>Digite um termo na busca para encontrar tarefas, conversas, clientes, contatos, projetos e demandas.</p></div>
+<% elsif @groups.empty? %>
+  <div class="empty"><p>Nenhum resultado para “<%= @query %>”.</p></div>
+<% else %>
+  <% @groups.each do |group| %>
+    <section class="search-group">
+      <h2 class="search-group__title"><%= group.label %> <span class="muted">(<%= group.total %>)</span></h2>
+
+      <ul class="search-results">
+        <% group.hits.each do |hit| %>
+          <li class="search-result">
+            <%# Um ÚNICO link envolve o resultado inteiro; "Ir →" é só indicador visual
+                (sem links aninhados). Funciona sem JS; foco por teclado + hover/focus. %>
+            <%= link_to search_result_path(hit.record), class: "search-result__link",
+                  "aria-label": search_result_aria(hit.record) do %>
+              <span class="search-result__main">
+                <span class="search-result__head">
+                  <%= search_type_badge(hit.record) %>
+                  <span class="search-result__title"><%= search_result_title(hit.record) %></span>
+                </span>
+                <span class="search-result__context muted"><%= search_result_context(hit.record) %></span>
+                <% if hit.matched_in.any? %>
+                  <span class="search-result__matched muted">Encontrado em: <%= hit.matched_in.join(", ") %></span>
+                <% end %>
+              </span>
+              <span class="search-result__go" aria-hidden="true">Ir →</span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+
+      <% if group.more? %>
+        <p class="search-group__more">
+          <%= link_to "Ver todos os #{group.total} resultados em #{group.label} →", group.see_all_path, class: "btn btn--ghost btn--sm" %>
+        </p>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>
