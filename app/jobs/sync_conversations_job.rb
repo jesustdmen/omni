@@ -5,10 +5,12 @@
 class SyncConversationsJob < ApplicationJob
   queue_as :default
 
-  def perform(sync_execution_id)
+  # PB-016a — `skip_pipeline:` (opção "Importar arquivos disponíveis") força pular a
+  # coleta mesmo com o pipeline interno ligado; só importa o output já existente.
+  def perform(sync_execution_id, skip_pipeline: false)
     execution = SyncExecution.find_by(id: sync_execution_id)
     return if execution.nil? || !execution.active?
 
-    Sync::RunConversationsSync.call(execution: execution)
+    Sync::RunConversationsSync.call(execution: execution, skip_pipeline: skip_pipeline)
   end
 end

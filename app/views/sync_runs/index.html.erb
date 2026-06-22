@@ -9,25 +9,48 @@
 <div class="page-head">
   <div class="page-head__titles">
     <h1>Sincronização de conversas</h1>
-    <p class="page-head__sub">Traz novas conversas do VS Code (output normalizado) para o Omni. Lê apenas a fonte fixa; não executa o pipeline.</p>
+    <%# PB-016a — quando o pipeline interno está ligado, o botão faz coleta + importação. %>
+    <% if @pipeline_internal %>
+      <p class="page-head__sub">Coleta as conversas mais recentes (VS Code/Codex/Claude), normaliza e importa no Omni — tudo aqui, sem PowerShell nem Tarefa do Windows.</p>
+    <% else %>
+      <p class="page-head__sub">Importa o output normalizado já disponível para o Omni. Lê apenas a fonte fixa; o pipeline interno está desligado.</p>
+    <% end %>
   </div>
 </div>
 
-<%# PB-015 — painel operacional: ação + status agregado da última execução. %>
+<%# PB-016a — painel operacional: ação principal + status agregado da última execução. %>
 <div class="card sync-panel">
   <% active = @active_execution %>
   <div class="sync-panel__action">
-    <%= button_to "Atualizar conversas no Omni",
+    <%= button_to "Sincronizar agora",
           sync_executions_path, method: :post,
           class: "btn btn--primary",
           disabled: active.present?,
-          data: { turbo_confirm: "Iniciar a sincronização de conversas agora?" } %>
+          data: { turbo_confirm: @pipeline_internal ? "Coletar e importar as conversas agora?" : "Importar as conversas disponíveis agora?" } %>
+    <% if @pipeline_internal %>
+      <span class="muted">Executa <strong>coleta + importação</strong> em segundo plano.</span>
+    <% else %>
+      <span class="muted">Importa os arquivos disponíveis (coleta pelo Omni desligada).</span>
+    <% end %>
     <% if active %>
       <span class="muted">Há uma sincronização <strong><%= active.status %></strong> em andamento — aguarde concluir.</span>
     <% end %>
   </div>
 
-  <%# PB-015 — indicador de progresso por etapa (só durante execução ativa). %>
+  <%# PB-016a — opção secundária: só importar o que já existe (sem coletar), útil
+      quando o pipeline interno está ligado mas o operador quer apenas reimportar. %>
+  <% if @pipeline_internal %>
+    <div class="sync-panel__secondary">
+      <%= button_to "Importar arquivos disponíveis",
+            sync_executions_path(only_import: "1"), method: :post,
+            class: "btn btn--ghost btn--sm",
+            disabled: active.present?,
+            data: { turbo_confirm: "Importar apenas o output já disponível (sem coletar)?" } %>
+      <span class="muted">Pula a coleta; importa o output normalizado atual.</span>
+    </div>
+  <% end %>
+
+  <%# PB-016a — indicador de progresso por etapa (só durante execução ativa). %>
   <% if active %>
     <div class="sync-progress" role="status" aria-live="polite">
       <div class="sync-progress__head">
@@ -52,6 +75,10 @@
       </div>
       <% if last.status == "error" && last.error_message.present? %>
         <p class="sync-status__error">Erro: <%= last.error_message %></p>
+      <% end %>
+      <%# PB-016a — resumo seguro do pipeline (quando executado). %>
+      <% if last.pipeline_exit_code.present? || last.pipeline_summary.present? %>
+        <p class="muted sync-status__pipeline">Pipeline: <%= last.pipeline_summary.presence || "exit=#{last.pipeline_exit_code}" %></p>
       <% end %>
       <%# Contadores agregados das etapas (SyncRun) desta execução. %>
       <% runs = last.sync_runs.order(:created_at) %>

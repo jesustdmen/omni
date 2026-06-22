@@ -6,6 +6,8 @@ class SyncRunsController < ApplicationController
     @executions = SyncExecution.recent.limit(10)
     @active_execution = SyncExecution.active.order(created_at: :desc).first
     @last_execution = @executions.first
+    # PB-016a — a UI muda rótulos/ação conforme o pipeline interno está ligado.
+    @pipeline_internal = Rails.application.config.x.run_pipeline_internally
   end
 
   def show
