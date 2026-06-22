@@ -101,7 +101,7 @@ class DemandTaskLinkTest < ActionDispatch::IntegrationTest
     task = ConvertDemand.call(d).task
     get demand_path(d)
     assert_response :success
-    assert_select ".converted-state a[href=?]", task_path(task), /Abrir tarefa/
+    assert_select ".converted-state a[href=?]", task_path(task), /Abrir #{Regexp.escape(task.code)}/ # PB-014
     assert_select "form[action=?]", convert_demand_path(d), count: 0 # sem botão converter
   end
 

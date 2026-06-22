@@ -164,7 +164,7 @@ class DemandsListTest < ActionDispatch::IntegrationTest
     d = demand(title: "Já convertida")
     task = ConvertDemand.call(d).task
     get demands_path
-    assert_select ".te-actions a[href=?]", task_path(task), /Abrir tarefa/
+    assert_select ".te-actions a[href=?]", task_path(task), /Abrir #{Regexp.escape(task.code)}/ # PB-014
     assert_select ".te-actions form[action=?]", convert_demand_path(d), count: 0
   end
 

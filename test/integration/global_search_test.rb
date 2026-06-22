@@ -111,7 +111,8 @@ class GlobalSearchTest < ActionDispatch::IntegrationTest
     assert_select "a.search-result__link[href^=?]", task_path(t) do # + return_to (PB-013b)
       assert_select ".search-result__go", /Ir/
     end
-    assert_select "a.search-result__link[aria-label=?]", "Ir para tarefa Corrigir relatório financeiro"
+    # PB-014 — o título do resultado (e o aria) incluem o código legível.
+    assert_select "a.search-result__link[aria-label=?]", "Ir para tarefa #{t.code} — Corrigir relatório financeiro"
     # sem links aninhados dentro do card-link
     assert_select "a.search-result__link a", count: 0
   end
