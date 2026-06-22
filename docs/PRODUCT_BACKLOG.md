@@ -322,13 +322,18 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Proposto** (direção de produto do PO, 2026-06-21). |
+| Status | **CONCLUÍDA (2026-06-22)** — PB-016a + PB-016b entregues e aceitas pelo PO; **addendum ao ADR-011**. |
 | Problema que resolve | Uso diário: o Omni deve **orquestrar a importação sozinho**, em intervalos configuráveis, **sem depender do Agendador de Tarefas do Windows**. |
 | Origem/evidência | Decisão do PO; addendum ao **ADR-011**. |
-| Critério de aceite | Página **Configurações** com agendador (ex.: 5/15/30/60 min) rodando como **processo da própria aplicação** (SolidQueue `recurring.yml` + worker); para trazer conversas novas, **disparo do pipeline pelo Omni** sob **allowlist de binário/caminho fixo + timeout + sem input do usuário + sem logar credenciais**. |
-| Fora de escopo | Não implementar nesta etapa; substitui a dependência do script externo/Tarefa do Windows. |
-| Dependências | PB-015, ADR-011 (addendum), F7.2/F7.3 (worker em produção). |
+| Critério de aceite | ✅ Botão "Sincronizar agora" executa **coleta (pipeline) + importação**; **Configurações** com agendador configurável rodando como **processo da própria aplicação** (SolidQueue `recurring.yml` + worker); disparo do pipeline sob **allowlist/caminho fixo + timeout + sem input + sem logar credenciais**. |
+| Fora de escopo | Cancelamento de execução em andamento; histórico avançado de logs; produção/F7 (worker/agente em produção). |
+| Dependências | PB-015, ADR-011 (addendum 2026-06-22). |
 | Relacionado | OP-01, OP-03, WD-10 (Configurações). |
+
+**Fatias:**
+
+- **PB-016a — execução do pipeline pelo agente Windows (ENTREGUE 2026-06-22):** o pipeline (RepoB) é Windows-nativo (lê `%APPDATA%`/`.codex`/`.claude`; exige `APPDATA`) e **não roda no container** Linux. Solução: **agente** no host (`app/script/pipeline_agent.py`, stdlib) que o Omni aciona por **HTTP local com token**; o Rails/worker **nunca executa Python** nem monta as fontes. `Sync::PipelineRunner` (cliente HTTP: health → run) dispara o agente; `RunConversationsSync` roda **coleta antes da importação**. Segurança: **comando fixo no agente**, token, timeout, sem input do usuário, saída segura (sem credenciais/paths). **Resiliência:** agente offline → **degrada** (pula coleta, importa o output atual com aviso); falha real (exit≠0/timeout) **aborta antes de importar** (índice preservado, settle/verify da PB-015). Auto-start/auto-restart do agente no devstack (`.devstack/agent.sh` + `up.sh`). Gate por flag `OMNI_RUN_PIPELINE_INTERNALLY` (default off = comportamento PB-015). Validado ponta a ponta (coleta real, exit=0; +482 turn_refs; vínculos/tarefas preservados).
+- **PB-016b — agendamento interno configurável em `/settings` (ENTREGUE 2026-06-22):** `SyncSchedule` (singleton: ligar/desligar + intervalo, allowlist 15min…24h) + `ScheduledSyncJob` recorrente (SolidQueue `recurring.yml`, tick por minuto) disparam o **mesmo fluxo** do botão manual quando vencido e sem execução ativa. **Sem Tarefa do Windows.** O agendador mora em **Configurações** (`/settings`, decisão de produto); `/sync_runs` mantém só a sincronização manual + atalho para Configurações. Status do pipeline na UI enxuto (data/hora + status; stdout cru só em erro, resumido).
 
 ---
 
@@ -340,4 +345,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **PB-014 ENTREGUE** (código legível `TSK-000001`, 2026-06-22; addendum ao ADR-016).
 
-Próxima decisão do PO: **PB-016** (agendador interno de importação em Configurações). Nada será implementado sem autorização explícita.
+**PB-016 CONCLUÍDA** — PB-016a (execução do pipeline pelo agente Windows) + PB-016b (agendamento interno em /settings), 2026-06-22; addendum ao ADR-011.
+
+Próxima decisão do PO: a definir. Nada será implementado sem autorização explícita.

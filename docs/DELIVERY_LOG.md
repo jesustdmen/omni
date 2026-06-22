@@ -9,6 +9,32 @@
 
 ## Entradas
 
+## 2026-06-22 — [Produto Operacional · PB-016] Sincronização completa pelo Omni — CONCLUÍDA (a + b)
+### Resumo
+O Omni passa a **orquestrar a importação internamente**: o botão "Sincronizar agora" executa **coleta (pipeline) + importação**, e há **agendamento configurável em Configurações** — sem PowerShell e sem Agendador de Tarefas do Windows. **Aceite do PO.** **Addendum ao ADR-011.** PB-016 integralmente concluída (fatias a e b).
+### PB-016a — execução do pipeline pelo agente Windows
+- **Achado arquitetural:** o pipeline (RepoB) é **Windows-nativo** (lê `%APPDATA%\Code`, `~/.codex`, `~/.claude`; exige `APPDATA`) e **não roda no container** Linux. Em vez de montar o perfil do usuário no container (frágil; proibido pela própria PB-016a), o pipeline roda **no host** via um **agente**.
+- **Agente** (`app/script/pipeline_agent.py`, só stdlib): HTTP `/health` `/run` `/status`, **token compartilhado**, **comando FIXO** (`python run_pipeline.py`), **timeout**, lock (1 execução por vez), **saída segura** (sem credenciais/conteúdo/paths absolutos). Auto-start + auto-restart no devstack (`.devstack/agent.sh` + `up.sh`).
+- **Omni:** `Sync::PipelineRunner` vira **cliente HTTP** (health → run); `Sync::RunConversationsSync` roda a **coleta antes da importação** (gated por `OMNI_RUN_PIPELINE_INTERNALLY`, default off = comportamento PB-015). O cliente **não passa comando/path** (allowlist no agente). **Resiliência:** agente offline → **degrada** (pula a coleta, importa o `output/normalized/` atual com aviso); falha real (exit≠0/timeout) **aborta antes de importar**, preservando o índice (settle/verify da PB-015). `current_step` alimenta o progresso por etapa; status da UI enxuto (stdout cru só em erro, resumido).
+- **Validação real (host):** "Sincronizar agora" → `collecting` → `indexing` → `partial/completed`; **pipeline exit=0**, **+482 turn_refs**, vínculos/tarefas preservados.
+### PB-016b — agendamento interno configurável em /settings
+- `SyncSchedule` (singleton: ligar/desligar + `interval_minutes`, allowlist 15min…24h) + `ScheduledSyncJob` recorrente (SolidQueue `recurring.yml`, tick por minuto) disparam o **mesmo fluxo** do botão manual quando vencido e **sem execução ativa**. **Sem Tarefa do Windows.**
+- O agendador mora em **Configurações** (`/settings` — `SettingsController`; antes placeholder), por decisão de produto; `/sync_runs` mantém só a sincronização manual + atalho para Configurações. Pundit (`SyncSchedulePolicy`), CSRF e anti-concorrência preservados.
+### Validação
+Suíte **614 runs / 2363 assertions / 0** falhas/erros/skips (agente testado contra fake HTTP via TCPServer — **pipeline real nunca roda na suíte**; degradação offline; agendamento due?/singleton/dispara-quando-vencido; controllers/UI; Pundit/CSRF). rubocop **190/0**; brakeman **0**; `git diff --check` limpo. Migrations aditivas: `sync_executions` (current_step/pipeline_exit_code/pipeline_summary) e `sync_schedules` (singleton).
+### Pendências
+- Nenhuma na PB-016. Fora de escopo (futuro): cancelamento de execução; histórico avançado de logs; agente/worker em produção (F7).
+### Fora de escopo (cumprido)
+Sem montar fontes no container; sem o Rails executar Python; sem Tarefa do Windows; `_origem/_repob` e `_mockup/` somente leitura.
+
+## 2026-06-22 — [Correção pós-PB-006] Busca de CNPJ: 429 (rate-limit) com mensagem clara
+### Resumo
+A busca de CNPJ exibia "Serviço indisponível" quando, na verdade, a BrasilAPI (plano gratuito) **rate-limitava** as consultas (HTTP 429; ~3/min por IP — o container sai por um único IP). A API estava no ar. Hotfix de mensagem (não muda o proxy/allowlist da PB-006/ADR-022).
+### Correção
+- `Cnpj::Lookup` trata `Net::HTTPTooManyRequests` distintamente → status `:too_many_requests` + "Limite de consultas atingido; aguarde ~1 min", em vez do `else` genérico "indisponível". O controller já propaga `result.status` (HTTP 429). Testes (unit + endpoint) para o caso 429.
+### Validação
+Comprovado end-to-end: após a janela de rate-limit, 1 chamada → HTTP 200 (`52005934000110` → G. DE O. CARVALHO LTDA). Incluído na suíte verde (614/2363/0).
+
 ## 2026-06-22 — [Produto Operacional · PB-014] Código legível de tarefa (TSK-000001) — ENTREGUE
 ### Resumo
 Tarefas ganham código operacional legível **`TSK-000001`** (não substitui a PK/UUID). **Aceite do PO.** Reabre o **ADR-016** (addendum). Migration autorizada.

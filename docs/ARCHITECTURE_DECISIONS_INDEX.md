@@ -14,7 +14,7 @@
 | ADR-008 | Consumo `output/normalized/` | ✅ Aceito | 2026-06-16 | 3 | Alto | 007,009 | — |
 | ADR-009 | Turnos lazy/sob demanda | ✅ Aceito | 2026-06-16 | 3 | Alto | 008,010 | mapeamento `thread_id → shards/messages/<sha1>` **refutado** → ver addendum **ADR-018**; estratégia definida em **ADR-021** (índice de offsets) |
 | ADR-010 | Diário por view sob demanda | ✅ Aceito | 2026-06-16 | 6 | Médio | 009 | — |
-| ADR-011 | Agendador externo roda; Rails lê | ✅ Aceito (+addendum 2026-06-21) | 2026-06-16 | 3/6 | Médio | 005 | **PB-015 entregue** (Rails só lê); addendum: agendador interno do Omni (PB-016) poderá disparar o pipeline só com allowlist+timeout+path fixo |
+| ADR-011 | Agendador externo roda; Rails lê | ✅ Aceito (+addenda 2026-06-21 e 2026-06-22) | 2026-06-16 | 3/6 | Médio | 005 | **PB-015** (Rails só lê) + **PB-016 concluída**: Omni dispara o pipeline via **agente no host** (não no container), com allowlist+timeout+token+sem input; agendamento interno em /settings |
 | ADR-012 | Sanitização server-side de markdown | ✅ Aceito | 2026-06-16 | 5 | Alto (XSS) | — | teste de payload malicioso (F5) |
 | ADR-013 | Conversas pessoais (`personal`+`user_id`+Pundit) | ✅ Aceito | 2026-06-16 | 3/5 | Médio | 004,014 | impl. usa coluna boolean `personal` (sem `status`) + decisão b1 (ver addendum F5.1.2 no ADR-013); reconciliar ao implementar b2/cifra |
 | ADR-014 | Multiusuário preparado; domínio compartilhado MVP | ✅ Aceito | 2026-06-16 | 1/3 | Médio | 004,013 | tenancy de domínio → roadmap |
