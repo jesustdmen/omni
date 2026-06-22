@@ -31,6 +31,7 @@ class ConversationsController < ApplicationController
     @links = @conversation.conversation_links.includes(:created_by, task: :client).order(:created_at)
     @has_primary = @links.any? { |l| l.link_type == "primary" }
     @tasks = Task.includes(:client).order(:title)
+    @return_to = return_to_param # PB-013b — origem (lista/busca) p/ "Voltar".
     load_turns
   end
 

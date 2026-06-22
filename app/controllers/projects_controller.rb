@@ -21,11 +21,14 @@ class ProjectsController < ApplicationController
     @filters_active = project_filters_active?
   end
 
-  def show; end
+  def show
+    @return_to = return_to_param # PB-013b
+  end
 
   def new
     @project = Project.new
     authorize @project
+    @return_to = return_to_param
   end
 
   def create
@@ -34,23 +37,27 @@ class ProjectsController < ApplicationController
     if @project.save
       redirect_to @project, notice: "Projeto criado."
     else
+      @return_to = return_to_param
       render :new, status: :unprocessable_entity
     end
   end
 
-  def edit; end
+  def edit
+    @return_to = return_to_param
+  end
 
   def update
     if @project.update(project_params)
-      redirect_to @project, notice: "Projeto atualizado."
+      redirect_to safe_return_to(fallback: @project), notice: "Projeto atualizado." # PB-013b
     else
+      @return_to = return_to_param
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     @project.destroy
-    redirect_to projects_path, notice: "Projeto removido."
+    redirect_to safe_return_to(fallback: projects_path), notice: "Projeto removido." # PB-013b
   end
 
   # PB-007 — duplica o projeto (transacional; só campos autorizados) e leva à edição.

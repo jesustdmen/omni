@@ -36,39 +36,47 @@ class TasksController < ApplicationController
     @checklist_item = ChecklistItem.new
     # PB-004c — demanda de origem (0 ou 1) para a aba "Demanda".
     @origin_demand = @task.origin_demand
+    @return_to = return_to_param # PB-013b — origem (lista/busca) p/ "Voltar".
   end
 
   def new
     @task = Task.new
     authorize @task
+    @return_to = return_to_param
   end
 
   def create
     @task = Task.new(task_params)
     authorize @task
     if @task.save
-      redirect_to @task, notice: "Tarefa criada."
+      redirect_to @task, notice: "Tarefa criada." # detalhe; lista de origem via "Voltar".
     else
+      @return_to = return_to_param
       render :new, status: :unprocessable_entity
     end
   end
 
-  def edit; end
+  def edit
+    @return_to = return_to_param
+  end
 
   def update
     if @task.update(task_params)
-      redirect_to @task, notice: "Tarefa atualizada."
+      # PB-013b — edição direta da lista volta à lista filtrada; senão, ao detalhe.
+      redirect_to safe_return_to(fallback: @task), notice: "Tarefa atualizada."
     else
+      @return_to = return_to_param
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     # PB-004c — via serviço: se houver demanda de origem, devolve-a a "pending".
+    had_demand = @task.origin_demand.present?
     result = DeleteTask.call(@task)
     if result.success?
-      notice = @task.origin_demand ? "Tarefa removida. A demanda de origem voltou para pendente." : "Tarefa removida."
-      redirect_to tasks_path, notice: notice
+      notice = had_demand ? "Tarefa removida. A demanda de origem voltou para pendente." : "Tarefa removida."
+      redirect_to safe_return_to(fallback: tasks_path), notice: notice # PB-013b
     else
       redirect_to @task, alert: "Não foi possível remover a tarefa."
     end

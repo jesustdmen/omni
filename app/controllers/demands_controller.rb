@@ -29,11 +29,13 @@ class DemandsController < ApplicationController
   def show
     # PB-004c — tarefa criada a partir desta demanda (0 ou 1), para link/estado.
     @converted_task = @demand.converted_task
+    @return_to = return_to_param # PB-013b
   end
 
   def new
     @demand = Demand.new
     authorize @demand
+    @return_to = return_to_param
   end
 
   def create
@@ -42,16 +44,20 @@ class DemandsController < ApplicationController
     if @demand.save
       redirect_to @demand, notice: "Demanda criada."
     else
+      @return_to = return_to_param
       render :new, status: :unprocessable_entity
     end
   end
 
-  def edit; end
+  def edit
+    @return_to = return_to_param
+  end
 
   def update
     if @demand.update(demand_params)
-      redirect_to @demand, notice: "Demanda atualizada."
+      redirect_to safe_return_to(fallback: @demand), notice: "Demanda atualizada." # PB-013b
     else
+      @return_to = return_to_param
       render :edit, status: :unprocessable_entity
     end
   end
@@ -62,7 +68,7 @@ class DemandsController < ApplicationController
     if @demand.converted_task.present?
       redirect_to @demand, alert: "Esta demanda gerou uma tarefa e não pode ser excluída. Exclua a tarefa primeiro (a demanda voltará a pendente)."
     elsif @demand.destroy
-      redirect_to demands_path, notice: "Demanda removida."
+      redirect_to safe_return_to(fallback: demands_path), notice: "Demanda removida." # PB-013b
     else
       redirect_to @demand, alert: "Não foi possível remover a demanda."
     end

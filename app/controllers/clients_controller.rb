@@ -15,11 +15,14 @@ class ClientsController < ApplicationController
     @tab == "contacts" ? load_contacts : load_companies
   end
 
-  def show; end
+  def show
+    @return_to = return_to_param # PB-013b
+  end
 
   def new
     @client = Client.new
     authorize @client
+    @return_to = return_to_param
   end
 
   def create
@@ -28,23 +31,27 @@ class ClientsController < ApplicationController
     if @client.save
       redirect_to @client, notice: "Cliente criado."
     else
+      @return_to = return_to_param
       render :new, status: :unprocessable_entity
     end
   end
 
-  def edit; end
+  def edit
+    @return_to = return_to_param
+  end
 
   def update
     if @client.update(client_params)
-      redirect_to @client, notice: "Cliente atualizado."
+      redirect_to safe_return_to(fallback: @client), notice: "Cliente atualizado." # PB-013b
     else
+      @return_to = return_to_param
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     @client.destroy
-    redirect_to clients_path, notice: "Cliente removido."
+    redirect_to safe_return_to(fallback: clients_path), notice: "Cliente removido." # PB-013b
   end
 
   # PB-006 — proxy de consulta de CNPJ (BrasilAPI) via servidor: allowlist de host
