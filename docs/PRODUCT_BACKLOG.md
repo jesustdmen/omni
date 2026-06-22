@@ -274,7 +274,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Parcialmente entregue** — **PB-013a** (busca global) **ENTREGUE** + aceite do PO (2026-06-21); **PB-013b pendente** (breadcrumbs + preservação de filtros/contexto entre lista↔detalhe↔edição). **NÃO concluída.** |
+| Status | **CONCLUÍDA** — **PB-013a** (busca global) ENTREGUE (2026-06-21) + **PB-013b** (preservação de contexto/navegação) ENTREGUE com aceite do PO (2026-06-22). |
 | Problema que resolve | A navegação entre telas ainda está estranha, com excesso de uso de "voltar" e perda de contexto operacional ao circular entre lista/detalhe/edição. |
 | Origem/evidência | Observação do Product Owner durante o aceite manual da PB-003a (2026-06-19). |
 | Critério de aceite | Retorno coerente entre lista↔detalhe↔edição preservando o contexto operacional (ex.: voltar para a tarefa após editar/excluir apontamento; menos "voltar" cego). |
@@ -285,7 +285,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 **Fatias:**
 
 - **PB-013a — ENTREGUE (2026-06-21):** **busca global** (`GET /search`) sobre os dados funcionais, agrupada por categoria (Tarefas/Demandas/Projetos/Clientes/Contatos/Conversas) com **badge de tipo**, **"Encontrado em: …"** e contexto; tarefas também por **checklist/apontamento** (DISTINCT, sem duplicar); conversas por título com **source/workspace** (sem turnos — ADR-021); top-5 por categoria + **"ver todos"**; cada resultado é um **card-link único** com **"Ir →"** (sem JS, foco por teclado, hover/focus, responsivo, aria contextual); **"← Voltar"** retorna à tela de origem (referer interno; fallback Dashboard). Topbar passou de placeholder a **form GET funcional**. Aceite do PO; checks verdes (ver `PROJECT_STATUS.md`).
-- **PB-013b — PENDENTE:** breadcrumbs; **preservação de filtros e contexto** entre lista↔detalhe↔edição (ex.: voltar à lista mantendo busca/filtros/página; voltar à tarefa após editar/excluir apontamento). **A PB-013 não está integralmente concluída.**
+- **PB-013b — ENTREGUE (2026-06-22):** **mecanismo central `return_to`** (concern `ReturnNavigation`) — sanitizador único que aceita só caminho interno (preserva query + fragmento) e rejeita scheme/host, `//host`, backslash, CR/LF, controle e tamanho excessivo (anti open-redirect); fallback por recurso; sem JS, sem duplicação por controller. **Preservação de filtros/contexto** entre lista↔detalhe↔edição: listas levam `return_to=fullpath` (busca/filtros/paginação/per_page/aba) em Ver/Editar/Excluir; detalhes (Voltar/Editar/Excluir), forms (hidden + Cancelar) e pages new/edit honram o contexto; **busca global** abre resultado e volta aos mesmos resultados; **contatos** voltam conforme origem (cliente vs aba global); **apontamentos** voltam à tarefa (#tab-time) ou à lista global conforme origem; **breadcrumbs** com `aria-label="Breadcrumb"` e sem UUID como rótulo (sem reformulação visual). Aceite do PO (busca a validar em uso); checks verdes (ver `PROJECT_STATUS.md`). **PB-013 integralmente concluída.**
 
 ### PB-014 — Código legível de tarefa
 
@@ -334,6 +334,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c); **PB-005** (demandas), **PB-006** (clientes/contatos + CNPJ — ADR-022) e **PB-007** (projetos + duplicação) entregues. **As 4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas — lacuna operacional da PB-001 fechada.**
 
-**PB-013a** (busca global) entregue — **PB-013 segue parcial** (falta PB-013b: breadcrumbs + preservação de filtros/contexto).
+**PB-013 CONCLUÍDA** — PB-013a (busca global, 2026-06-21) + PB-013b (preservação de contexto/navegação, 2026-06-22).
 
-Próxima decisão do PO: **PB-013b** (breadcrumbs + preservação de contexto); **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
+Próxima decisão do PO: **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.

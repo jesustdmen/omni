@@ -9,6 +9,25 @@
 
 ## Entradas
 
+## 2026-06-22 — [Produto Operacional · PB-013b] Preservação de contexto e navegação — ENTREGUE (PB-013 concluída)
+### Resumo
+Fatia **b** da PB-013: preservação de contexto/navegação entre listas, busca, detalhes, formulários e ações. **Aceite do PO** (busca a validar durante o uso). Com a PB-013b, a **PB-013 está integralmente concluída**. Sem migration/schema/dependência.
+### Entregue
+- **Mecanismo central `return_to`** — concern `ReturnNavigation` (`app/controllers/concerns/return_navigation.rb`), único sanitizador: aceita **somente caminho interno** absoluto, preserva **query string** e **fragmento interno**; rejeita **scheme/host**, **`//host`**, **backslash**, **CR/LF/controle** e **tamanho >2000**; **fallback por recurso** (`safe_return_to`); referer interno só como fallback secundário (`safe_referer_back`). Sem JS; sem duplicação por controller (incluído no `ApplicationController`).
+- **Listas** (tarefas/demandas/projetos/clientes-empresas/contatos/projetos/conversas): Ver/Editar/Excluir carregam `return_to=request.fullpath` (busca, filtros, paginação, per_page, **aba ativa**).
+- **Detalhes:** "Voltar"/breadcrumb retornam à origem exata; Editar propaga o contexto; Excluir retorna à origem após sucesso; sem `return_to` mantém o fallback atual.
+- **Formulários** (new/edit): hidden `return_to`; **Salvar** vai ao destino contextual; **Cancelar** volta à origem; **erro de validação** mantém o contexto.
+- **Busca global (PB-013a intacta):** resultado carrega `return_to=/search?q=...`; detalhe/edição voltam aos **mesmos resultados**. Badges, "Encontrado em", cards, "Ir →", "Ver todos" e "← Voltar" preservados; consultas/categorias inalteradas.
+- **Contatos:** pela aba global → `/clients?tab=contacts…`; pelo cliente → cliente. **Apontamentos:** pela tarefa → `#tab-time`; pela lista global → lista (não força a tarefa).
+- **Breadcrumbs:** `nav[aria-label="Breadcrumb"]` onde faltava; link-raiz preserva a origem; **nunca UUID** como rótulo; CSS reaproveitado, sem reformulação visual.
+- **Segurança:** nenhum `redirect_to params[:return_to]` direto — toda navegação passa pelo sanitizador (anti open-redirect); referer seguro só como fallback.
+### Validação
+Suíte **547 runs / 2135 assertions / 0** falhas/erros/skips (inclui **20** unit do sanitizador + **25** de fluxo: A/B/C, cancelar, erro, exclusão, paginação/per_page, aba Empresas/Contatos, busca, contato/apontamento por origem, breadcrumbs acessíveis, auth/Pundit, bloqueio de open-redirect); rubocop **174/0**; brakeman **0**; `git diff --check` limpo. Eager-load (`zeitwerk:check`) OK. Aceite visual do PO: OK. Banco dev sem massa artificial.
+### Pendências
+- Nenhuma na PB-013. (Busca global: PO validará detalhes durante o uso.)
+### Fora de escopo (cumprido)
+Sem redesenho de layout; sem recriar breadcrumbs existentes; sem SPA/command palette/histórico auditável; sem busca em turnos; sem migration/schema/dependência; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-21 — [Produto Operacional · PB-013a] Busca global — ENTREGUE (PB-013 parcial)
 ### Resumo
 Busca global sobre os dados funcionais do Omni (a topbar deixou de ser placeholder). **Aceite do PO.** Fatia **a** da PB-013 — **PB-013 segue parcialmente entregue**: PB-013b (breadcrumbs + preservação de filtros/contexto entre lista↔detalhe↔edição) **pendente**. Sem migration/dependência.
