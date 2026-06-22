@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_21_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_22_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -320,6 +320,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_21_160000) do
 
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "client_id", null: false
+    t.bigserial "code_number", null: false
     t.integer "conversation_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.uuid "demand_id"
@@ -331,6 +332,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_21_160000) do
     t.string "type", null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_tasks_on_client_id"
+    t.index ["code_number"], name: "index_tasks_on_code_number", unique: true
     t.index ["created_at"], name: "index_tasks_on_created_at"
     t.index ["demand_id"], name: "idx_tasks_one_per_demand", unique: true, where: "(demand_id IS NOT NULL)"
     t.index ["project_id"], name: "index_tasks_on_project_id"

@@ -27,12 +27,33 @@ class Task < ApplicationRecord
     canceled: "canceled"
   }, default: "todo", validate: true
 
+  # PB-014 — código legível (`TSK-000001`). `code_number` é gerado pela sequence do
+  # banco (DEFAULT nextval); somente leitura no app (nunca atribuído pela aplicação).
+  attr_readonly :code_number
+
   validates :title, presence: true
   validates :type, presence: true, inclusion: { in: TYPES }
   validates :status, presence: true
   # PB-004c — no máximo 1 tarefa por demanda (espelha o índice único parcial).
   validates :demand_id, uniqueness: true, allow_nil: true
   validate :project_belongs_to_same_client
+
+  # PB-014 — código operacional legível e estável (não substitui a PK/UUID).
+  # `TSK-` + 6 dígitos zero-padded (cresce além de 6 dígitos se necessário).
+  def code
+    return if code_number.blank?
+
+    format("TSK-%06d", code_number)
+  end
+
+  # PB-014 — extrai o `code_number` de um termo de busca. Reconhece (case-insensitive,
+  # com espaços ao redor): "TSK-000001", "tsk-1", "TSK000001" e número puro "1".
+  # Retorna o Integer ou nil quando o termo não é um código/número de tarefa.
+  CODE_TERM = /\A\s*(?:tsk[-\s]?)?0*(\d{1,18})\s*\z/i
+  def self.code_number_from(term)
+    m = CODE_TERM.match(term.to_s)
+    m && m[1].to_i
+  end
 
   # Soma read-only das durações dos apontamentos desta tarefa (F2.5).
   def total_duration
