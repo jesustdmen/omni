@@ -26,6 +26,7 @@ module SearchHelper
   # Título principal do resultado.
   def search_result_title(record)
     case record
+    when Task         then [ record.code, record.title ].compact.join(" — ") # PB-014
     when Conversation then record.title.presence || "— sem título —"
     else record.try(:name) || record.try(:title) || record.to_s
     end

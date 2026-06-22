@@ -43,14 +43,18 @@ class GlobalSearch
     Client.normalize_cnpj_digits(@q)
   end
 
-  # --- Tarefas: título/descrição + checklist + apontamento (DISTINCT) -------
+  # --- Tarefas: código + título/descrição + checklist + apontamento (DISTINCT)
   def tasks_group
-    base = Task.where(
-      "tasks.title ILIKE :p OR tasks.description ILIKE :p OR " \
-      "tasks.id IN (SELECT task_id FROM checklist_items WHERE content ILIKE :p) OR " \
-      "tasks.id IN (SELECT task_id FROM time_entries WHERE description ILIKE :p)",
-      p: like
-    ).distinct
+    # PB-014 — termo que parece código de tarefa (TSK-000001/número) também casa por code_number.
+    sql = "tasks.title ILIKE :p OR tasks.description ILIKE :p OR " \
+          "tasks.id IN (SELECT task_id FROM checklist_items WHERE content ILIKE :p) OR " \
+          "tasks.id IN (SELECT task_id FROM time_entries WHERE description ILIKE :p)"
+    args = { p: like }
+    if task_code.present?
+      sql += " OR tasks.code_number = :code"
+      args[:code] = task_code
+    end
+    base = Task.where(sql, **args).distinct
 
     total = base.count
     records = base.includes(:client).order(created_at: :desc).limit(PER_CATEGORY).to_a
@@ -62,11 +66,19 @@ class GlobalSearch
   # Recalcula em quais campos casou (consultas escopadas à tarefa; conjunto pequeno).
   def task_matched_in(task)
     fields = []
+    fields << "Código" if task_code.present? && task.code_number == task_code
     fields << "Título" if ilike?(task.title)
     fields << "Descrição" if ilike?(task.description)
     fields << "Checklist" if task.checklist_items.where("content ILIKE :p", p: like).exists?
     fields << "Apontamento" if task.time_entries.where("description ILIKE :p", p: like).exists?
     fields
+  end
+
+  # `code_number` extraído do termo (ou nil). Memoizado.
+  def task_code
+    return @task_code if defined?(@task_code)
+
+    @task_code = Task.code_number_from(@q)
   end
 
   # --- Demandas -------------------------------------------------------------

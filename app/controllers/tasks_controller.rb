@@ -113,7 +113,14 @@ class TasksController < ApplicationController
 
     # Escapa curingas do LIKE (% e _) e o próprio escape (\), tratando-os como texto.
     pattern = "%#{term.gsub('\\', '\\\\\\\\').gsub('%', '\\%').gsub('_', '\\_')}%"
-    scope.where("title ILIKE :p OR description ILIKE :p", p: pattern)
+    # PB-014 — se o termo parecer um código de tarefa (TSK-000001 ou número),
+    # também casa por code_number (OR; não substitui a busca por texto).
+    code = Task.code_number_from(term)
+    if code
+      scope.where("title ILIKE :p OR description ILIKE :p OR code_number = :c", p: pattern, c: code)
+    else
+      scope.where("title ILIKE :p OR description ILIKE :p", p: pattern)
+    end
   end
 
   def valid_client?(client_id)
