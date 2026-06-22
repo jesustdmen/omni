@@ -292,13 +292,15 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 (decisão do PO; reabre ADR-016) |
-| Status | Proposto |
-| Problema que resolve | Tarefas são identificadas por UUID/URL, sem código operacional legível (ex.: `TSK-0001`) como no TaskManager — dificulta referência rápida no dia a dia. |
-| Origem/evidência | Observação do PO + `PB-001_PARITY_AUDIT.md §5.3`; **ADR-016** adiou "código legível" para v1. |
-| Critério de aceite | Decisão explícita do PO: reabrir no MVP (com geração de código) ou manter em v1; se aprovado, código estável/legível exibido na lista e no detalhe. |
-| Fora de escopo | Não implementar nesta etapa; requer decisão de produto e possível adendo ao ADR-016. |
-| Dependências | ADR-016. |
+| Status | **ENTREGUE (2026-06-22)** — aceite do PO; **addendum ao ADR-016**. |
+| Problema que resolve | Tarefas eram identificadas só por UUID/URL, sem código operacional legível (ex.: `TSK-000001`) como no TaskManager — dificultava referência rápida no dia a dia. |
+| Origem/evidência | Observação do PO + `PB-001_PARITY_AUDIT.md §5.3`; **ADR-016** adiou "código legível" para v1; reaberto pelo PO. |
+| Critério de aceite | ✅ Código estável/legível `TSK-000001` exibido na lista e no detalhe (e demais telas onde a tarefa aparece); geração automática, única, não reutilizável. |
+| Fora de escopo | tags/assignee/due_date/estimated_hours (seguem v1); rota/lookup público por código (URLs continuam por UUID). |
+| Dependências | ADR-016 (addendum). |
 | Relacionado | WD-04, UI-03. |
+
+**Entrega (2026-06-22):** `tasks.code_number` (bigint) por **sequence do PostgreSQL** (`DEFAULT nextval`; concorrência segura, nunca `maximum+1`) → `Task#code` = **`TSK-%06d`**. Backfill determinístico das existentes (`created_at ASC, id ASC`); `NOT NULL` + índice **unique**; `attr_readonly` + fora dos strong params (não atribuível). **URLs continuam por UUID** (sem rota/lookup por código nesta fatia); exclusão **não reutiliza** código. Exibido na lista/detalhe de tarefas, busca global ("Encontrado em: Código"), links em demandas/conversas/apontamentos/dashboard e selects (`TSK-000001 — Título`). **Busca por código** (completo ou número, case-insensitive) em OR com texto; `%/_` escapados. Checks verdes (ver `PROJECT_STATUS.md`).
 
 ### PB-015 — Sincronização operacional de conversas
 
@@ -336,4 +338,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **PB-013 CONCLUÍDA** — PB-013a (busca global, 2026-06-21) + PB-013b (preservação de contexto/navegação, 2026-06-22).
 
-Próxima decisão do PO: **PB-014** (código legível de tarefa); ou **PB-016** (agendador interno de importação). Nada será implementado sem autorização explícita.
+**PB-014 ENTREGUE** (código legível `TSK-000001`, 2026-06-22; addendum ao ADR-016).
+
+Próxima decisão do PO: **PB-016** (agendador interno de importação em Configurações). Nada será implementado sem autorização explícita.

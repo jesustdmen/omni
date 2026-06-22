@@ -19,7 +19,7 @@
 | ADR-013 | Conversas pessoais (`personal`+`user_id`+Pundit) | ✅ Aceito | 2026-06-16 | 3/5 | Médio | 004,014 | impl. usa coluna boolean `personal` (sem `status`) + decisão b1 (ver addendum F5.1.2 no ADR-013); reconciliar ao implementar b2/cifra |
 | ADR-014 | Multiusuário preparado; domínio compartilhado MVP | ✅ Aceito | 2026-06-16 | 1/3 | Médio | 004,013 | tenancy de domínio → roadmap |
 | ADR-015 | Dropar runtime-switch de ambiente | ✅ Aceito | 2026-06-16 | 1/2 | Médio | 006 | homologação = ambiente separado; clone = rake task segura |
-| ADR-016 | Task MVP = paridade + counters | ✅ Aceito | 2026-06-16 | 2 | Médio | — | tags/assignee/due_date/estimated_hours/checklist/código → v1 |
+| ADR-016 | Task MVP = paridade + counters | ✅ Aceito (+addendum 2026-06-22) | 2026-06-16 | 2 | Médio | — | checklist (PB-004b) e código legível `TSK-000001` (PB-014) reabertos/entregues; tags/assignee/due_date/estimated_hours → v1 |
 | ADR-017 | CNPJ nullable + partial unique | ✅ Aceito | 2026-06-16 | 2 | Baixo | — | normalizar `''`→NULL na migração |
 | ADR-018 | Addendum ao ADR-009 — shards por arquivo-fonte; turnos lazy fora da F3 | ✅ Aceito | 2026-06-17 | 3 | Médio | 009,008 | índice `thread_id→offset` definido em **ADR-021** |
 | ADR-019 | Consolidação em repositório único (`app/`) + docs em `app/docs/` | ✅ Aceito | 2026-06-17 | 3 | Médio | — | configurar remoto único e primeiro push |

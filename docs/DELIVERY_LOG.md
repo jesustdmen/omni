@@ -9,6 +9,24 @@
 
 ## Entradas
 
+## 2026-06-22 — [Produto Operacional · PB-014] Código legível de tarefa (TSK-000001) — ENTREGUE
+### Resumo
+Tarefas ganham código operacional legível **`TSK-000001`** (não substitui a PK/UUID). **Aceite do PO.** Reabre o **ADR-016** (addendum). Migration autorizada.
+### Entregue
+- **`tasks.code_number`** (bigint) gerado por **sequence do PostgreSQL** (`tasks_code_number_seq`, `DEFAULT nextval`, `OWNED BY` a coluna) — concorrência segura no banco, **nunca `maximum+1`**. `Task#code` = `format("TSK-%06d", code_number)` (cresce além de 6 dígitos sem truncar).
+- **Migration reversível** (`20260622120000`): coluna nullable → sequence dedicada → **backfill determinístico** (`created_at ASC, id ASC`) → `DEFAULT nextval` → `NOT NULL` → índice **unique** (`index_tasks_on_code_number`). Sem hardcode de IDs. Schema dumpa como `bigserial` (equivalente).
+- **Read-only:** `attr_readonly :code_number` (Rails 8 levanta `ReadonlyAttributeError` em alteração) + **fora dos strong params** (envio por params é ignorado).
+- **URLs continuam por UUID** — sem rota/lookup por código nesta fatia. **Exclusão não reutiliza** código (gaps aceitáveis).
+- **Exibição:** lista `/tasks` (junto ao título), detalhe `/tasks/:id` (cabeçalho + "Código" + breadcrumb/title), **busca global** ("Encontrado em: Código"), links de tarefa em **demandas/conversas/apontamentos/dashboard**, **selects** como `TSK-000001 — Título (Cliente)` (`TasksHelper`). Não expõe UUID quando o código basta.
+- **Busca por código** (lista `/tasks` e global): aceita `TSK-000001`, `tsk-1`, número formatado e puro, **case-insensitive**, em **OR** com título/descrição/checklist/apontamento (não substitui); `%/_` seguem escapados (`Task.code_number_from`).
+- **Criação automática** em todos os caminhos (manual, conversa→tarefa, demanda→tarefa, fixtures/testes) sem código nos controllers.
+### Validação
+Suíte **577 runs / 2220 assertions / 0** falhas/erros/skips (11 unit: formato, auto-geração, sequencial/único, exclusão não reutiliza, **concorrência sem duplicar**, attr_readonly, parser; 15 integração: lista/detalhe/busca/selects/links, criação manual/conversa/demanda, busca local e global por código, code_number não atribuível). rubocop **179/0**; brakeman **0**; `git diff --check` limpo. Banco dev: **6 tarefas, 0 nulos, 0 duplicados** (`TSK-000001..000006` por `created_at,id`; próxima → `TSK-000007`).
+### Pendências
+- Nenhuma na PB-014. tags/assignee/due_date/estimated_hours e rota/lookup por código seguem v1/roadmap (ADR-016 §addendum).
+### Fora de escopo (cumprido)
+Sem tags/responsável/prazo/estimativa; sem rota por código; sem dependência nova; sem mudança na PB-016; `_origem/`/`_mockup/` intocados.
+
 ## 2026-06-22 — [Correção pós-PB-013] Loader de turnos marcava índice válido como "desatualizado"
 ### Resumo
 Hotfix de leitura (não reabre a PB-013). Após a correção de "miolo" do fingerprint na PB-015, o **builder** (`Sync::BuildConversationTurnRefs`) passou a gravar `content_hash` com **3 janelas** (cabeça+miolo+cauda), mas o **`ConversationTurns::LazyLoader`** seguia recalculando com **2 janelas** (cabeça+cauda). Os hashes nunca mais batiam → o loader marcava **toda** conversa como `:stale` ("índice de turnos desatualizado") e ocultava o conteúdo, mesmo com o índice íntegro.
