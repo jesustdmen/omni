@@ -41,9 +41,12 @@ module Sync
       assert_includes labels, "sessions.jsonl"
     end
 
-    test "lê apenas do diretório fixo: nunca recebe path do usuário" do
-      # RunConversationsSync.call só aceita :execution — não há parâmetro de path.
-      assert_equal %i[execution], Sync::RunConversationsSync.method(:call).parameters.map(&:last)
+    test "lê apenas do diretório fixo: nunca recebe path/comando do usuário" do
+      # RunConversationsSync.call aceita só execution + injeção de runner/skip (PB-016a);
+      # NUNCA path, dir ou comando — esses vêm de config/ENV (allowlist).
+      names = Sync::RunConversationsSync.method(:call).parameters.map(&:last)
+      assert_equal %i[execution pipeline_runner skip_pipeline].sort, names.sort
+      assert_empty(names & %i[path dir command script python args])
     end
 
     test "erro quando arquivos do normalized estão ausentes; índice anterior preservado" do
@@ -137,6 +140,96 @@ module Sync
       FileUtils.rm_f(File.join(@dir, "sessions.jsonl"))
       _result, exec = run_sync
       assert_no_match(%r{/tmp/}, exec.reload.error_message.to_s)
+    end
+
+    # ------- PB-016a: etapa do pipeline (runner FALSO; nunca o pipeline real) -------
+
+    # Runner falso configurável: registra que foi chamado e devolve um Result.
+    class FakeRunner
+      attr_reader :called
+      def initialize(ok:, exit_code: 0, timed_out: false, summary: "exit=0")
+        @ok = ok; @exit_code = exit_code; @timed_out = timed_out; @summary = summary; @called = 0
+      end
+
+      def call
+        @called += 1
+        Sync::PipelineRunner::Result.new(ok: @ok, exit_code: @exit_code, timed_out: @timed_out, summary: @summary)
+      end
+    end
+
+    def with_pipeline_on
+      prev = Rails.application.config.x.run_pipeline_internally
+      Rails.application.config.x.run_pipeline_internally = true
+      yield
+    ensure
+      Rails.application.config.x.run_pipeline_internally = prev
+    end
+
+    test "pipeline ON + sucesso: roda pipeline ANTES do import e conclui" do
+      with_pipeline_on do
+        runner = FakeRunner.new(ok: true, exit_code: 0, summary: "exit=0 · ok")
+        exec = SyncExecution.create!(status: "queued", trigger: "manual")
+        result = Sync::RunConversationsSync.call(execution: exec, pipeline_runner: runner)
+        exec.reload
+        assert result.success?, "erro=#{result.error}"
+        assert_equal 1, runner.called, "pipeline deve ter sido executado"
+        assert_equal 0, exec.pipeline_exit_code
+        assert Conversation.count.positive?, "importação deve ter ocorrido após o pipeline"
+        assert_equal "completed", exec.current_step
+      end
+    end
+
+    test "pipeline ON + exit code de erro: NÃO importa, marca error, índice preservado" do
+      with_pipeline_on do
+        # primeiro um sync ok (sem pipeline) p/ ter um índice anterior
+        run_sync
+        refs_before = ConversationTurnRef.count
+        convs_before = Conversation.count
+
+        runner = FakeRunner.new(ok: false, exit_code: 3, summary: "exit=3 · boom")
+        exec = SyncExecution.create!(status: "queued", trigger: "manual")
+        result = Sync::RunConversationsSync.call(execution: exec, pipeline_runner: runner)
+        exec.reload
+
+        assert_not result.success?
+        assert_equal "error", exec.status
+        assert_equal 3, exec.pipeline_exit_code
+        assert_match(/pipeline/i, exec.error_message)
+        assert_equal refs_before, ConversationTurnRef.count, "índice preservado em falha do pipeline"
+        assert_equal convs_before, Conversation.count, "nada importado quando o pipeline falha"
+      end
+    end
+
+    test "pipeline ON + timeout: NÃO importa, mensagem de timeout" do
+      with_pipeline_on do
+        runner = FakeRunner.new(ok: false, exit_code: nil, timed_out: true, summary: "timeout")
+        exec = SyncExecution.create!(status: "queued", trigger: "manual")
+        result = Sync::RunConversationsSync.call(execution: exec, pipeline_runner: runner)
+        exec.reload
+        assert_not result.success?
+        assert_equal "error", exec.status
+        assert_match(/tempo limite/i, exec.error_message)
+        assert_equal 0, Conversation.count, "nada importado em timeout do pipeline"
+      end
+    end
+
+    test "pipeline OFF (default): não chama runner, só importa /normalized" do
+      runner = FakeRunner.new(ok: true)
+      exec = SyncExecution.create!(status: "queued", trigger: "manual")
+      result = Sync::RunConversationsSync.call(execution: exec, pipeline_runner: runner)
+      assert result.success?
+      assert_equal 0, runner.called, "com pipeline OFF, o runner não deve ser chamado"
+    end
+
+    test "skip_pipeline força pular a coleta mesmo com pipeline ON" do
+      with_pipeline_on do
+        runner = FakeRunner.new(ok: true)
+        exec = SyncExecution.create!(status: "queued", trigger: "manual_import")
+        result = Sync::RunConversationsSync.call(execution: exec, pipeline_runner: runner, skip_pipeline: true)
+        assert result.success?
+        assert_equal 0, runner.called, "skip_pipeline deve pular o pipeline"
+        assert Conversation.count.positive?, "importação ainda ocorre"
+      end
     end
   end
 end

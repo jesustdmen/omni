@@ -5,7 +5,10 @@ class SyncConversationsJobTest < ActiveJob::TestCase
   def with_spy
     calls = []
     original = Sync::RunConversationsSync.method(:call)
-    Sync::RunConversationsSync.define_singleton_method(:call) { |execution:| calls << execution }
+    # PB-016a — o serviço agora recebe também skip_pipeline (default false).
+    Sync::RunConversationsSync.define_singleton_method(:call) do |execution:, skip_pipeline: false, pipeline_runner: nil|
+      calls << { execution: execution, skip_pipeline: skip_pipeline }
+    end
     yield calls
   ensure
     Sync::RunConversationsSync.singleton_class.send(:remove_method, :call)
@@ -16,7 +19,16 @@ class SyncConversationsJobTest < ActiveJob::TestCase
     exec = SyncExecution.create!(status: "queued", trigger: "manual")
     with_spy do |calls|
       SyncConversationsJob.perform_now(exec.id)
-      assert_equal [ exec.id ], calls.map(&:id)
+      assert_equal [ exec.id ], calls.map { |c| c[:execution].id }
+      assert_equal [ false ], calls.map { |c| c[:skip_pipeline] }, "default não pula o pipeline"
+    end
+  end
+
+  test "repassa skip_pipeline ao serviço (PB-016a)" do
+    exec = SyncExecution.create!(status: "queued", trigger: "manual_import")
+    with_spy do |calls|
+      SyncConversationsJob.perform_now(exec.id, skip_pipeline: true)
+      assert_equal [ true ], calls.map { |c| c[:skip_pipeline] }
     end
   end
 
