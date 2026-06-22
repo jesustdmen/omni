@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_22_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -319,6 +319,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_130000) do
     t.index ["sync_execution_id"], name: "index_sync_runs_on_sync_execution_id"
     t.check_constraint "lines_processed >= 0 AND imported >= 0 AND updated >= 0 AND skipped >= 0 AND error_lines >= 0", name: "sync_runs_counts_non_negative"
     t.check_constraint "status = ANY (ARRAY['ok'::text, 'partial'::text, 'error'::text])", name: "sync_runs_status_check"
+  end
+
+  create_table "sync_schedules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: false, null: false
+    t.integer "interval_minutes", default: 60, null: false
+    t.datetime "last_enqueued_at"
+    t.datetime "updated_at", null: false
+    t.index "(true)", name: "idx_sync_schedules_singleton", unique: true
   end
 
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

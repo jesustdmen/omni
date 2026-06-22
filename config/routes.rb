@@ -45,6 +45,8 @@ Rails.application.routes.draw do
   resources :sync_runs, only: %i[index show]
   # PB-015 — disparo da sincronização operacional (enfileira job; lê só /normalized).
   resources :sync_executions, only: %i[create]
+  # PB-016a — configuração do agendamento interno (singleton; liga/desliga + intervalo).
+  resource :sync_schedule, only: %i[update]
 
   get "settings", to: "pages#placeholder", as: :settings
 end

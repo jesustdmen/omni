@@ -9,7 +9,19 @@
 #     priority: 2
 #     schedule: at 5am every day
 
+development:
+  # PB-016a — tick do agendamento interno da sincronização (verifica SyncSchedule
+  # e dispara quando vencido). A cadência real é controlada por interval_minutes;
+  # este tick só observa de minuto em minuto.
+  scheduled_sync_tick:
+    class: ScheduledSyncJob
+    schedule: every minute
+
 production:
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
+  # PB-016a — agendamento interno da sincronização (ver development).
+  scheduled_sync_tick:
+    class: ScheduledSyncJob
+    schedule: every minute
