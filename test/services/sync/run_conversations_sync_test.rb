@@ -147,13 +147,15 @@ module Sync
     # Runner falso configurável: registra que foi chamado e devolve um Result.
     class FakeRunner
       attr_reader :called
-      def initialize(ok:, exit_code: 0, timed_out: false, summary: "exit=0")
-        @ok = ok; @exit_code = exit_code; @timed_out = timed_out; @summary = summary; @called = 0
+      def initialize(ok:, exit_code: 0, timed_out: false, agent_offline: false, summary: "exit=0")
+        @ok = ok; @exit_code = exit_code; @timed_out = timed_out
+        @agent_offline = agent_offline; @summary = summary; @called = 0
       end
 
       def call
         @called += 1
-        Sync::PipelineRunner::Result.new(ok: @ok, exit_code: @exit_code, timed_out: @timed_out, summary: @summary)
+        Sync::PipelineRunner::Result.new(ok: @ok, exit_code: @exit_code, timed_out: @timed_out,
+                                         agent_offline: @agent_offline, summary: @summary)
       end
     end
 
@@ -229,6 +231,19 @@ module Sync
         assert result.success?
         assert_equal 0, runner.called, "skip_pipeline deve pular o pipeline"
         assert Conversation.count.positive?, "importação ainda ocorre"
+      end
+    end
+
+    test "pipeline ON + AGENTE OFFLINE: degrada — pula coleta e IMPORTA com aviso" do
+      with_pipeline_on do
+        runner = FakeRunner.new(ok: false, agent_offline: true, summary: "Agente de coleta offline.")
+        exec = SyncExecution.create!(status: "queued", trigger: "manual")
+        result = Sync::RunConversationsSync.call(execution: exec, pipeline_runner: runner)
+        exec.reload
+        assert result.success?, "agente offline NÃO deve falhar a sincronização"
+        assert_includes %w[ok partial], exec.status
+        assert Conversation.count.positive?, "importa o output disponível mesmo com agente offline"
+        assert_match(/Coleta pulada/i, exec.pipeline_summary)
       end
     end
   end

@@ -1,77 +1,105 @@
 require "test_helper"
-require "tmpdir"
-require "fileutils"
+require "socket"
 
 module Sync
-  # PB-016a — testa o runner do pipeline SEM jamais executar o pipeline real.
-  # Usa scripts triviais de teste (sh) que apenas escrevem em stdout/stderr e
-  # saem com um código — exercitando Open3 (array, sem shell), timeout, exit code
-  # e a captura/limite/redação, mas nunca o RepoB.
+  # PB-016a — testa o PipelineRunner como CLIENTE HTTP do agente, SEM jamais rodar
+  # o pipeline real. Sobe um agente FALSO via TCPServer (stdlib; sem webrick) que
+  # responde /health e /run conforme o cenário.
   class PipelineRunnerTest < ActiveSupport::TestCase
-    setup do
-      @dir = Dir.mktmpdir("pipe")
+    # Mini servidor HTTP em thread. `health:` controla /health; `run_body`/`run_status`
+    # controlam /run; exige X-Agent-Token == token em /run.
+    def with_fake_agent(health:, run_body:, run_status: 200, token: "t")
+      server = TCPServer.new("127.0.0.1", 0)
+      port = server.addr[1]
+      thread = Thread.new do
+        loop do
+          client = server.accept
+          request_line = client.gets.to_s
+          headers = {}
+          while (line = client.gets) && line != "\r\n"
+            k, v = line.split(":", 2)
+            headers[k.strip.downcase] = v.to_s.strip if v
+          end
+          path = request_line.split(" ")[1].to_s
+
+          status, body =
+            if path.start_with?("/health")
+              [ health ? 200 : 503, { ok: health, runner_present: true } ]
+            elsif path.start_with?("/run")
+              headers["x-agent-token"] == token ? [ run_status, run_body ] : [ 401, { ok: false, error: "unauthorized" } ]
+            else
+              [ 404, { ok: false } ]
+            end
+
+          payload = body.to_json
+          client.print "HTTP/1.1 #{status} OK\r\nContent-Type: application/json\r\nContent-Length: #{payload.bytesize}\r\nConnection: close\r\n\r\n#{payload}"
+          client.close
+        rescue IOError, Errno::ECONNRESET
+          next
+        end
+      end
+      yield "http://127.0.0.1:#{port}", token
+    ensure
+      thread&.kill
+      server&.close
     end
 
-    teardown { FileUtils.remove_entry(@dir) if Dir.exist?(@dir) }
-
-    # Cria um "executável" (sh) que roda o corpo dado e sai com `code`.
-    def script(body, code: 0, name: "fake.sh")
-      path = File.join(@dir, name)
-      File.write(path, "#!/usr/bin/env bash\n#{body}\nexit #{code}\n")
-      FileUtils.chmod(0o755, path)
-      path
+    def runner(url, token, **opts)
+      PipelineRunner.new(agent_url: url, token: token, timeout: 10, **opts)
     end
 
-    def run_pipe(script_path, timeout: 30)
-      PipelineRunner.new(python: "bash", script: script_path, dir: @dir, timeout: timeout).call
+    test "sucesso: agente online e /run exit 0 → ok?" do
+      with_fake_agent(health: true, run_body: { ok: true, exit_code: 0, timed_out: false, summary: "exit=0 · ok" }) do |url, token|
+        r = runner(url, token).call
+        assert r.ok?
+        assert_equal 0, r.exit_code
+        refute r.agent_offline?
+      end
     end
 
-    test "sucesso: exit 0 → ok?" do
-      r = run_pipe(script("echo done", code: 0))
-      assert r.ok?
-      assert_equal 0, r.exit_code
-      refute r.timed_out
+    test "exit code de erro → falha (não offline)" do
+      with_fake_agent(health: true, run_body: { ok: false, exit_code: 3, timed_out: false, summary: "exit=3 · boom" }) do |url, token|
+        r = runner(url, token).call
+        refute r.ok?
+        assert_equal 3, r.exit_code
+        refute r.agent_offline?
+      end
     end
 
-    test "exit code != 0 → falha com o código" do
-      r = run_pipe(script("echo boom 1>&2", code: 3))
+    test "timeout reportado pelo agente → timed_out" do
+      with_fake_agent(health: true, run_body: { ok: false, exit_code: nil, timed_out: true, summary: "timeout" }) do |url, token|
+        r = runner(url, token).call
+        refute r.ok?
+        assert r.timed_out
+      end
+    end
+
+    test "agente offline (health falha) → agent_offline, sem chamar /run" do
+      with_fake_agent(health: false, run_body: { ok: true, exit_code: 0 }) do |url, token|
+        r = runner(url, token).call
+        refute r.ok?
+        assert r.agent_offline?, "health falho deve marcar offline"
+      end
+    end
+
+    test "URL sem agente (conexão recusada) → agent_offline" do
+      r = PipelineRunner.new(agent_url: "http://127.0.0.1:1", token: "t", timeout: 2).call
       refute r.ok?
-      assert_equal 3, r.exit_code
-      assert_match(/exit=3/, r.summary)
+      assert r.agent_offline?
     end
 
-    test "timeout: processo longo é morto e marcado timed_out" do
-      r = run_pipe(script("sleep 5", code: 0), timeout: 1)
-      refute r.ok?
-      assert r.timed_out
-      assert_match(/tempo limite/i, r.summary)
+    test "token errado → /run recusa (401), falha não-offline" do
+      with_fake_agent(health: true, run_body: { ok: true, exit_code: 0 }, token: "certo") do |url, _token|
+        r = runner(url, "errado").call
+        refute r.ok?
+        refute r.agent_offline?
+        assert_match(/recusou/i, r.summary)
+      end
     end
 
-    test "ambiente inválido: script ausente → falha sem executar" do
-      r = PipelineRunner.new(python: "bash", script: File.join(@dir, "nao_existe.sh"), dir: @dir).call
-      refute r.ok?
-      assert_match(/inválido/i, r.summary)
-    end
-
-    test "captura é limitada (não explode a memória) e resumo é curto" do
-      # imprime muito mais que o teto de captura; o summary fica curto.
-      r = run_pipe(script("for i in $(seq 1 100000); do echo linha-$i; done", code: 0))
-      assert r.ok?
-      assert_operator r.summary.bytesize, :<=, 500
-    end
-
-    test "resumo seguro: não vaza caminhos absolutos" do
-      r = run_pipe(script("echo erro em /home/secreto/arquivo.py 1>&2", code: 4))
-      refute r.ok?
-      assert_no_match(%r{/home/secreto/}, r.summary)
-    end
-
-    test "comando é fixo (array): metacaracteres do nome não viram shell" do
-      # se houvesse shell, '; touch pwned' executaria; com array, é só argumento.
-      pwned = File.join(@dir, "pwned")
-      r = PipelineRunner.new(python: "bash", script: "x; touch #{pwned}", dir: @dir).call
-      refute r.ok? # script inexistente (validação) — e nada foi criado
-      refute File.exist?(pwned), "nenhum shell deve ter interpretado o ';'"
+    test "URL em branco → offline (não tenta rede)" do
+      r = PipelineRunner.new(agent_url: "", token: "t", timeout: 2).call
+      assert r.agent_offline?
     end
   end
 end
