@@ -188,10 +188,11 @@ class DemandsListTest < ActionDispatch::IntegrationTest
     d = demand(title: "Com ações", description: "uma descrição")
     get demands_path
     assert_select "td.demands-list__title .demands-list__excerpt", /uma descrição/
-    assert_select ".te-actions a[href=?]", demand_path(d)        # Ver
-    assert_select ".te-actions a[href=?]", edit_demand_path(d)   # Editar
+    assert_select ".te-actions a[href^=?]", demand_path(d)        # Ver (+ return_to, PB-013b)
+    assert_select ".te-actions a[href^=?]", edit_demand_path(d)   # Editar (+ return_to)
     assert_select ".te-actions form[action=?][method=post]", demand_path(d) do
       assert_select "input[name=_method][value=delete]", true    # Excluir
+      assert_select "input[name=return_to]", true                # PB-013b — contexto
     end
   end
 

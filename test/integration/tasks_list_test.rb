@@ -172,10 +172,11 @@ class TasksListTest < ActionDispatch::IntegrationTest
     get tasks_path
     assert_select "td.tasks-list__title", /Com ações/
     assert_select "td.tasks-list__title .tasks-list__excerpt", /uma descrição/
-    assert_select ".te-actions a[href=?]", task_path(t)            # Ver
-    assert_select ".te-actions a[href=?]", edit_task_path(t)       # Editar
+    assert_select ".te-actions a[href^=?]", task_path(t)            # Ver (+ return_to, PB-013b)
+    assert_select ".te-actions a[href^=?]", edit_task_path(t)       # Editar (+ return_to)
     assert_select ".te-actions form[action=?][method=post]", task_path(t) do
       assert_select "input[name=_method][value=delete]", true      # Excluir (DELETE)
+      assert_select "input[name=return_to]", true                  # PB-013b — contexto
     end
   end
 

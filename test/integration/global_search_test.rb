@@ -91,7 +91,7 @@ class GlobalSearchTest < ActionDispatch::IntegrationTest
     c = @client.contacts.create!(name: "João", email: "joao@acme.com")
     get search_path(q: "joao@acme")
     assert_select ".search-group__title", /Contatos/
-    assert_select ".search-result__link[href=?]", client_path(@client)
+    assert_select ".search-result__link[href^=?]", client_path(@client) # + return_to (PB-013b)
     assert_select ".search-result__matched", /E-mail/
   end
 
@@ -108,7 +108,7 @@ class GlobalSearchTest < ActionDispatch::IntegrationTest
   test "cada resultado é um único link (card inteiro) com 'Ir →' e aria contextual" do
     t = @client.tasks.create!(title: "Corrigir relatório financeiro", type: "support")
     get search_path(q: "relatório")
-    assert_select "a.search-result__link[href=?]", task_path(t) do
+    assert_select "a.search-result__link[href^=?]", task_path(t) do # + return_to (PB-013b)
       assert_select ".search-result__go", /Ir/
     end
     assert_select "a.search-result__link[aria-label=?]", "Ir para tarefa Corrigir relatório financeiro"

@@ -131,8 +131,8 @@ class ProjectsListTest < ActionDispatch::IntegrationTest
     p = project(name: "Com ações")
     get projects_path
     assert_select "a.btn--primary[href=?]", new_project_path, /Novo projeto/
-    assert_select ".te-actions a[href=?]", project_path(p)
-    assert_select ".te-actions a[href=?]", edit_project_path(p)
+    assert_select ".te-actions a[href^=?]", project_path(p)       # Ver (+ return_to, PB-013b)
+    assert_select ".te-actions a[href^=?]", edit_project_path(p)  # Editar (+ return_to)
     assert_select ".te-actions form[action=?]", duplicate_project_path(p)
     assert_select ".te-actions form[action=?][method=post]", project_path(p) do
       assert_select "input[name=_method][value=delete]", true

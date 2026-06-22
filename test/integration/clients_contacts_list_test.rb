@@ -138,17 +138,18 @@ class ClientsContactsListTest < ActionDispatch::IntegrationTest
   test "ações empresa Ver/Editar/Excluir + Novo cliente destacado" do
     get clients_path
     assert_select "a.btn--primary[href=?]", new_client_path, /Novo cliente/
-    assert_select ".te-actions a[href=?]", client_path(@acme)
-    assert_select ".te-actions a[href=?]", edit_client_path(@acme)
+    assert_select ".te-actions a[href^=?]", client_path(@acme)        # Ver (+ return_to, PB-013b)
+    assert_select ".te-actions a[href^=?]", edit_client_path(@acme)   # Editar (+ return_to)
     assert_select ".te-actions form[action=?][method=post]", client_path(@acme) do
       assert_select "input[name=_method][value=delete]", true
+      assert_select "input[name=return_to]", true                     # PB-013b — contexto
     end
   end
 
   test "ações contato Editar/Excluir + link p/ cliente" do
     c = contact(@acme, name: "Zé")
     get clients_path(tab: "contacts")
-    assert_select ".te-actions a[href=?]", edit_client_contact_path(@acme, c)
+    assert_select ".te-actions a[href^=?]", edit_client_contact_path(@acme, c) # + return_to (PB-013b)
     assert_select "td a[href=?]", client_path(@acme), /ACME/
   end
 

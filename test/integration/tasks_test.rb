@@ -196,7 +196,8 @@ class TasksTest < ActionDispatch::IntegrationTest
     entry = task.time_entries.create!(start_time: t, end_time: t + 30.seconds)
     get task_path(task)
     assert_response :success
-    assert_select "#tab-time .te-actions a[href=?]", edit_time_entry_path(entry)
+    # PB-013b — Editar carrega return_to (volta à tarefa#tab-time); checa o prefixo.
+    assert_select "#tab-time .te-actions a[href^=?]", edit_time_entry_path(entry)
     assert_select "#tab-time .te-actions form[action=?][method=post]", time_entry_path(entry) do
       assert_select "input[name=_method][value=delete]", true
     end
@@ -210,7 +211,7 @@ class TasksTest < ActionDispatch::IntegrationTest
     get task_path(task)
     assert_response :success
     assert_select "#tab-time .te-actions form[action=?]", stop_time_entry_path(running)
-    assert_select "#tab-time .te-actions a[href=?]", edit_time_entry_path(running)
+    assert_select "#tab-time .te-actions a[href^=?]", edit_time_entry_path(running) # PB-013b — + return_to
   end
 
   test "edit e update" do
