@@ -34,5 +34,24 @@ module App
     # /normalized no web e no worker). O sync NUNCA aceita path do usuário; só lê
     # daqui. Configurável por ENV apenas para dev/CI, não exposto na UI.
     config.x.normalized_dir = ENV.fetch("OMNI_NORMALIZED_DIR", "/normalized")
+
+    # PB-016a — sincronização COMPLETA pelo Omni (pipeline + importação).
+    # O Omni passa a poder executar o pipeline externo (Python/RepoB) ANTES da
+    # importação — ainda lendo só /normalized depois (ADR-011 §addendum). Tudo por
+    # CONFIGURAÇÃO/ENV; nada vem do usuário (allowlist de executável e script).
+    #
+    #  - run_pipeline_internally : liga/desliga a execução do pipeline pelo Omni
+    #    (false = comportamento PB-015: só importa o /normalized já existente);
+    #  - pipeline_python         : executável Python (caminho absoluto ou nome no PATH);
+    #  - pipeline_script         : script do pipeline (run_pipeline.py) — caminho absoluto;
+    #  - pipeline_dir            : diretório de trabalho do pipeline (chdir);
+    #  - pipeline_timeout        : timeout fixo em segundos (mata o processo ao estourar).
+    config.x.run_pipeline_internally =
+      ActiveModel::Type::Boolean.new.cast(ENV.fetch("OMNI_RUN_PIPELINE_INTERNALLY", "false"))
+    # `python3` é o que existe na imagem dev (não há `python`). Override por ENV em prod.
+    config.x.pipeline_python  = ENV.fetch("OMNI_PIPELINE_PYTHON", "python3")
+    config.x.pipeline_script  = ENV.fetch("OMNI_PIPELINE_SCRIPT", "/pipeline/pipeline/run_pipeline.py")
+    config.x.pipeline_dir     = ENV.fetch("OMNI_PIPELINE_DIR", "/pipeline/pipeline")
+    config.x.pipeline_timeout = ENV.fetch("OMNI_PIPELINE_TIMEOUT", "1800").to_i
   end
 end
