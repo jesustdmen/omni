@@ -153,12 +153,25 @@ class SyncExecutionsTest < ActionDispatch::IntegrationTest
     assert_select ".page-head__sub", /[Ii]mporta/
   end
 
-  test "UI mostra resumo seguro do pipeline da última execução" do
+  test "sucesso NÃO despeja o stdout do pipeline na UI (só data/hora + status)" do
     SyncExecution.create!(status: "ok", trigger: "manual", pipeline_exit_code: 0,
-                          pipeline_summary: "exit=0 · 1647 conversas",
+                          pipeline_summary: "exit=0 · INFO foo WARNING [too_large 327 MB] arquivo.json",
                           started_at: Time.current, finished_at: Time.current)
     get sync_runs_path
-    assert_select ".sync-status__pipeline", /exit=0/
+    assert_select ".sync-status__pipeline", count: 0
+    assert_no_match(/too_large/, response.body)
+    # mas o status e o horário continuam visíveis
+    assert_select ".sync-status__row", /Última execução/
+  end
+
+  test "erro mostra um detalhe curto e limpo do pipeline (sem o dump)" do
+    SyncExecution.create!(status: "error", trigger: "manual", pipeline_exit_code: 3,
+                          error_message: "O pipeline falhou; nenhuma conversa foi importada.",
+                          pipeline_summary: "exit=3 · INFO foo WARNING [too_large 327 MB] arquivo.json",
+                          started_at: Time.current, finished_at: Time.current)
+    get sync_runs_path
+    assert_select ".sync-status__pipeline", /exit=3/
+    assert_no_match(/too_large/, response.body) # o dump não vaza nem no erro
   end
 
   # ---------------- PB-016a: /sync_runs só tem ATALHO p/ o agendamento ----------------

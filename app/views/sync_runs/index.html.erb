@@ -103,9 +103,10 @@
       <% if last.status == "error" && last.error_message.present? %>
         <p class="sync-status__error">Erro: <%= last.error_message %></p>
       <% end %>
-      <%# PB-016a — resumo seguro do pipeline (quando executado). %>
-      <% if last.pipeline_exit_code.present? || last.pipeline_summary.present? %>
-        <p class="muted sync-status__pipeline">Pipeline: <%= last.pipeline_summary.presence || "exit=#{last.pipeline_exit_code}" %></p>
+      <%# PB-016a — em sucesso, não polui a UI com o stdout do pipeline (a tabela de
+          contadores abaixo já resume). Em erro, mostra só um detalhe curto e limpo. %>
+      <% if last.status == "error" && last.pipeline_summary.present? %>
+        <p class="muted sync-status__pipeline">Detalhe do pipeline: <%= last.pipeline_summary_short %></p>
       <% end %>
       <%# Contadores agregados das etapas (SyncRun) desta execução. %>
       <% runs = last.sync_runs.order(:created_at) %>

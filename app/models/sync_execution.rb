@@ -47,6 +47,18 @@ class SyncExecution < ApplicationRecord
     status == "running"
   end
 
+  # PB-016a — resumo curto/limpo do pipeline para a UI (só em caso de erro): a
+  # primeira linha relevante, sem o stdout verboso. Não usa o dump cru.
+  def pipeline_summary_short
+    raw = pipeline_summary.to_s
+    return "" if raw.blank?
+
+    # Mantém o "exit=N" e descarta o despejo de linhas (INFO/WARNING/arquivos).
+    exit_part = raw[/exit=-?\d+/]
+    first = raw.sub(/\Aexit=-?\d+\s*·?\s*/, "").split(/INFO|WARNING|ERROR|\n/).first.to_s.strip
+    [ exit_part, first.presence ].compact.join(" · ")[0, 140]
+  end
+
   def duration_seconds
     return nil unless started_at && finished_at
 
