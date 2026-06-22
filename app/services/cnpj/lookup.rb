@@ -34,6 +34,10 @@ module Cnpj
         Result.new(ok: true, data: map_fields(JSON.parse(response.body)), error: nil, status: :ok)
       when Net::HTTPNotFound
         failure("CNPJ não encontrado.", :not_found)
+      when Net::HTTPTooManyRequests
+        # 429 — a BrasilAPI limita consultas por IP (a API NÃO está fora). Mensagem
+        # honesta para o operador, distinta de "serviço indisponível".
+        failure("Limite de consultas de CNPJ atingido. Aguarde cerca de 1 minuto e tente novamente.", :too_many_requests)
       else
         failure("Serviço de CNPJ indisponível no momento.", :bad_gateway)
       end

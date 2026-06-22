@@ -57,6 +57,16 @@ class CnpjLookupTest < ActiveSupport::TestCase
     assert_equal :not_found, result.status
   end
 
+  test "429 → rate-limit com mensagem clara (não 'indisponível')" do
+    result = with_http(response: Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")) do
+      Cnpj::Lookup.call("52005934000110")
+    end
+    assert_not result.ok
+    assert_equal :too_many_requests, result.status
+    assert_match(/limite de consultas/i, result.error)
+    assert_no_match(/indispon/i, result.error)
+  end
+
   test "timeout → falha graciosa (não levanta)" do
     result = with_http(error: Net::OpenTimeout.new) { Cnpj::Lookup.call("12345678000199") }
     assert_not result.ok

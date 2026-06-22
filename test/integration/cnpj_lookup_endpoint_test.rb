@@ -39,4 +39,14 @@ class CnpjLookupEndpointTest < ActionDispatch::IntegrationTest
     assert_response :not_found
     assert_match(/não encontrado/i, JSON.parse(response.body)["error"])
   end
+
+  test "rate-limit (429) propaga status e mensagem clara (não 'indisponível')" do
+    with_lookup_result(Cnpj::Lookup::Result.new(ok: false, data: nil,
+      error: "Limite de consultas de CNPJ atingido. Aguarde cerca de 1 minuto e tente novamente.",
+      status: :too_many_requests)) do
+      get cnpj_lookup_clients_path(cnpj: "52005934000110")
+    end
+    assert_response :too_many_requests
+    assert_match(/limite de consultas/i, JSON.parse(response.body)["error"])
+  end
 end
