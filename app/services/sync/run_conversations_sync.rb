@@ -104,6 +104,11 @@ module Sync
     # --- PB-016a: pipeline externo (coleta + normalização) -------------------
     # Roda só quando habilitado por config (run_pipeline_internally). Retorna true
     # para prosseguir com a importação; false aborta (execução marcada error).
+    #
+    # Resiliência (decisão do PO): se o AGENTE estiver OFFLINE, NÃO falha — pula a
+    # coleta e importa o /normalized atual com um aviso (coleta é upgrade opcional).
+    # Já uma falha REAL do pipeline (exit!=0/timeout) aborta antes de importar,
+    # preservando o índice (não importa um output potencialmente inconsistente).
     def run_pipeline_step
       return true unless pipeline_enabled?
 
@@ -111,6 +116,12 @@ module Sync
       result = pipeline_runner.call
       @execution.update!(pipeline_exit_code: result.exit_code, pipeline_summary: result.summary)
       return true if result.ok?
+
+      if result.agent_offline?
+        # degrada: segue para a importação do que já existe, com aviso visível.
+        @execution.update!(pipeline_summary: "Coleta pulada: #{result.summary} Importando o output disponível.")
+        return true
+      end
 
       finish_error(pipeline_error_message(result))
       false

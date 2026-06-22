@@ -48,10 +48,11 @@ module App
     #  - pipeline_timeout        : timeout fixo em segundos (mata o processo ao estourar).
     config.x.run_pipeline_internally =
       ActiveModel::Type::Boolean.new.cast(ENV.fetch("OMNI_RUN_PIPELINE_INTERNALLY", "false"))
-    # `python3` é o que existe na imagem dev (não há `python`). Override por ENV em prod.
-    config.x.pipeline_python  = ENV.fetch("OMNI_PIPELINE_PYTHON", "python3")
-    config.x.pipeline_script  = ENV.fetch("OMNI_PIPELINE_SCRIPT", "/pipeline/pipeline/run_pipeline.py")
-    config.x.pipeline_dir     = ENV.fetch("OMNI_PIPELINE_DIR", "/pipeline/pipeline")
-    config.x.pipeline_timeout = ENV.fetch("OMNI_PIPELINE_TIMEOUT", "1800").to_i
+    # O pipeline roda no HOST (via agente), não no container. O Omni só conhece a
+    # URL e o token do agente; o comando do pipeline é fixo NO agente (allowlist).
+    # `host.docker.internal` resolve o host a partir do container (Docker Desktop).
+    config.x.pipeline_agent_url   = ENV.fetch("OMNI_PIPELINE_AGENT_URL", "http://host.docker.internal:8765")
+    config.x.pipeline_agent_token = ENV.fetch("OMNI_PIPELINE_AGENT_TOKEN", "omni-dev-agent")
+    config.x.pipeline_timeout     = ENV.fetch("OMNI_PIPELINE_TIMEOUT", "1800").to_i
   end
 end
