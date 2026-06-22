@@ -43,3 +43,7 @@
 *.sql
 postgres-volume-snapshot-*
 
+
+# PB-016a — bytecode do agente Python (host)
+script/__pycache__/
+*.pyc

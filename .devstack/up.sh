@@ -26,10 +26,19 @@ docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NET
 # Remove server.pid órfão (o app é bind-mount; o pid sobrevive ao container).
 rm -f "$APP_DIR/tmp/pids/server.pid" 2>/dev/null || true
 
+# PB-016a — flag da coleta + URL/token do agente (a UI reflete o estado; o web não
+# roda Python). Mesmos defaults do worker/agente.
+RUN_PIPELINE="${OMNI_RUN_PIPELINE_INTERNALLY:-0}"
+AGENT_URL="${OMNI_PIPELINE_AGENT_URL:-http://host.docker.internal:8765}"
+AGENT_TOKEN="${OMNI_PIPELINE_AGENT_TOKEN:-omni-dev-agent}"
+
 # Recria o container (idempotente).
 docker rm -f omni_web >/dev/null 2>&1 || true
 MSYS_NO_PATHCONV=1 docker run -d --name omni_web \
   --network "$NETWORK" -p "${PORT}:3000" \
+  -e OMNI_RUN_PIPELINE_INTERNALLY="${RUN_PIPELINE}" \
+  -e OMNI_PIPELINE_AGENT_URL="${AGENT_URL}" \
+  -e OMNI_PIPELINE_AGENT_TOKEN="${AGENT_TOKEN}" \
   -v "${APP_DIR}:/app" \
   -v omni_bundle:/usr/local/bundle \
   -v "${NORMALIZED_DIR}:/normalized:ro" \
@@ -44,4 +53,13 @@ if [ "${OMNI_SKIP_JOBS:-0}" != "1" ]; then
   bash "$(dirname "$0")/jobs.sh"
 else
   echo "  (omni_jobs não iniciado — OMNI_SKIP_JOBS=1)"
+fi
+
+# PB-016a — sobe o AGENTE de pipeline NO HOST (coleta roda no Windows nativo),
+# com auto-restart, a menos que OMNI_SKIP_AGENT=1. Em background; idempotente.
+if [ "${OMNI_SKIP_AGENT:-0}" != "1" ]; then
+  ( bash "$(dirname "$0")/agent.sh" >/tmp/omni_pipeline_agent.log 2>&1 & )
+  echo "  pipeline-agent (host) iniciando em :${OMNI_AGENT_PORT:-8765} (log: /tmp/omni_pipeline_agent.log)"
+else
+  echo "  (pipeline-agent não iniciado — OMNI_SKIP_AGENT=1)"
 fi
