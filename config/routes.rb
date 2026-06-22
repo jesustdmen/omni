@@ -48,5 +48,6 @@ Rails.application.routes.draw do
   # PB-016a — configuração do agendamento interno (singleton; liga/desliga + intervalo).
   resource :sync_schedule, only: %i[update]
 
-  get "settings", to: "pages#placeholder", as: :settings
+  # PB-016a — Configurações: hospeda o agendador de importação (decisão de produto).
+  get "settings", to: "settings#show", as: :settings
 end

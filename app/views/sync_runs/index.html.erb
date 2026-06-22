@@ -63,27 +63,18 @@
     </div>
   <% end %>
 
-  <%# PB-016a — agendamento interno (modo agendado, além do manual). Sem JS. %>
-  <div class="sync-schedule">
-    <%= form_with model: @schedule, url: sync_schedule_path, method: :patch, class: "sync-schedule__form" do |f| %>
-      <span class="sync-schedule__title">Agendamento automático</span>
-      <label class="sync-schedule__toggle">
-        <%= f.check_box :enabled %> Ativado
-      </label>
-      <label>
-        A cada
-        <%= f.select :interval_minutes,
-              options_for_select(SyncSchedule::INTERVAL_OPTIONS.map { |m| [ m < 60 ? "#{m} min" : "#{m / 60} h", m ] }, @schedule.interval_minutes) %>
-      </label>
-      <%= f.submit "Salvar agendamento", class: "btn btn--outline btn--sm" %>
+  <%# PB-016a — o AGENDAMENTO mora em Configurações (decisão de produto); aqui só
+      um atalho com o estado atual. %>
+  <div class="sync-schedule-hint">
+    <span class="muted">
+      Agendamento automático:
       <% if @schedule.enabled %>
-        <span class="muted">
-          Ativo (a cada <%= @schedule.interval_label %>)<% if @schedule.last_enqueued_at %> · último disparo <%= @schedule.last_enqueued_at.strftime("%d/%m/%Y %H:%M") %><% end %>.
-        </span>
+        <span class="badge badge--info">ativo</span> a cada <%= @schedule.interval_label %>.
       <% else %>
-        <span class="muted">Desativado — sincronize manualmente pelo botão acima.</span>
+        <span class="badge badge--neutral">desativado</span>.
       <% end %>
-    <% end %>
+    </span>
+    <%= link_to "Configurar em Configurações →", settings_path, class: "btn btn--ghost btn--sm" %>
   </div>
 
   <%# PB-016a — indicador de progresso por etapa (só durante execução ativa). %>

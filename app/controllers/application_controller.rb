@@ -25,7 +25,9 @@ class ApplicationController < ActionController::Base
   def skip_pundit?
     # `search` (PB-013): busca global read-only sobre várias entidades — não é
     # resourceful; a autenticação (Devise) é a barreira. ADR-014 (domínio compartilhado).
-    devise_controller? || params[:controller].to_s.match?(%r{\A(rails/|dashboard\z|pages\z|search\z)})
+    # `settings` (PB-016a): página de Configurações (read-only; ações de escrita têm
+    # seus próprios controllers com Pundit, ex.: sync_schedule).
+    devise_controller? || params[:controller].to_s.match?(%r{\A(rails/|dashboard\z|pages\z|search\z|settings\z)})
   end
 
   def user_not_authorized
