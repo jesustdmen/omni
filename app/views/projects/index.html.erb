@@ -37,16 +37,18 @@
           <td><%= [ project.start_date, project.end_date ].compact.map { |d| d.strftime("%d/%m/%Y") }.join(" → ").presence || "—" %></td>
           <td><%= project.budget.presence || "—" %></td>
           <td>
+            <%# PB-013b — propaga o contexto da lista. %>
             <div class="te-actions">
-              <%= link_to action_icon("eye"), project, class: "btn btn--ghost btn--icon te-action--view",
+              <%= link_to action_icon("eye"), project_path(project, return_to: request.fullpath), class: "btn btn--ghost btn--icon te-action--view",
                     title: "Ver", "aria-label": "Ver projeto" %>
-              <%= link_to action_icon("pencil"), edit_project_path(project), class: "btn btn--ghost btn--icon te-action--edit",
+              <%= link_to action_icon("pencil"), edit_project_path(project, return_to: request.fullpath), class: "btn btn--ghost btn--icon te-action--edit",
                     title: "Editar", "aria-label": "Editar projeto" %>
               <%= button_to "Duplicar", duplicate_project_path(project), method: :post,
                     class: "btn btn--ghost btn--sm", form_class: "inline",
                     data: { turbo_confirm: "Duplicar o projeto “#{project.name}”?" } %>
-              <%= button_to action_icon("trash"), project, method: :delete,
+              <%= button_to action_icon("trash"), project_path(project), method: :delete,
                     class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                    params: { return_to: request.fullpath },
                     title: "Excluir", "aria-label": "Excluir projeto",
                     data: { turbo_confirm: "Excluir o projeto “#{project.name}”?" } %>
             </div>

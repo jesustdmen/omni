@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="page-head__titles"><h1>Time entries</h1></div>
   <div class="page-head__actions">
-    <%= link_to "Novo apontamento retroativo", new_time_entry_path, class: "btn btn--primary" %>
+    <%= link_to "Novo apontamento retroativo", new_time_entry_path(return_to: request.fullpath), class: "btn btn--primary" %>
   </div>
 </div>
 
@@ -20,7 +20,7 @@
           <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
           <td><%= duration_label(entry.duration) %></td>
           <td><%= entry.is_running ? tag.span("Em execução", class: "badge badge--info") : tag.span("Parado", class: "badge badge--neutral") %></td>
-          <td><%= link_to "Editar", edit_time_entry_path(entry), class: "btn btn--ghost btn--sm" %></td>
+          <td><%= link_to "Editar", edit_time_entry_path(entry, return_to: request.fullpath), class: "btn btn--ghost btn--sm" %></td>
         </tr>
       <% end %>
     </tbody>
@@ -28,6 +28,6 @@
 <% else %>
   <div class="empty">
     <p>Nenhum apontamento ainda.</p>
-    <%= link_to "Novo apontamento retroativo", new_time_entry_path, class: "btn btn--primary" %>
+    <%= link_to "Novo apontamento retroativo", new_time_entry_path(return_to: request.fullpath), class: "btn btn--primary" %>
   </div>
 <% end %>

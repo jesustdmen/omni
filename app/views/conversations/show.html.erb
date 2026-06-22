@@ -1,7 +1,8 @@
 <% content_for :title, (@conversation.title.presence || "Conversa") %>
 
-<nav class="breadcrumb">
-  <%= link_to "Conversas", conversations_path %>
+<%# PB-013b — breadcrumb acessível; preserva a origem (lista/busca). %>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Conversas", (@return_to.presence || conversations_path) %>
   <span class="sep">/</span>
   <span><%= @conversation.title.presence || "— sem título —" %></span>
 </nav>
@@ -100,4 +101,4 @@
   <% end %>
 </div>
 
-<%= link_to "Voltar", conversations_path, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || conversations_path), class: "back-link" %>

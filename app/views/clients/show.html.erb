@@ -1,7 +1,8 @@
 <% content_for :title, @client.name %>
 
-<nav class="breadcrumb">
-  <%= link_to "Clientes", clients_path %>
+<%# PB-013b — breadcrumb acessível; preserva a origem (aba/filtros/página). %>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Clientes", (@return_to.presence || clients_path) %>
   <span class="sep">/</span>
   <span><%= @client.name %></span>
 </nav>
@@ -12,10 +13,10 @@
     <div class="badge-row"><%= status_badge(@client.status) %></div>
   </div>
   <div class="page-head__actions">
-    <%= link_to "Editar", edit_client_path(@client), class: "btn btn--outline btn--sm" %>
-    <%= link_to "Excluir", @client,
-          data: { turbo_method: :delete, turbo_confirm: "Excluir este cliente?" },
-          class: "btn btn--ghost btn--sm" %>
+    <%= link_to "Editar", edit_client_path(@client, return_to: @return_to), class: "btn btn--outline btn--sm" %>
+    <%= button_to "Excluir", client_path(@client, return_to: @return_to), method: :delete,
+          class: "btn btn--ghost btn--sm", form_class: "inline",
+          data: { turbo_confirm: "Excluir este cliente?" } %>
   </div>
 </div>
 
@@ -32,7 +33,8 @@
 
 <div class="subhead">
   <h2>Contatos</h2>
-  <%= link_to "Novo contato", new_client_contact_path(@client), class: "btn btn--outline btn--sm" %>
+  <%# PB-013b — contato aberto pelo cliente retorna ao próprio cliente. %>
+  <%= link_to "Novo contato", new_client_contact_path(@client, return_to: request.fullpath), class: "btn btn--outline btn--sm" %>
 </div>
 
 <% if @client.contacts.any? %>
@@ -43,10 +45,11 @@
         <span class="muted">&lt;<%= contact.email %>&gt;</span>
         <% if contact.is_primary %><span class="badge badge--info">★ primário</span><% end %>
         <span class="contact-actions actions">
-          <%= link_to "Editar", edit_client_contact_path(@client, contact) %>
+          <%= link_to "Editar", edit_client_contact_path(@client, contact, return_to: request.fullpath) %>
           <span class="sep">·</span>
-          <%= link_to "Excluir", client_contact_path(@client, contact),
-                data: { turbo_method: :delete, turbo_confirm: "Excluir contato?" } %>
+          <%= button_to "Excluir", client_contact_path(@client, contact), method: :delete,
+                class: "btn btn--ghost btn--sm", form_class: "inline", params: { return_to: request.fullpath },
+                data: { turbo_confirm: "Excluir contato?" } %>
         </span>
       </li>
     <% end %>
@@ -54,8 +57,8 @@
 <% else %>
   <div class="empty">
     <p>Nenhum contato.</p>
-    <%= link_to "Novo contato", new_client_contact_path(@client), class: "btn btn--outline btn--sm" %>
+    <%= link_to "Novo contato", new_client_contact_path(@client, return_to: request.fullpath), class: "btn btn--outline btn--sm" %>
   </div>
 <% end %>
 
-<%= link_to "Voltar", clients_path, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || clients_path), class: "back-link" %>

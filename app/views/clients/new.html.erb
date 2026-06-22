@@ -4,4 +4,4 @@
 
 <div class="card form-card"><%= render "form", client: @client %></div>
 
-<%= link_to "Voltar", clients_path, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || clients_path), class: "back-link" %>

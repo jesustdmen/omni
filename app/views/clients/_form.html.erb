@@ -1,6 +1,7 @@
 <%# PB-006 — data-controller habilita o autopreenchimento por CNPJ (proxy no Rails);
     sem JS, o form continua funcionando (digitação manual). %>
 <%= form_with model: client, data: { controller: "cnpj-lookup", "cnpj-lookup-url-value": cnpj_lookup_clients_path } do |f| %>
+  <%= hidden_field_tag :return_to, @return_to if @return_to.present? %><%# PB-013b %>
   <% if client.errors.any? %>
     <div class="errors">
       <p><%= pluralize(client.errors.count, "erro") %> impediram salvar:</p>
@@ -28,5 +29,9 @@
     <%= f.text_area :workspace_paths_text, rows: 4 %>
   </div>
 
-  <div><%= f.submit %></div>
+  <div>
+    <%= f.submit %>
+    <%# PB-013b — Cancelar volta à origem; senão ao detalhe (edição) ou à lista (novo). %>
+    <%= link_to "Cancelar", (@return_to.presence || (client.persisted? ? client : clients_path)), class: "btn btn--ghost btn--sm" %>
+  </div>
 <% end %>

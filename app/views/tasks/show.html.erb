@@ -1,7 +1,8 @@
 <% content_for :title, @task.title %>
 
-<nav class="breadcrumb">
-  <%= link_to "Tarefas", tasks_path %>
+<%# PB-013b — breadcrumb acessível; "Tarefas" preserva a origem (lista/busca filtrada). %>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Tarefas", (@return_to.presence || tasks_path) %>
   <span class="sep">/</span>
   <span><%= @task.title %></span>
 </nav>
@@ -16,10 +17,11 @@
     </div>
   </div>
   <div class="page-head__actions">
-    <%= link_to "Editar", edit_task_path(@task), class: "btn btn--outline btn--sm" %>
-    <%= link_to "Excluir", @task,
-          data: { turbo_method: :delete, turbo_confirm: "Excluir tarefa?" },
-          class: "btn btn--ghost btn--sm" %>
+    <%# PB-013b — Editar propaga o contexto; Excluir retorna à origem após sucesso. %>
+    <%= link_to "Editar", edit_task_path(@task, return_to: @return_to), class: "btn btn--outline btn--sm" %>
+    <%= button_to "Excluir", task_path(@task, return_to: @return_to), method: :delete,
+          class: "btn btn--ghost btn--sm", form_class: "inline",
+          data: { turbo_confirm: "Excluir tarefa?" } %>
   </div>
 </div>
 
@@ -124,7 +126,8 @@
       <% running = entries.find(&:is_running) %>
       <% if running %>
         <span class="muted">⏱ em andamento desde <%= running.start_time&.strftime("%H:%M") %></span>
-        <%= button_to stop_time_entry_path(running), method: :patch, class: "btn btn--primary btn--sm" do %>
+        <%= button_to stop_time_entry_path(running), method: :patch, class: "btn btn--primary btn--sm",
+              params: { return_to: task_path(@task, anchor: "tab-time") } do %>
           <%= action_icon("stop") %> Parar timer
         <% end %>
       <% else %>
@@ -132,7 +135,8 @@
           <%= action_icon("play") %> Iniciar timer
         <% end %>
       <% end %>
-      <%= link_to "Novo apontamento retroativo", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+      <%# PB-013b — novo apontamento criado pela tarefa retorna à tarefa (#tab-time). %>
+      <%= link_to "Novo apontamento retroativo", new_time_entry_path(task_id: @task.id, return_to: task_path(@task, anchor: "tab-time")), class: "btn btn--outline btn--sm" %>
     </div>
   </div>
 
@@ -165,19 +169,23 @@
                 <% else %><strong><%= duration_label(entry.duration) %></strong><% end %>
               </td>
               <td>
-                <%# PB-003a — ações operacionais diretas na linha (rotas CRUD/stop existentes). %>
+                <%# PB-003a — ações na linha. PB-013b: Ver/Editar/Parar/Excluir voltam à
+                    tarefa (#tab-time), pois a origem foi a própria tarefa. %>
+                <% te_back = task_path(@task, anchor: "tab-time") %>
                 <div class="te-actions">
-                  <%= link_to action_icon("eye"), entry, class: "btn btn--ghost btn--icon te-action--view",
+                  <%= link_to action_icon("eye"), time_entry_path(entry, return_to: te_back), class: "btn btn--ghost btn--icon te-action--view",
                         title: "Ver", "aria-label": "Ver apontamento" %>
-                  <%= link_to action_icon("pencil"), edit_time_entry_path(entry), class: "btn btn--ghost btn--icon te-action--edit",
+                  <%= link_to action_icon("pencil"), edit_time_entry_path(entry, return_to: te_back), class: "btn btn--ghost btn--icon te-action--edit",
                         title: "Editar", "aria-label": "Editar apontamento" %>
                   <% if entry.is_running %>
                     <%= button_to action_icon("stop"), stop_time_entry_path(entry), method: :patch,
                           class: "btn btn--ghost btn--icon te-action--stop", form_class: "inline",
+                          params: { return_to: te_back },
                           title: "Parar timer", "aria-label": "Parar timer deste apontamento" %>
                   <% end %>
                   <%= button_to action_icon("trash"), time_entry_path(entry), method: :delete,
                         class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                        params: { return_to: te_back },
                         title: "Excluir", "aria-label": "Excluir apontamento",
                         data: { turbo_confirm: "Excluir este apontamento?" } %>
                 </div>
@@ -205,7 +213,8 @@
   <% else %>
     <div class="empty">
       <p>Nenhum apontamento nesta tarefa.</p>
-      <%= link_to "Novo apontamento retroativo", new_time_entry_path(task_id: @task.id), class: "btn btn--outline btn--sm" %>
+      <%# PB-013b — novo apontamento criado pela tarefa retorna à tarefa (#tab-time). %>
+      <%= link_to "Novo apontamento retroativo", new_time_entry_path(task_id: @task.id, return_to: task_path(@task, anchor: "tab-time")), class: "btn btn--outline btn--sm" %>
     </div>
   <% end %>
 </section>
@@ -260,4 +269,4 @@
   <% end %>
 </section>
 
-<p><%= link_to "Voltar", tasks_path, class: "back-link" %></p>
+<p><%= link_to "Voltar", (@return_to.presence || tasks_path), class: "back-link" %></p>

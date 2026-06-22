@@ -42,11 +42,13 @@
             <td><%= c.position.presence || "—" %></td>
             <td><%= c.is_primary ? tag.span("Principal", class: "badge badge--info") : "—" %></td>
             <td>
+              <%# PB-013b — contato acessado pela aba global retorna a /clients?tab=contacts... %>
               <div class="te-actions">
-                <%= link_to action_icon("pencil"), edit_client_contact_path(c.client, c), class: "btn btn--ghost btn--icon te-action--edit",
+                <%= link_to action_icon("pencil"), edit_client_contact_path(c.client, c, return_to: request.fullpath), class: "btn btn--ghost btn--icon te-action--edit",
                       title: "Editar", "aria-label": "Editar contato" %>
                 <%= button_to action_icon("trash"), client_contact_path(c.client, c), method: :delete,
                       class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                      params: { return_to: request.fullpath },
                       title: "Excluir", "aria-label": "Excluir contato",
                       data: { turbo_confirm: "Excluir o contato “#{c.name}”?" } %>
               </div>
@@ -93,13 +95,15 @@
             <td><%= status_badge(client.status) %></td>
             <td><%= primary&.name || tag.span("—", class: "muted") %></td>
             <td>
+              <%# PB-013b — propaga o contexto da lista (aba Empresas/filtros/página). %>
               <div class="te-actions">
-                <%= link_to action_icon("eye"), client, class: "btn btn--ghost btn--icon te-action--view",
+                <%= link_to action_icon("eye"), client_path(client, return_to: request.fullpath), class: "btn btn--ghost btn--icon te-action--view",
                       title: "Ver", "aria-label": "Ver cliente" %>
-                <%= link_to action_icon("pencil"), edit_client_path(client), class: "btn btn--ghost btn--icon te-action--edit",
+                <%= link_to action_icon("pencil"), edit_client_path(client, return_to: request.fullpath), class: "btn btn--ghost btn--icon te-action--edit",
                       title: "Editar", "aria-label": "Editar cliente" %>
-                <%= button_to action_icon("trash"), client, method: :delete,
+                <%= button_to action_icon("trash"), client_path(client), method: :delete,
                       class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                      params: { return_to: request.fullpath },
                       title: "Excluir", "aria-label": "Excluir cliente",
                       data: { turbo_confirm: "Excluir o cliente “#{client.name}”?" } %>
               </div>

@@ -4,4 +4,4 @@
 
 <div class="card form-card"><%= render "form", demand: @demand %></div>
 
-<%= link_to "Voltar", @demand, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || @demand), class: "back-link" %>

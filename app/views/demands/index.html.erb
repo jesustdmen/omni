@@ -41,10 +41,11 @@
           <td><%= status_badge(demand.status) %></td>
           <td><%= demand.created_at.strftime("%d/%m/%Y") %></td>
           <td>
+            <%# PB-013b — propaga o contexto da lista. %>
             <div class="te-actions">
-              <%= link_to action_icon("eye"), demand, class: "btn btn--ghost btn--icon te-action--view",
+              <%= link_to action_icon("eye"), demand_path(demand, return_to: request.fullpath), class: "btn btn--ghost btn--icon te-action--view",
                     title: "Ver", "aria-label": "Ver demanda" %>
-              <%= link_to action_icon("pencil"), edit_demand_path(demand), class: "btn btn--ghost btn--icon te-action--edit",
+              <%= link_to action_icon("pencil"), edit_demand_path(demand, return_to: request.fullpath), class: "btn btn--ghost btn--icon te-action--edit",
                     title: "Editar", "aria-label": "Editar demanda" %>
               <%# Conversão depende do estado da demanda (PB-004c). %>
               <% if demand.converted? %>
@@ -58,8 +59,9 @@
               <% else %>
                 <span class="muted demands-list__no-client" title="Defina um cliente na demanda para poder converter">sem cliente</span>
               <% end %>
-              <%= button_to action_icon("trash"), demand, method: :delete,
+              <%= button_to action_icon("trash"), demand_path(demand), method: :delete,
                     class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                    params: { return_to: request.fullpath },
                     title: "Excluir", "aria-label": "Excluir demanda",
                     data: { turbo_confirm: "Excluir a demanda “#{demand.title}”?" } %>
             </div>

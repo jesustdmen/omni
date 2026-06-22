@@ -24,7 +24,7 @@
           <li class="search-result">
             <%# Um ÚNICO link envolve o resultado inteiro; "Ir →" é só indicador visual
                 (sem links aninhados). Funciona sem JS; foco por teclado + hover/focus. %>
-            <%= link_to search_result_path(hit.record), class: "search-result__link",
+            <%= link_to search_result_path(hit.record, return_to: request.fullpath), class: "search-result__link",
                   "aria-label": search_result_aria(hit.record) do %>
               <span class="search-result__main">
                 <span class="search-result__head">

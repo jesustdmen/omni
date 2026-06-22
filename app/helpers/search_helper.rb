@@ -1,14 +1,16 @@
 # PB-013 — apresentação dos resultados da busca global.
 module SearchHelper
-  # Destino do resultado (o card inteiro e o "Ir →" levam aqui).
-  def search_result_path(record)
+  # Destino do resultado (o card inteiro e o "Ir →" levam aqui). PB-013b: carrega
+  # `return_to` para o detalhe poder voltar aos MESMOS resultados da busca.
+  def search_result_path(record, return_to: nil)
+    opts = return_to.present? ? { return_to: return_to } : {}
     case record
-    when Task         then task_path(record)
-    when Demand       then demand_path(record)
-    when Project      then project_path(record)
-    when Client       then client_path(record)
-    when Contact      then client_path(record.client) # abre o cliente do contato
-    when Conversation then conversation_path(record)
+    when Task         then task_path(record, opts)
+    when Demand       then demand_path(record, opts)
+    when Project      then project_path(record, opts)
+    when Client       then client_path(record, opts)
+    when Contact      then client_path(record.client, opts) # abre o cliente do contato
+    when Conversation then conversation_path(record, opts)
     end
   end
 

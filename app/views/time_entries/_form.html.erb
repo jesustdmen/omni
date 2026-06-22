@@ -1,4 +1,5 @@
 <%= form_with model: time_entry do |f| %>
+  <%= hidden_field_tag :return_to, @return_to if @return_to.present? %><%# PB-013b %>
   <% if time_entry.errors.any? %>
     <div class="errors">
       <p><%= pluralize(time_entry.errors.count, "erro") %> impediram salvar:</p>
@@ -32,5 +33,9 @@
     <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
   <% end %>
 
-  <div><%= f.submit %></div>
+  <div>
+    <%= f.submit %>
+    <%# PB-013b — Cancelar volta à origem; senão ao detalhe (edição) ou à lista (novo). %>
+    <%= link_to "Cancelar", (@return_to.presence || (time_entry.persisted? ? time_entry : time_entries_path)), class: "btn btn--ghost btn--sm" %>
+  </div>
 <% end %>

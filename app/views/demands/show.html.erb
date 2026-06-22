@@ -1,7 +1,8 @@
 <% content_for :title, @demand.title %>
 
-<nav class="breadcrumb">
-  <%= link_to "Demandas", demands_path %>
+<%# PB-013b — breadcrumb acessível; preserva a origem (lista/busca filtrada). %>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Demandas", (@return_to.presence || demands_path) %>
   <span class="sep">/</span>
   <span><%= @demand.title %></span>
 </nav>
@@ -15,10 +16,10 @@
     </div>
   </div>
   <div class="page-head__actions">
-    <%= link_to "Editar", edit_demand_path(@demand), class: "btn btn--outline btn--sm" %>
-    <%= link_to "Excluir", @demand,
-          data: { turbo_method: :delete, turbo_confirm: "Excluir demanda?" },
-          class: "btn btn--ghost btn--sm" %>
+    <%= link_to "Editar", edit_demand_path(@demand, return_to: @return_to), class: "btn btn--outline btn--sm" %>
+    <%= button_to "Excluir", demand_path(@demand, return_to: @return_to), method: :delete,
+          class: "btn btn--ghost btn--sm", form_class: "inline",
+          data: { turbo_confirm: "Excluir demanda?" } %>
   </div>
 </div>
 
@@ -50,4 +51,4 @@
   </div>
 <% end %>
 
-<%= link_to "Voltar", demands_path, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || demands_path), class: "back-link" %>

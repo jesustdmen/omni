@@ -1,5 +1,7 @@
 <%# `url` opcional: quando ausente, form_with infere a rota do model (/tasks). %>
 <%= form_with model: task, url: local_assigns[:url] do |f| %>
+  <%# PB-013b — preserva a origem através do submit (Salvar honra; erro mantém). %>
+  <%= hidden_field_tag :return_to, @return_to if @return_to.present? %>
   <% if task.errors.any? %>
     <div class="errors">
       <p><%= pluralize(task.errors.count, "erro") %> impediram salvar:</p>
@@ -35,5 +37,9 @@
   </div>
   <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
 
-  <div><%= f.submit %></div>
+  <div>
+    <%= f.submit %>
+    <%# PB-013b — Cancelar volta à origem (lista filtrada/detalhe); senão à lista. %>
+    <%= link_to "Cancelar", (@return_to.presence || (task.persisted? ? task : tasks_path)), class: "btn btn--ghost btn--sm" %>
+  </div>
 <% end %>

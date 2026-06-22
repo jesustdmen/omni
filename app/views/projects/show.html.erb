@@ -1,7 +1,8 @@
 <% content_for :title, @project.name %>
 
-<nav class="breadcrumb">
-  <%= link_to "Projetos", projects_path %>
+<%# PB-013b — breadcrumb acessível; preserva a origem (lista/busca filtrada). %>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Projetos", (@return_to.presence || projects_path) %>
   <span class="sep">/</span>
   <span><%= @project.name %></span>
 </nav>
@@ -15,10 +16,10 @@
     </div>
   </div>
   <div class="page-head__actions">
-    <%= link_to "Editar", edit_project_path(@project), class: "btn btn--outline btn--sm" %>
-    <%= link_to "Excluir", @project,
-          data: { turbo_method: :delete, turbo_confirm: "Excluir este projeto?" },
-          class: "btn btn--ghost btn--sm" %>
+    <%= link_to "Editar", edit_project_path(@project, return_to: @return_to), class: "btn btn--outline btn--sm" %>
+    <%= button_to "Excluir", project_path(@project, return_to: @return_to), method: :delete,
+          class: "btn btn--ghost btn--sm", form_class: "inline",
+          data: { turbo_confirm: "Excluir este projeto?" } %>
   </div>
 </div>
 
@@ -33,4 +34,4 @@
   </dl>
 </div>
 
-<%= link_to "Voltar", projects_path, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || projects_path), class: "back-link" %>

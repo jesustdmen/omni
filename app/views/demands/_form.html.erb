@@ -1,4 +1,5 @@
 <%= form_with model: demand do |f| %>
+  <%= hidden_field_tag :return_to, @return_to if @return_to.present? %><%# PB-013b %>
   <% if demand.errors.any? %>
     <div class="errors">
       <p><%= pluralize(demand.errors.count, "erro") %> impediram salvar:</p>
@@ -26,5 +27,9 @@
   <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
   <div><%= f.label :observations, "Observações" %><br><%= f.text_area :observations, rows: 2 %></div>
 
-  <div><%= f.submit %></div>
+  <div>
+    <%= f.submit %>
+    <%# PB-013b — Cancelar volta à origem; senão ao detalhe (edição) ou à lista (novo). %>
+    <%= link_to "Cancelar", (@return_to.presence || (demand.persisted? ? demand : demands_path)), class: "btn btn--ghost btn--sm" %>
+  </div>
 <% end %>

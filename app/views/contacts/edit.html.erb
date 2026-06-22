@@ -1,7 +1,8 @@
 <% content_for :title, "Editar contato" %>
 
-<nav class="breadcrumb">
-  <%= link_to "Clientes", clients_path %>
+<%# PB-013b — breadcrumb acessível; "Clientes" preserva a origem (cliente ou aba global Contatos). %>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Clientes", (@return_to.presence || clients_path) %>
   <span class="sep">/</span>
   <%= link_to @client.name, @client %>
   <span class="sep">/</span>
@@ -12,4 +13,4 @@
 
 <div class="card form-card"><%= render "form", client: @client, contact: @contact %></div>
 
-<%= link_to "Voltar", @client, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || @client), class: "back-link" %>

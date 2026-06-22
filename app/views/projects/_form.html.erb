@@ -1,4 +1,5 @@
 <%= form_with model: project do |f| %>
+  <%= hidden_field_tag :return_to, @return_to if @return_to.present? %><%# PB-013b %>
   <% if project.errors.any? %>
     <div class="errors">
       <p><%= pluralize(project.errors.count, "erro") %> impediram salvar:</p>
@@ -24,5 +25,9 @@
   </div>
   <div><%= f.label :budget, "Orçamento (informativo)" %><br><%= f.text_field :budget %></div>
 
-  <div><%= f.submit %></div>
+  <div>
+    <%= f.submit %>
+    <%# PB-013b — Cancelar volta à origem; senão ao detalhe (edição) ou à lista (novo). %>
+    <%= link_to "Cancelar", (@return_to.presence || (project.persisted? ? project : projects_path)), class: "btn btn--ghost btn--sm" %>
+  </div>
 <% end %>

@@ -1,7 +1,8 @@
 <% content_for :title, "Apontamento" %>
 
-<nav class="breadcrumb">
-  <%= link_to "Time entries", time_entries_path %>
+<%# PB-013b — breadcrumb acessível; "Apontamentos" preserva a origem quando houver. %>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Apontamentos", (@return_to.presence || time_entries_path) %>
   <span class="sep">/</span>
   <%= link_to @time_entry.task.title, @time_entry.task %>
 </nav>
@@ -14,10 +15,10 @@
     </div>
   </div>
   <div class="page-head__actions">
-    <%= link_to "Editar", edit_time_entry_path(@time_entry), class: "btn btn--outline btn--sm" %>
-    <%= link_to "Excluir", @time_entry,
-          data: { turbo_method: :delete, turbo_confirm: "Excluir apontamento?" },
-          class: "btn btn--ghost btn--sm" %>
+    <%= link_to "Editar", edit_time_entry_path(@time_entry, return_to: @return_to), class: "btn btn--outline btn--sm" %>
+    <%= button_to "Excluir", time_entry_path(@time_entry, return_to: @return_to), method: :delete,
+          class: "btn btn--ghost btn--sm", form_class: "inline",
+          data: { turbo_confirm: "Excluir apontamento?" } %>
   </div>
 </div>
 
@@ -33,4 +34,4 @@
   </dl>
 </div>
 
-<%= link_to "Voltar", time_entries_path, class: "back-link" %>
+<%= link_to "Voltar", (@return_to.presence || time_entries_path), class: "back-link" %>
