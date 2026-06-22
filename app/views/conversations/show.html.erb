@@ -66,7 +66,8 @@
     <tbody>
       <% @links.each do |link| %>
         <tr>
-          <td><%= link_to link.task.title, link.task %> <span class="muted">(<%= link.task.client.name %>)</span></td>
+          <%# PB-014 — código legível no link da tarefa vinculada. %>
+          <td><%= link_to task_code_label(link.task), link.task %> <span class="muted">(<%= link.task.client.name %>)</span></td>
           <td><%= tag.span(link.link_type, class: "badge badge--#{link.link_type == 'primary' ? 'info' : 'neutral'}") %></td>
           <td><%= link.origin %></td>
           <td><%= link.created_by&.username || "—" %></td>
@@ -86,8 +87,9 @@
   <%= form_with url: conversation_links_path(@conversation), method: :post do |f| %>
     <div>
       <%= label_tag :task_id, "Tarefa" %><br>
+      <%# PB-014 — select como "TSK-000001 — Título (Cliente)". %>
       <%= select_tag :task_id,
-            options_for_select(@tasks.map { |t| [ "#{t.title} (#{t.client.name})", t.id ] }),
+            options_for_select(@tasks.map { |t| task_select_option(t) }),
             prompt: "Selecione a tarefa" %>
     </div>
     <div>

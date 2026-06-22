@@ -51,7 +51,7 @@
         <% @recent_tasks.each do |task| %>
           <li>
             <%= status_badge(task.status) %>
-            <span class="grow"><%= link_to task.title, task %></span>
+            <span class="grow"><%= task_code_tag(task) %> <%= link_to task.title, task %></span><%# PB-014 %>
             <span class="muted"><%= task.client.name %></span>
           </li>
         <% end %>

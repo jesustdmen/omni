@@ -4,7 +4,7 @@
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <%= link_to "Apontamentos", (@return_to.presence || time_entries_path) %>
   <span class="sep">/</span>
-  <%= link_to @time_entry.task.title, @time_entry.task %>
+  <%= link_to task_code_label(@time_entry.task), @time_entry.task %><%# PB-014 %>
 </nav>
 
 <div class="page-head">
@@ -24,7 +24,7 @@
 
 <div class="card">
   <dl>
-    <dt>Tarefa</dt><dd><%= link_to @time_entry.task.title, @time_entry.task %></dd>
+    <dt>Tarefa</dt><dd><%= link_to task_code_label(@time_entry.task), @time_entry.task %></dd><%# PB-014 %>
     <dt>Data</dt><dd><%= @time_entry.date %></dd>
     <dt>Início</dt><dd><%= @time_entry.start_time&.strftime("%d/%m/%Y %H:%M") %></dd>
     <dt>Término</dt><dd><%= @time_entry.end_time&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>

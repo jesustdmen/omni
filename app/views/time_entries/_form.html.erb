@@ -20,9 +20,10 @@
   <% else %>
     <div>
       <%= f.label :task_id, "Tarefa" %><br>
+      <%# PB-014 — select como "TSK-000001 — Título (Cliente)". %>
       <%= f.select :task_id,
             options_for_select(
-              Task.includes(:client).order(:title).map { |t| [ "#{t.title} (#{t.client.name})", t.id ] },
+              Task.includes(:client).order(:title).map { |t| task_select_option(t) },
               time_entry.task_id
             ),
             prompt: "Selecione a tarefa" %>

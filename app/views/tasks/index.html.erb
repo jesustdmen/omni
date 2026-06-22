@@ -29,7 +29,9 @@
       <% tasks.each do |task| %>
         <tr>
           <td class="tasks-list__title">
-            <%= link_to task.title, task %>
+            <%# PB-014 — código legível junto ao título. PB-013b — return_to preservado. %>
+            <%= task_code_tag(task) %>
+            <%= link_to task.title, task_path(task, return_to: request.fullpath) %>
             <% if task.description.present? %>
               <span class="muted tasks-list__excerpt"><%= truncate(task.description, length: 80) %></span>
             <% end %>

@@ -18,7 +18,7 @@
     <tbody>
       <% entries.each do |entry| %>
         <tr>
-          <td><%= link_to entry.task.title, entry.task %></td>
+          <td><%= link_to task_code_label(entry.task), entry.task %></td><%# PB-014 %>
           <td><%= entry.task.client.name %></td>
           <td><%= entry.start_time&.strftime("%d/%m/%Y %H:%M") %></td>
           <td><%= duration_label([ (Time.current - entry.start_time).to_i, 0 ].max) %></td>

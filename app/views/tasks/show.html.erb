@@ -1,16 +1,18 @@
-<% content_for :title, @task.title %>
+<% content_for :title, "#{@task.code} — #{@task.title}" %>
 
 <%# PB-013b — breadcrumb acessível; "Tarefas" preserva a origem (lista/busca filtrada). %>
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <%= link_to "Tarefas", (@return_to.presence || tasks_path) %>
   <span class="sep">/</span>
-  <span><%= @task.title %></span>
+  <span><%= @task.code %> — <%= @task.title %></span>
 </nav>
 
 <div class="page-head">
   <div class="page-head__titles">
+    <%# PB-014 — código legível no cabeçalho. %>
     <h1><%= @task.title %></h1>
     <div class="badge-row">
+      <%= task_code_tag(@task, css: "badge badge--neutral task-code") %>
       <%= status_badge(@task.status) %>
       <%= status_badge(@task.type) %>
       <span class="muted"><%= @task.client.name %></span>
@@ -43,6 +45,7 @@
 <section class="tab-panel" id="tab-detalhes">
   <div class="card">
     <dl>
+      <dt>Código</dt><dd><%= @task.code %></dd>
       <dt>Título</dt><dd><%= @task.title %></dd>
       <dt>Tipo</dt><dd><%= @task.type %></dd>
       <dt>Status</dt><dd><%= @task.status %></dd>

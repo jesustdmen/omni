@@ -46,7 +46,8 @@
   <div class="converted-state">
     <p><span aria-hidden="true">✓</span> Demanda convertida em tarefa.</p>
     <% if @converted_task %>
-      <%= link_to "Abrir tarefa", task_path(@converted_task), class: "btn btn--outline btn--sm" %>
+      <%# PB-014 — link da tarefa exibe o código. %>
+      <%= link_to "Abrir #{@converted_task.code}", task_path(@converted_task), class: "btn btn--outline btn--sm" %>
     <% end %>
   </div>
 <% end %>

@@ -50,7 +50,8 @@
               <%# Conversão depende do estado da demanda (PB-004c). %>
               <% if demand.converted? %>
                 <% if demand.converted_task %>
-                  <%= link_to "Abrir tarefa", task_path(demand.converted_task), class: "btn btn--ghost btn--sm" %>
+                  <%# PB-014 — link da tarefa exibe o código. %>
+                  <%= link_to "Abrir #{demand.converted_task.code}", task_path(demand.converted_task), class: "btn btn--ghost btn--sm" %>
                 <% end %>
               <% elsif demand.client_id.present? %>
                 <%= button_to "Converter", convert_demand_path(demand), method: :post,
