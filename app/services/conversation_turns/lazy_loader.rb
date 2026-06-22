@@ -107,18 +107,22 @@ module ConversationTurns
       partial_hash(file_path, size) == source.content_hash
     end
 
+    # DEVE espelhar EXATAMENTE Sync::BuildConversationTurnRefs#partial_hash, que grava
+    # o content_hash: SHA-256 de cabeça + MIOLO + cauda (3 janelas). A versão anterior
+    # usava só cabeça+cauda (2 janelas) e, desde a correção de miolo da PB-015, nunca
+    # mais batia com o hash gravado — marcando todo índice válido como :stale.
     def partial_hash(file_path, size)
       window = Sync::BuildConversationTurnRefs::HASH_WINDOW
       digest = Digest::SHA256.new
       File.open(file_path, "rb") do |f|
-        if size <= window * 2
-          # Arquivo pequeno: lê no máximo window*2 bytes (bounded; nunca o arquivo todo
-          # de forma ilimitada). Mesmo resultado do builder, que também lê só `size` bytes aqui.
-          digest.update(f.read(window * 2))
+        if size <= window * 3
+          digest.update(f.read)
         else
-          digest.update(f.read(window))
+          digest.update(f.read(window))            # cabeça
+          f.seek((size - window) / 2)
+          digest.update(f.read(window))            # miolo
           f.seek(size - window)
-          digest.update(f.read(window))
+          digest.update(f.read(window))            # cauda
         end
       end
       digest.hexdigest

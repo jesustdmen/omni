@@ -9,6 +9,19 @@
 
 ## Entradas
 
+## 2026-06-22 — [Correção pós-PB-013] Loader de turnos marcava índice válido como "desatualizado"
+### Resumo
+Hotfix de leitura (não reabre a PB-013). Após a correção de "miolo" do fingerprint na PB-015, o **builder** (`Sync::BuildConversationTurnRefs`) passou a gravar `content_hash` com **3 janelas** (cabeça+miolo+cauda), mas o **`ConversationTurns::LazyLoader`** seguia recalculando com **2 janelas** (cabeça+cauda). Os hashes nunca mais batiam → o loader marcava **toda** conversa como `:stale` ("índice de turnos desatualizado") e ocultava o conteúdo, mesmo com o índice íntegro.
+### Causa raiz
+Algoritmos de `partial_hash` divergentes entre builder (grava) e loader (verifica). Provado no banco dev: `content_hash` gravado = recalc 3-janelas do builder; recalc 2-janelas do loader diferia. Índice válido; defeito exclusivo do lado de leitura. Não relacionado à PB-013b.
+### Correção
+- `app/services/conversation_turns/lazy_loader.rb` — `partial_hash` espelha exatamente o builder (cabeça+miolo+cauda). Sem migration, dados ou pipeline.
+- Novo `test/services/conversation_turns/lazy_loader_test.rb` trava o invariante loader↔builder (inclui arquivo grande com miolo e a defesa "miolo alterado → :stale").
+### Validação
+Banco dev: `fingerprint_ok?=true`, loader lê turnos (`status=ok`, `mismatched=0`) inclusive na maior conversa (14.514 refs); UI sem aviso de desatualizado. Suíte **551/2145/0**; rubocop **175/0**; brakeman **0**; `git diff --check` limpo. Aceite do PO.
+### Pendências
+Nenhuma.
+
 ## 2026-06-22 — [Produto Operacional · PB-013b] Preservação de contexto e navegação — ENTREGUE (PB-013 concluída)
 ### Resumo
 Fatia **b** da PB-013: preservação de contexto/navegação entre listas, busca, detalhes, formulários e ações. **Aceite do PO** (busca a validar durante o uso). Com a PB-013b, a **PB-013 está integralmente concluída**. Sem migration/schema/dependência.
