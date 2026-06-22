@@ -33,13 +33,18 @@ module Sync
       def success? = ok
     end
 
-    def self.call(execution:)
-      new(execution: execution).call
+    def self.call(execution:, pipeline_runner: nil, skip_pipeline: false)
+      new(execution: execution, pipeline_runner: pipeline_runner, skip_pipeline: skip_pipeline).call
     end
 
-    def initialize(execution:)
+    # `pipeline_runner` é injetável (testes NUNCA rodam o pipeline real). Quando nil
+    # e o pipeline interno está habilitado, usa Sync::PipelineRunner (ENV/allowlist).
+    # `skip_pipeline:` força pular a coleta (opção "Importar arquivos disponíveis").
+    def initialize(execution:, pipeline_runner: nil, skip_pipeline: false)
       @execution = execution
       @dir = Rails.application.config.x.normalized_dir.to_s
+      @pipeline_runner = pipeline_runner
+      @skip_pipeline = skip_pipeline
     end
 
     def call
@@ -48,15 +53,23 @@ module Sync
       return failure("Outra sincronização já está em andamento.") unless try_advisory_lock
 
       begin
-        @execution.update!(status: "running", started_at: Time.current, error_message: nil)
+        @execution.update!(status: "running", started_at: Time.current, error_message: nil,
+                           current_step: "starting")
+
+        # PB-016a — etapa 1: PIPELINE EXTERNO (coleta + normalização), se habilitado.
+        # Falha/timeout do pipeline ABORTA antes de qualquer importação (índice preservado).
+        return pipeline_failure_result unless run_pipeline_step
 
         summaries = path(SUMMARIES)
         sessions  = path(SESSIONS)
+        # PB-016a — confere os arquivos normalizados ANTES de importar.
+        set_step("verifying")
         ensure_present!(summaries, sessions)
 
         # Snapshot do fingerprint ANTES (detecta reescrita durante a leitura).
         fp_before = fingerprint(sessions)
 
+        set_step("importing")
         import_run = Sync::ImportSummaries.call(
           summaries_path: summaries,
           titles_path: optional(TITLES),
@@ -64,6 +77,7 @@ module Sync
         )
         import_run.update!(sync_execution_id: @execution.id)
 
+        set_step("indexing")
         build_report = Sync::BuildConversationTurnRefs.call(path: sessions)
         link_latest_build_run
 
@@ -76,7 +90,7 @@ module Sync
         end
 
         status = aggregate_status(import_run, build_report)
-        @execution.update!(status: status, finished_at: Time.current)
+        @execution.update!(status: status, finished_at: Time.current, current_step: "completed")
         Result.new(ok: true, status: status, error: nil, execution: @execution)
       rescue StandardError => e
         finish_error(safe_message(e))
@@ -86,6 +100,46 @@ module Sync
     end
 
     private
+
+    # --- PB-016a: pipeline externo (coleta + normalização) -------------------
+    # Roda só quando habilitado por config (run_pipeline_internally). Retorna true
+    # para prosseguir com a importação; false aborta (execução marcada error).
+    def run_pipeline_step
+      return true unless pipeline_enabled?
+
+      set_step("collecting")
+      result = pipeline_runner.call
+      @execution.update!(pipeline_exit_code: result.exit_code, pipeline_summary: result.summary)
+      return true if result.ok?
+
+      finish_error(pipeline_error_message(result))
+      false
+    end
+
+    def pipeline_enabled?
+      return false if @skip_pipeline
+
+      Rails.application.config.x.run_pipeline_internally
+    end
+
+    # Usa o runner injetado (testes) ou o real (Sync::PipelineRunner, ENV/allowlist).
+    def pipeline_runner
+      @pipeline_runner ||= Sync::PipelineRunner.new
+    end
+
+    def pipeline_error_message(result)
+      return "O pipeline excedeu o tempo limite; nenhuma conversa foi importada." if result.timed_out
+
+      "O pipeline falhou (#{result.summary}); nenhuma conversa foi importada."
+    end
+
+    def pipeline_failure_result
+      Result.new(ok: false, status: "error", error: @execution.error_message, execution: @execution)
+    end
+
+    def set_step(step)
+      @execution.update!(current_step: step)
+    end
 
     # --- lock ----------------------------------------------------------------
     def try_advisory_lock
@@ -164,7 +218,8 @@ module Sync
     end
 
     def finish_error(message)
-      @execution.update!(status: "error", finished_at: Time.current, error_message: message)
+      @execution.update!(status: "error", finished_at: Time.current, error_message: message,
+                         current_step: "error")
       Result.new(ok: false, status: "error", error: message, execution: @execution)
     end
 

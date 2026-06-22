@@ -5,7 +5,19 @@
 class SyncExecution < ApplicationRecord
   STATUSES = %w[queued running ok partial error].freeze
   ACTIVE = %w[queued running].freeze
-  # Etapas operacionais esperadas, na ordem (PB-015) — base do indicador de progresso.
+
+  # PB-016a — etapas da sincronização COMPLETA (pipeline + importação), na ordem;
+  # base do indicador de progresso por etapa (via `current_step`). "collecting" só
+  # ocorre com o pipeline interno habilitado; sem ele, começa em "verifying" (PB-015).
+  STEP_FLOW = [
+    { key: "collecting", title: "Coletando e normalizando (pipeline)" },
+    { key: "verifying",  title: "Verificando arquivos" },
+    { key: "importing",  title: "Importando metadados" },
+    { key: "indexing",   title: "Indexando turnos" }
+  ].freeze
+  STEP_TITLES = STEP_FLOW.to_h { |s| [ s[:key], s[:title] ] }.freeze
+
+  # Compat PB-015: etapas com SyncRun próprio (contagem de runs concluídos).
   STEPS = [
     { label: "summaries.jsonl", title: "Conversas (metadados)" },
     { label: "sessions.jsonl",  title: "Índice de turnos" }
@@ -41,32 +53,39 @@ class SyncExecution < ApplicationRecord
     (finished_at - started_at).to_i
   end
 
-  # --- progresso por etapa (PB-015) ---------------------------------------
+  # --- progresso por etapa (PB-016a — baseado em `current_step`) -----------
   def steps_total
-    STEPS.size
+    STEP_FLOW.size
   end
 
-  # Etapas concluídas = SyncRuns desta execução cujo label é uma etapa conhecida.
+  # Índice (1-based) da etapa corrente no fluxo; 0 quando ainda não começou.
+  def step_index
+    idx = STEP_FLOW.index { |s| s[:key] == current_step }
+    idx ? idx + 1 : 0
+  end
+
+  # Etapas concluídas para o indicador (a corrente conta como em andamento).
   def steps_done
-    done = sync_runs.where(source_label: STEPS.map { |s| s[:label] }).distinct.count(:source_label)
-    # Execução concluída conta como todas as etapas (cobre status sem todos os runs).
-    active? ? done : [ done, steps_total ].max
+    return steps_total unless active? # concluída/erro: barra cheia
+
+    [ step_index - 1, 0 ].max
   end
 
-  # Etapa em andamento (a primeira ainda não registrada como SyncRun), ou nil.
+  # Etapa em andamento (rótulo amigável), ou nil.
   def current_step_title
-    return nil unless status == "running"
+    return nil unless running?
 
-    done_labels = sync_runs.pluck(:source_label)
-    pending = STEPS.find { |s| done_labels.exclude?(s[:label]) }
-    pending&.dig(:title) || STEPS.last[:title]
+    STEP_TITLES[current_step] || STEP_TITLES.values.first
   end
 
   def progress_percent
     case status
-    when "queued"             then 0
+    when "queued"                 then 0
     when "ok", "partial", "error" then 100
-    else ((steps_done.to_f / steps_total) * 100).round
+    else
+      return 0 if step_index.zero?
+
+      ((step_index.to_f / steps_total) * 100).round
     end
   end
 end
