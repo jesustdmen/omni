@@ -50,6 +50,42 @@
     </div>
   <% end %>
 
+  <%# PB-016a — estado do agente de coleta (host) quando o pipeline interno está ligado. %>
+  <% if @pipeline_internal %>
+    <div class="sync-agent">
+      <span class="muted">Agente de coleta (host):</span>
+      <% if @agent_online %>
+        <span class="badge badge--info">online</span>
+      <% else %>
+        <span class="badge badge--neutral">offline</span>
+        <span class="muted">— a coleta será pulada; a importação do output atual ainda ocorre.</span>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# PB-016a — agendamento interno (modo agendado, além do manual). Sem JS. %>
+  <div class="sync-schedule">
+    <%= form_with model: @schedule, url: sync_schedule_path, method: :patch, class: "sync-schedule__form" do |f| %>
+      <span class="sync-schedule__title">Agendamento automático</span>
+      <label class="sync-schedule__toggle">
+        <%= f.check_box :enabled %> Ativado
+      </label>
+      <label>
+        A cada
+        <%= f.select :interval_minutes,
+              options_for_select(SyncSchedule::INTERVAL_OPTIONS.map { |m| [ m < 60 ? "#{m} min" : "#{m / 60} h", m ] }, @schedule.interval_minutes) %>
+      </label>
+      <%= f.submit "Salvar agendamento", class: "btn btn--outline btn--sm" %>
+      <% if @schedule.enabled %>
+        <span class="muted">
+          Ativo (a cada <%= @schedule.interval_label %>)<% if @schedule.last_enqueued_at %> · último disparo <%= @schedule.last_enqueued_at.strftime("%d/%m/%Y %H:%M") %><% end %>.
+        </span>
+      <% else %>
+        <span class="muted">Desativado — sincronize manualmente pelo botão acima.</span>
+      <% end %>
+    <% end %>
+  </div>
+
   <%# PB-016a — indicador de progresso por etapa (só durante execução ativa). %>
   <% if active %>
     <div class="sync-progress" role="status" aria-live="polite">
