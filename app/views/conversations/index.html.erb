@@ -39,6 +39,7 @@
   <%= f.select :folder, options_for_select([ [ "Workspace: todos", "" ], [ "Com folder", "with" ], [ "Órfão", "orphan" ] ], params[:folder]) %>
   <%= f.select :link, options_for_select([ [ "Vínculo: todos", "" ], [ "Sem vínculo", "none" ], [ "Com primária", "primary" ], [ "Com menção", "mention" ] ], params[:link]) %>
   <%= f.search_field :q, value: params[:q], placeholder: "Buscar título ou thread_id" %>
+  <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
   <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
   <%= link_to "Limpar", conversations_path, class: "btn btn--ghost btn--sm" %>
 <% end %>
@@ -69,6 +70,7 @@
     </tbody>
   </table>
 
+  <% if (note = per_page_cap_notice(@total_count)) %><p class="muted pagination__cap-note"><%= note %></p><% end %>
   <%= pagination_nav(current: @page, total_pages: @total_pages, total_count: @total_count, unit: "conversa(s)",
         url: ->(p) { conversations_path(request.query_parameters.merge(page: p)) }) %>
 <% else %>

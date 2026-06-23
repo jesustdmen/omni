@@ -45,4 +45,14 @@ class PaginatedTest < ActiveSupport::TestCase
     assert_equal "all", with_params(per_page: "all").per_page_selected
     assert_equal 50, with_params({}).per_page_selected
   end
+
+  test "aviso de teto: só quando 'all' e total > ALL_CAP" do
+    d = with_params(per_page: "all")
+    assert_nil d.per_page_cap_notice(Paginated::ALL_CAP)        # no limite, sem aviso
+    note = d.per_page_cap_notice(Paginated::ALL_CAP + 648)      # acima do teto
+    assert_match(/Mostrando os primeiros #{Paginated::ALL_CAP}/, note)
+    assert_match(/#{Paginated::ALL_CAP + 648}/, note)
+    # sem "all", nunca avisa
+    assert_nil with_params(per_page: "50").per_page_cap_notice(99_999)
+  end
 end

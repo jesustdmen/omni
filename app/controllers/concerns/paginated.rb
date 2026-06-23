@@ -11,7 +11,9 @@ module Paginated
   extend ActiveSupport::Concern
 
   included do
-    helper_method :per_page_select_options, :per_page_selected, :show_all_per_page? if respond_to?(:helper_method)
+    if respond_to?(:helper_method)
+      helper_method :per_page_select_options, :per_page_selected, :show_all_per_page?, :per_page_cap_notice
+    end
   end
 
   PER_PAGE_OPTIONS = [ 10, 25, 50, 100 ].freeze
@@ -42,5 +44,13 @@ module Paginated
   # Valor selecionado no <select> (o literal "all" quando for o caso).
   def per_page_selected
     show_all_per_page? ? ALL_VALUE : sanitized_per_page
+  end
+
+  # Aviso quando o usuário pediu "Mostrar tudo" mas há mais registros que o teto:
+  # mostramos só ALL_CAP por segurança. Retorna a mensagem ou nil.
+  def per_page_cap_notice(total_count)
+    return nil unless show_all_per_page? && total_count.to_i > ALL_CAP
+
+    "Mostrando os primeiros #{ALL_CAP} de #{total_count} — refine os filtros para ver o restante."
   end
 end

@@ -60,6 +60,7 @@
     </tbody>
   </table>
 
+  <% if (note = per_page_cap_notice(@total_count)) %><p class="muted pagination__cap-note"><%= note %></p><% end %>
   <%= pagination_nav(current: @page, total_pages: @total_pages, total_count: @total_count, unit: "tarefa(s)",
         url: ->(p) { tasks_path(request.query_parameters.merge(page: p)) }) %>
 <% elsif @filters_active %>

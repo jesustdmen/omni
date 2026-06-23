@@ -1,4 +1,5 @@
 <%# PB-006 — paginação compartilhada das abas; preserva busca/filtros/per_page/tab.
     Navegação amigável (primeira/anterior/próxima/última) via pagination_nav. %>
+<% if (note = per_page_cap_notice(@total_count)) %><p class="muted pagination__cap-note"><%= note %></p><% end %>
 <%= pagination_nav(current: @page, total_pages: @total_pages, total_count: @total_count, unit: "registro(s)",
       url: ->(p) { clients_path(request.query_parameters.merge(tab: @tab, page: p)) }) %>

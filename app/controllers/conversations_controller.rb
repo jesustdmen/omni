@@ -1,4 +1,5 @@
 class ConversationsController < ApplicationController
+  include Paginated # lista de conversas: tamanho por allowlist + "Mostrar tudo"
   # F3.UI.1 — console SOMENTE LEITURA de validação da Fase 3.
   PER_PAGE = 50
   # F5.1 — turnos read-only por página. PB-paginação: o operador pode escolher o
@@ -11,15 +12,17 @@ class ConversationsController < ApplicationController
     scope = filtered(policy_scope(Conversation))
 
     @total_count = scope.count
-    @page = [ params[:page].to_i, 1 ].max
-    @total_pages = [ (@total_count.to_f / PER_PAGE).ceil, 1 ].max
+    @per_page = sanitized_per_page
+    @show_all = show_all_per_page?
+    @total_pages = [ (@total_count.to_f / @per_page).ceil, 1 ].max
+    @page = [ [ params[:page].to_i, 1 ].max, @total_pages ].min
     # F5.4 — eager load de vínculos+task APENAS na página (evita N+1 dos badges;
     # @total_count fica sem includes). Turnos NÃO são carregados aqui.
     @conversations = scope
       .includes(conversation_links: :task)
       .order(Arel.sql("last_ts DESC NULLS LAST, updated_at DESC"))
-      .limit(PER_PAGE)
-      .offset((@page - 1) * PER_PAGE)
+      .limit(@per_page)
+      .offset((@page - 1) * @per_page)
 
     load_kpis
     @sources = Conversation.distinct.pluck(:source).compact.sort
