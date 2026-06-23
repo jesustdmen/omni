@@ -348,4 +348,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **PB-016 CONCLUÍDA** — PB-016a (execução do pipeline pelo agente Windows) + PB-016b (agendamento interno em /settings), 2026-06-22; addendum ao ADR-011.
 
+**Melhoria UX transversal (2026-06-23):** paginação amigável (« Primeira/Última », "Página X de Y") + "Mostrar tudo" (teto + aviso) em todas as listas e nos turnos de `/conversations/:id`. Sem item de backlog dedicado; registrada no DELIVERY_LOG/FEATURE_MATRIX.
+
 Próxima decisão do PO: a definir. Nada será implementado sem autorização explícita.

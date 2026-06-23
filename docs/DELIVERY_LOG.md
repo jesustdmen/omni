@@ -9,6 +9,21 @@
 
 ## Entradas
 
+## 2026-06-23 — [Melhoria UX transversal] Paginação amigável em todas as listas + turnos
+### Resumo
+Navegação de paginação consistente em todo o app, com aceite visual do PO. Pequena melhoria UX transversal (não há item de backlog dedicado; sem migration/schema/dependência).
+### Entregue
+- **Helper único `PaginationHelper#pagination_nav`** (em `app/helpers/pagination_helper.rb`): « Primeira · ‹ Anterior · "Página X de Y · N item(s)" · Próxima › · Última » — botões de borda desabilitam nas pontas; preserva busca/filtros/per_page/aba. Aplicado em **tasks, demands, projects, clients (Empresas/Contatos) e conversations**, e nos **turnos** (`Conversations::TurnListComponent`).
+- **Concern `Paginated`** (`app/controllers/concerns/paginated.rb`): tamanho de página por allowlist (10/25/50/100) + **"Mostrar tudo"** com teto `ALL_CAP=1000` e **aviso** quando o total excede o teto ("Mostrando os primeiros 1000 de N — refine os filtros…"). Usado nos 4 controllers de lista + `/conversations`.
+- **Turnos** (`/conversations/:id`): mesma navegação + seletor **"Turnos por página" (50/100/200)** — `TURNS_PER_PAGE_OPTIONS = [50,100,200]`; sem "todos" irrestrito (render pesado em conversas grandes).
+- CSS de paginação (`pagination__controls/status/btn is-disabled`).
+### Validação
+Suíte **621 runs / 2398 assertions / 0** falhas/erros/skips (inclui unit do helper, unit do concern e integração: Primeira/Última, "Mostrar tudo", aviso de teto). rubocop **191/0**; brakeman **0**; `git diff --check` limpo. Aceite visual do PO (validado com a branch ativa). Rebaseada sobre `main` (7c2e2e4) sem conflitos; docs de CNPJ/PB-016 intactos.
+### Pendências
+Nenhuma.
+### Fora de escopo (cumprido)
+Sem migration/schema/dependência; não alterou docs/decisões de CNPJ/PB-016.
+
 ## 2026-06-23 — [Correção arquitetural · supersede PB-006/ADR-022] Consulta de CNPJ volta ao navegador (proxy no Rails removido)
 ### Resumo
 **Supersede a implementação de CNPJ da PB-006** (proxy no Rails — ADR-022, decisão original). O proxy de saída pelo servidor batia em **HTTP 429** da BrasilAPI: o limite é por IP e a saída do container usa um IP único/compartilhado — 429 mesmo numa consulta isolada (teste lado a lado: host do usuário = 200, container = 429). A consulta **voltou ao navegador** (como no RepoA), usando o IP do próprio usuário. Docs-only aqui; o código já foi publicado em `main` (`96c45c8`, `7b308bd`).
