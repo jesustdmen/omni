@@ -1,7 +1,7 @@
 # ADR-022 — Consulta de CNPJ via proxy no Rails (fronteira de saída externa)
 
 ## Status
-Aceito — 2026-06-21 (PB-006).
+**Revertida** pela decisão original do proxy — ver **Addendum (2026-06-23)**: a consulta de CNPJ voltou a ser feita **no navegador** (como o RepoA). Aceito em 2026-06-21 (PB-006); proxy no servidor removido em 2026-06-23.
 
 ## Contexto
 O RepoA cadastra clientes com **autopreenchimento por CNPJ**, chamando a **BrasilAPI**
@@ -47,3 +47,21 @@ Cadastro via busca de CNPJ é servido por um **proxy no Rails**:
 ## Relação com ADR-011
 Mesma filosofia de **fronteira controlada** do ADR-011 (allowlist + timeout + sem input do
 usuário), porém para **chamada HTTP de saída** (não execução de processo/pipeline).
+
+---
+
+## Addendum (2026-06-23) — consulta volta ao NAVEGADOR (proxy no servidor removido)
+
+A decisão de fazer a consulta **pelo servidor** mostrou-se inviável na prática e foi **revertida**.
+
+**Motivo (comprovado):** a BrasilAPI (plano gratuito) aplica **rate-limit por IP** (~poucas consultas/min). O proxy fazia a chamada **de saída do container**, então **todas** as consultas saem do **mesmo IP** (NAT do Docker), que é compartilhado/“sujo”. Resultado: HTTP **429 mesmo numa única consulta isolada**. Teste lado a lado (2026-06-23): do **host (IP do usuário)** → HTTP **200**; do **container** → HTTP **429**. O "Risco: abuso/rate-limit" deste ADR subestimou esse efeito — o cadastro manual de poucos clientes já bastava para travar.
+
+**Nova decisão:** a consulta volta a ser feita **no navegador** (como o RepoA, que comprovadamente funcionava), usando o **IP do próprio usuário** — sem rate-limit na prática. É uma API **pública, sem chave/segredo**; mover para o cliente **não expõe credencial**. Implementação:
+
+- O **Stimulus** `cnpj_lookup_controller.js` chama `https://brasilapi.com.br/api/cnpj/v1/<14 dígitos>` direto (host **fixo** no cliente — allowlist; só dígitos na URL; máscara removida no front; trata 200/404/429/erro; mapeia razão social/fantasia/telefone/endereço em maiúsculas, como antes).
+- **Removidos:** o endpoint `GET /clients/cnpj_lookup`, o `Cnpj::Lookup` (serviço) e seus testes — **sem código morto**.
+- **Mantido:** melhoria progressiva (sem JS, cadastro manual); a validação de máscara/dígitos é idêntica à do RepoA (recebe com ou sem máscara; usa só os 14 dígitos).
+
+**Escopo da reversão:** apenas a consulta de CNPJ. **Nenhuma outra** chamada externa muda — sincronização (ADR-011/PB-015/PB-016) e demais rotinas permanecem no servidor. O Omni deixa de ter chamada HTTP de saída (a única que existia era esta).
+
+**O que NÃO fazer (atualizado):** continua valendo host fixo (nunca de input do usuário) e não embutir outras chamadas externas sem novo ADR — agora aplicável ao **cliente** (Stimulus), não ao servidor.

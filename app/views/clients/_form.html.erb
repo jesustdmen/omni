@@ -1,6 +1,7 @@
-<%# PB-006 — data-controller habilita o autopreenchimento por CNPJ (proxy no Rails);
+<%# PB-006 — data-controller habilita o autopreenchimento por CNPJ. A consulta vai
+    direto do navegador para a BrasilAPI (IP do usuário; ADR-022 addendum 2026-06-22);
     sem JS, o form continua funcionando (digitação manual). %>
-<%= form_with model: client, data: { controller: "cnpj-lookup", "cnpj-lookup-url-value": cnpj_lookup_clients_path } do |f| %>
+<%= form_with model: client, data: { controller: "cnpj-lookup" } do |f| %>
   <%= hidden_field_tag :return_to, @return_to if @return_to.present? %><%# PB-013b %>
   <% if client.errors.any? %>
     <div class="errors">

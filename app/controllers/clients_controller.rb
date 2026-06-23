@@ -54,19 +54,6 @@ class ClientsController < ApplicationController
     redirect_to safe_return_to(fallback: clients_path), notice: "Cliente removido." # PB-013b
   end
 
-  # PB-006 — proxy de consulta de CNPJ (BrasilAPI) via servidor: allowlist de host
-  # fixo + timeout; nunca aceita URL do usuário; não persiste a resposta. Retorna
-  # JSON com os campos para o form autopreencher.
-  def cnpj_lookup
-    authorize Client, :new?
-    result = Cnpj::Lookup.call(params[:cnpj])
-    if result.ok
-      render json: result.data
-    else
-      render json: { error: result.error }, status: result.status
-    end
-  end
-
   private
 
   def set_client

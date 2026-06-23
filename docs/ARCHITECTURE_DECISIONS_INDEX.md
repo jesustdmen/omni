@@ -25,7 +25,7 @@
 | ADR-019 | Consolidação em repositório único (`app/`) + docs em `app/docs/` | ✅ Aceito | 2026-06-17 | 3 | Médio | — | configurar remoto único e primeiro push |
 | ADR-020 | Exceção read-only para `workspaceStorage` (resolução de folders) | ✅ Aceito | 2026-06-17 | 3 | Médio | 008,007 | remover se RepoB emitir `workspace_maps.json` normalizado |
 | ADR-021 | Lazy-load de turnos via índice de offsets em `sessions.jsonl` | ✅ Aceito | 2026-06-17 | 5 | Alto | 009,018,008,012,013 | implementar índice (`conversation_turn_refs`) + fingerprint na fatia pré-F5 |
-| ADR-022 | Consulta de CNPJ via proxy no Rails (fronteira de saída externa) | ✅ Aceito | 2026-06-21 | PB-006 | Médio | 011 | host fixo allowlist + timeout; sem input do usuário; não persistir resposta crua |
+| ADR-022 | Consulta de CNPJ: proxy no Rails → **revertida p/ navegador** | ↩️ Revertida (addendum 2026-06-23) | 2026-06-21 | PB-006 | Médio | 011 | proxy removido: IP do container era rate-limitado (429); consulta volta ao navegador (IP do usuário, como RepoA); host fixo no cliente |
 
 ## Manutenção
 - Ao aceitar um ADR: mudar Status para **Aceito** e preencher *Aprovado em*.

@@ -11,8 +11,8 @@ Rails.application.routes.draw do
   # O domínio real (clientes/projetos/tarefas/demandas) chega na Fase 2+.
   # Clientes + Contatos aninhados (F2.1).
   resources :clients do
-    # PB-006 — proxy de consulta de CNPJ (servidor chama BrasilAPI; allowlist+timeout).
-    get :cnpj_lookup, on: :collection
+    # PB-006 — a consulta de CNPJ é feita no navegador (ADR-022 addendum 2026-06-22);
+    # não há mais proxy no servidor.
     resources :contacts, only: %i[new create edit update destroy]
   end
   resources :projects do
