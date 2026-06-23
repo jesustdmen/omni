@@ -12,7 +12,7 @@
   <%= f.search_field :q, value: params[:q], placeholder: "Buscar nome ou descrição" %>
   <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
   <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ Project::STATUS_LABELS[s], s ] }, params[:status]) %>
-  <%= f.select :per_page, options_for_select(ProjectsController::PER_PAGE_OPTIONS.map { |n| [ "#{n}/página", n ] }, @per_page) %>
+  <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
   <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
   <%= link_to "Limpar filtros", projects_path, class: "btn btn--ghost btn--sm" %>
 <% end %>
@@ -58,13 +58,8 @@
     </tbody>
   </table>
 
-  <div class="pagination">
-    <span class="muted"><%= @total_count %> projeto(s) · página <%= @page %>/<%= @total_pages %></span>
-    <span class="actions">
-      <% if @page > 1 %><%= link_to "← Anterior", projects_path(request.query_parameters.merge(page: @page - 1)), class: "btn btn--ghost btn--sm" %><% end %>
-      <% if @page < @total_pages %><%= link_to "Próxima →", projects_path(request.query_parameters.merge(page: @page + 1)), class: "btn btn--ghost btn--sm" %><% end %>
-    </span>
-  </div>
+  <%= pagination_nav(current: @page, total_pages: @total_pages, total_count: @total_count, unit: "projeto(s)",
+        url: ->(p) { projects_path(request.query_parameters.merge(page: p)) }) %>
 <% elsif @filters_active %>
   <div class="empty">
     <p>Nenhum projeto para os filtros atuais.</p>

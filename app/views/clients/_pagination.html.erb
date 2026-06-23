@@ -1,12 +1,4 @@
-<%# PB-006 — paginação compartilhada das abas; preserva busca/filtros/per_page/tab. %>
-<div class="pagination">
-  <span class="muted"><%= @total_count %> registro(s) · página <%= @page %>/<%= @total_pages %></span>
-  <span class="actions">
-    <% if @page > 1 %>
-      <%= link_to "← Anterior", clients_path(request.query_parameters.merge(tab: @tab, page: @page - 1)), class: "btn btn--ghost btn--sm" %>
-    <% end %>
-    <% if @page < @total_pages %>
-      <%= link_to "Próxima →", clients_path(request.query_parameters.merge(tab: @tab, page: @page + 1)), class: "btn btn--ghost btn--sm" %>
-    <% end %>
-  </span>
-</div>
+<%# PB-006 — paginação compartilhada das abas; preserva busca/filtros/per_page/tab.
+    Navegação amigável (primeira/anterior/próxima/última) via pagination_nav. %>
+<%= pagination_nav(current: @page, total_pages: @total_pages, total_count: @total_count, unit: "registro(s)",
+      url: ->(p) { clients_path(request.query_parameters.merge(tab: @tab, page: p)) }) %>

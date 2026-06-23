@@ -100,7 +100,7 @@ class ProjectsListTest < ActionDispatch::IntegrationTest
     names = css_select("td.projects-list__name a").map(&:text)
     assert_equal %w[A B C], names.first(3) # name asc
     get projects_path(per_page: 10, page: 999)
-    assert_select ".pagination", %r{página 1/}
+    assert_select ".pagination__status", /Página 1 de/
   end
 
   test "links de paginação preservam busca/filtros/per_page" do

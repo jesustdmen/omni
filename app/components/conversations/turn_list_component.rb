@@ -9,17 +9,21 @@ module Conversations
   # exibido; conteúdo truncado por teto de bytes. O componente em si NÃO usa
   # html_safe/raw/sanitize (delega ao renderer) — grep-guard mantido.
   class TurnListComponent < ViewComponent::Base
+    include PaginationHelper # navegação amigável (primeira/anterior/próxima/última)
+
     ALLOWED_ROLES = %w[user assistant system tool].freeze
     # Tom do badge por role (apenas apresentação; valores fixos — sem injeção).
     ROLE_TONES = { "user" => "info", "assistant" => "violet", "tool" => "neutral", "system" => "warning" }.freeze
     TEXT_LIMIT = 20_000        # bytes máx de texto por turno (anti-DoS de render)
     TOOL_INPUT_LIMIT = 4_000   # bytes máx de tool_input por turno
 
-    def initialize(result:, conversation:, page: 1, total_pages: 1)
+    def initialize(result:, conversation:, page: 1, total_pages: 1, per_page: nil, per_page_options: [])
       @result = result
       @conversation = conversation
       @page = page
       @total_pages = total_pages
+      @per_page = per_page
+      @per_page_options = per_page_options
     end
 
     def status
@@ -85,10 +89,15 @@ module Conversations
     end
 
     def page_url(target)
-      helpers.conversation_path(@conversation, turn_page: target, anchor: "conversa")
+      helpers.conversation_path(@conversation, turn_page: target, turn_per_page: @per_page, anchor: "conversa")
     end
 
-    attr_reader :page, :total_pages
+    # URL para trocar o tamanho da página (volta à página 1).
+    def per_page_url(size)
+      helpers.conversation_path(@conversation, turn_page: 1, turn_per_page: size, anchor: "conversa")
+    end
+
+    attr_reader :page, :total_pages, :per_page, :per_page_options
 
     private
 

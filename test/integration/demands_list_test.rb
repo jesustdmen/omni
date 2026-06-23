@@ -127,9 +127,9 @@ class DemandsListTest < ActionDispatch::IntegrationTest
     get demands_path(per_page: 10)
     assert_select "tbody tr", 10
     assert_select ".pagination", /12 demanda\(s\)/
-    assert_select ".pagination", %r{página 1/2}
+    assert_select ".pagination__status", /Página 1 de 2/
     get demands_path(per_page: 10, page: 999)
-    assert_select ".pagination", %r{página 1/}
+    assert_select ".pagination__status", /Página 1 de/
   end
 
   test "links de paginação preservam busca/filtros/per_page" do

@@ -115,9 +115,9 @@ class ClientsContactsListTest < ActionDispatch::IntegrationTest
     12.times { |i| Client.create!(name: "C#{format('%02d', i)}") }
     get clients_path(per_page: 10)
     assert_select "tbody tr", 10
-    assert_select ".pagination", %r{página 1/}
+    assert_select ".pagination__status", /Página 1 de/
     get clients_path(per_page: 10, page: 999)
-    assert_select ".pagination", %r{página 1/}
+    assert_select ".pagination__status", /Página 1 de/
   end
 
   test "links de paginação preservam tab/busca/filtros/per_page" do

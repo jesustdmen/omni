@@ -663,6 +663,24 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 }
 .pagination .actions a { color: var(--text-muted); }
 
+/* Paginação amigável (helper pagination_nav): primeira/anterior/X-Y/próxima/última */
+.pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pagination__status {
+  color: var(--text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+}
+.pagination__btn.is-disabled {
+  opacity: .45;
+  pointer-events: none;
+  cursor: default;
+}
+
 /* ------------------------------------------------------------------ */
 /* Dashboard                                                          */
 /* ------------------------------------------------------------------ */

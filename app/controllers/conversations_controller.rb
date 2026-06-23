@@ -1,8 +1,11 @@
 class ConversationsController < ApplicationController
   # F3.UI.1 — console SOMENTE LEITURA de validação da Fase 3.
   PER_PAGE = 50
-  # F5.1 — turnos read-only por página (limite fixo, sem limit/offset do usuário).
+  # F5.1 — turnos read-only por página. PB-paginação: o operador pode escolher o
+  # tamanho da página numa allowlist fixa (sem "todos" irrestrito — conversas têm
+  # centenas de turnos com markdown; carregar tudo travaria o render).
   TURNS_PER_PAGE = 50
+  TURNS_PER_PAGE_OPTIONS = [ 50, 100, 200 ].freeze
 
   def index
     scope = filtered(policy_scope(Conversation))
@@ -44,12 +47,21 @@ class ConversationsController < ApplicationController
     @turns_hidden_personal = @conversation.personal
     return if @turns_hidden_personal
 
+    @turn_per_page = sanitized_turn_per_page
     @turn_page = [ params[:turn_page].to_i, 1 ].max
-    offset = (@turn_page - 1) * TURNS_PER_PAGE
+    offset = (@turn_page - 1) * @turn_per_page
     @turns = ConversationTurns::LazyLoader.call(
-      conversation_id: @conversation.id, limit: TURNS_PER_PAGE, offset: offset
+      conversation_id: @conversation.id, limit: @turn_per_page, offset: offset
     )
-    @turn_total_pages = [ (@turns.total.to_f / TURNS_PER_PAGE).ceil, 1 ].max
+    @turn_total_pages = [ (@turns.total.to_f / @turn_per_page).ceil, 1 ].max
+    # página fora do intervalo → recalcula (ex.: trocar per_page reduz total de páginas).
+    @turn_page = [ @turn_page, @turn_total_pages ].min
+  end
+
+  # Tamanho da página de turnos: só valores da allowlist; inválido → default.
+  def sanitized_turn_per_page
+    n = params[:turn_per_page].to_i
+    TURNS_PER_PAGE_OPTIONS.include?(n) ? n : TURNS_PER_PAGE
   end
 
   # Conjunto pequeno (≤ total de workspace_maps) de hashes com folder resolvido.

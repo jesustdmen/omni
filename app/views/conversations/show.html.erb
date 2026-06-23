@@ -46,7 +46,8 @@
   <p class="muted">Esta conversa é <strong>pessoal</strong>. O conteúdo dos turnos está oculto nesta fase (read-only).</p>
 <% else %>
   <%= render Conversations::TurnListComponent.new(
-        result: @turns, conversation: @conversation, page: @turn_page, total_pages: @turn_total_pages) %>
+        result: @turns, conversation: @conversation, page: @turn_page, total_pages: @turn_total_pages,
+        per_page: @turn_per_page, per_page_options: ConversationsController::TURNS_PER_PAGE_OPTIONS) %>
 <% end %>
 
 <%# F4 — Vínculos da conversa (manual). F5.3 — criar tarefa desta conversa. %>

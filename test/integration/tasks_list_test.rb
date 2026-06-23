@@ -125,7 +125,7 @@ class TasksListTest < ActionDispatch::IntegrationTest
     get tasks_path(per_page: 10)
     assert_select "tbody tr", 10
     assert_select ".pagination", /12 tarefa\(s\)/
-    assert_select ".pagination", /página 1\/2/
+    assert_select ".pagination__status", /Página 1 de 2/
   end
 
   test "per_page inválido cai no default (50)" do
@@ -138,9 +138,9 @@ class TasksListTest < ActionDispatch::IntegrationTest
   test "página inválida/negativa volta para a primeira" do
     12.times { |i| task(title: "T#{i}") }
     get tasks_path(per_page: 10, page: -5)
-    assert_select ".pagination", /página 1\//
+    assert_select ".pagination__status", /Página 1 de/
     get tasks_path(per_page: 10, page: 999)
-    assert_select ".pagination", /página 1\//
+    assert_select ".pagination__status", /Página 1 de/
   end
 
   test "ordenação estável: created_at desc, id desc" do
@@ -163,6 +163,32 @@ class TasksListTest < ActionDispatch::IntegrationTest
       assert_match(/per_page=10/, href)
       assert_match(/page=2/, href)
     end
+  end
+
+  test "navegação amigável: Primeira/Última na página do meio (links de borda)" do
+    25.times { |i| task(title: "T#{format('%02d', i)}") }
+    get tasks_path(per_page: 10, page: 2)
+    # 4 botões ativos (Primeira, Anterior, Próxima, Última)
+    assert_select ".pagination__btn", minimum: 4
+    assert_select "a.pagination__btn", text: /Primeira/
+    assert_select "a.pagination__btn", text: /Última/
+    assert_select ".pagination__status", /Página 2 de 3/
+  end
+
+  test "seletor de per_page inclui 'Mostrar tudo'" do
+    task(title: "T")
+    get tasks_path
+    assert_select "select[name=per_page] option[value=all]", /Mostrar tudo/
+  end
+
+  test "'Mostrar tudo' lista todos numa página só (com teto)" do
+    30.times { |i| task(title: "T#{format('%02d', i)}") }
+    get tasks_path(per_page: "all")
+    assert_select "tbody tr", 30
+    # marcado no select
+    assert_select "select[name=per_page] option[value=all][selected]"
+    # 1 página apenas → status mostra "de 1"
+    assert_select ".pagination__status", /de 1/
   end
 
   # --- tabela / ações ------------------------------------------------------

@@ -21,7 +21,7 @@
     <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients_for_filter, params[:client_id]) %>
     <%= f.select :status, options_for_select([ [ "Status do cliente: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
     <%= f.select :primary, options_for_select([ [ "Principal: todos", "" ], [ "Principal: sim", "yes" ], [ "Principal: não", "no" ] ], params[:primary]) %>
-    <%= f.select :per_page, options_for_select(ClientsController::PER_PAGE_OPTIONS.map { |n| [ "#{n}/página", n ] }, @per_page) %>
+    <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
     <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
     <%= link_to "Limpar filtros", clients_path(tab: "contacts"), class: "btn btn--ghost btn--sm" %>
   <% end %>
@@ -73,7 +73,7 @@
     <%= hidden_field_tag :tab, "companies" %>
     <%= f.search_field :q, value: params[:q], placeholder: "Buscar razão social, nome fantasia ou CNPJ" %>
     <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
-    <%= f.select :per_page, options_for_select(ClientsController::PER_PAGE_OPTIONS.map { |n| [ "#{n}/página", n ] }, @per_page) %>
+    <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
     <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
     <%= link_to "Limpar filtros", clients_path(tab: "companies"), class: "btn btn--ghost btn--sm" %>
   <% end %>

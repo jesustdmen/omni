@@ -1,14 +1,16 @@
 class ClientsController < ApplicationController
+  include Paginated # paginação (allowlist + "Mostrar tudo")
   before_action :set_client, only: %i[show edit update destroy]
 
   # PB-006 — listagem operacional com abas Empresas/Contatos.
-  PER_PAGE_OPTIONS = [ 10, 25, 50, 100 ].freeze
-  DEFAULT_PER_PAGE = 50
+  PER_PAGE_OPTIONS = Paginated::PER_PAGE_OPTIONS
+  DEFAULT_PER_PAGE = Paginated::DEFAULT_PER_PAGE
   TABS = %w[companies contacts].freeze
 
   def index
     @tab = TABS.include?(params[:tab]) ? params[:tab] : "companies"
     @per_page = sanitized_per_page
+    @show_all = show_all_per_page?
     @clients_for_filter = Client.ordered.pluck(:name, :id)
     @statuses = Client.distinct.pluck(:status).compact.sort
 
@@ -157,10 +159,7 @@ class ClientsController < ApplicationController
     client_id.present? && Client.exists?(id: client_id)
   end
 
-  def sanitized_per_page
-    pp = params[:per_page].to_i
-    PER_PAGE_OPTIONS.include?(pp) ? pp : DEFAULT_PER_PAGE
-  end
+  # sanitized_per_page / show_all_per_page? vêm de Paginated.
 
   def total_pages(count)
     [ (count.to_f / @per_page).ceil, 1 ].max

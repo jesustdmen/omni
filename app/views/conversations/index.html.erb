@@ -69,13 +69,8 @@
     </tbody>
   </table>
 
-  <div class="pagination">
-    <span class="muted"><%= @total_count %> conversa(s) · página <%= @page %>/<%= @total_pages %></span>
-    <span class="actions">
-      <% if @page > 1 %><%= link_to "← Anterior", conversations_path(request.query_parameters.merge(page: @page - 1)) %><% end %>
-      <% if @page < @total_pages %><%= link_to "Próxima →", conversations_path(request.query_parameters.merge(page: @page + 1)) %><% end %>
-    </span>
-  </div>
+  <%= pagination_nav(current: @page, total_pages: @total_pages, total_count: @total_count, unit: "conversa(s)",
+        url: ->(p) { conversations_path(request.query_parameters.merge(page: p)) }) %>
 <% else %>
   <div class="empty"><p>Nenhuma conversa para os filtros atuais.</p></div>
 <% end %>

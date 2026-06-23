@@ -1,14 +1,15 @@
 class ProjectsController < ApplicationController
+  include Paginated # paginação (allowlist + "Mostrar tudo")
   before_action :set_project, only: %i[show edit update destroy duplicate]
 
-  # PB-007 — paginação (allowlist) e default.
-  PER_PAGE_OPTIONS = [ 10, 25, 50, 100 ].freeze
-  DEFAULT_PER_PAGE = 50
+  PER_PAGE_OPTIONS = Paginated::PER_PAGE_OPTIONS
+  DEFAULT_PER_PAGE = Paginated::DEFAULT_PER_PAGE
 
   def index
     scope = filtered_projects(policy_scope(Project))
     @total_count = scope.count
     @per_page = sanitized_per_page
+    @show_all = show_all_per_page?
     @total_pages = [ (@total_count.to_f / @per_page).ceil, 1 ].max
     @page = sanitized_page(@total_pages)
     @projects = scope
@@ -108,10 +109,7 @@ class ProjectsController < ApplicationController
     params[:q].present? || valid_client?(params[:client_id]) || Project::STATUSES.include?(params[:status])
   end
 
-  def sanitized_per_page
-    pp = params[:per_page].to_i
-    PER_PAGE_OPTIONS.include?(pp) ? pp : DEFAULT_PER_PAGE
-  end
+  # sanitized_per_page / show_all_per_page? vêm de Paginated.
 
   def sanitized_page(total_pages)
     page = params[:page].to_i

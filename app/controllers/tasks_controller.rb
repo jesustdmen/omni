@@ -1,9 +1,10 @@
 class TasksController < ApplicationController
+  include Paginated # paginação (allowlist + "Mostrar tudo")
   before_action :set_task, only: %i[show edit update destroy]
 
-  # PB-004a — opções de paginação (allowlist) e default.
-  PER_PAGE_OPTIONS = [ 10, 25, 50, 100 ].freeze
-  DEFAULT_PER_PAGE = 50
+  # PB-004a — opções de paginação (allowlist) e default. (centralizadas no concern)
+  PER_PAGE_OPTIONS = Paginated::PER_PAGE_OPTIONS
+  DEFAULT_PER_PAGE = Paginated::DEFAULT_PER_PAGE
 
   def index
     scope = filtered_tasks(policy_scope(Task))
@@ -11,6 +12,7 @@ class TasksController < ApplicationController
     # Total calculado ANTES de limit/offset (sem includes; não carrega tudo em memória).
     @total_count = scope.count
     @per_page = sanitized_per_page
+    @show_all = show_all_per_page?
     @total_pages = [ (@total_count.to_f / @per_page).ceil, 1 ].max
     @page = sanitized_page(@total_pages)
 
@@ -132,10 +134,7 @@ class TasksController < ApplicationController
       Task::TYPES.include?(params[:type]) || valid_client?(params[:client_id])
   end
 
-  def sanitized_per_page
-    pp = params[:per_page].to_i
-    PER_PAGE_OPTIONS.include?(pp) ? pp : DEFAULT_PER_PAGE
-  end
+  # sanitized_per_page / show_all_per_page? / per_page_select_options vêm de Paginated.
 
   # Página inválida/negativa/acima do total → volta para a primeira.
   def sanitized_page(total_pages)

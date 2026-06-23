@@ -120,7 +120,7 @@ class ConversationTurnsTest < ActionDispatch::IntegrationTest
     build_for((1..55).map { |i| line(thread_id: "tP", role: "user", text: "linha #{i}") })
     get conversation_path(conv)
     assert_select "ol.turns li.turn", 50
-    assert_select "nav.pager"
+    assert_select "nav.pagination"
     assert_match "Página 1 de 2", response.body
 
     get conversation_path(conv, turn_page: 2)
