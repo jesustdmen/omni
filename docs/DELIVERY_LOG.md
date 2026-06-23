@@ -9,6 +9,19 @@
 
 ## Entradas
 
+## 2026-06-23 — [Correção arquitetural · supersede PB-006/ADR-022] Consulta de CNPJ volta ao navegador (proxy no Rails removido)
+### Resumo
+**Supersede a implementação de CNPJ da PB-006** (proxy no Rails — ADR-022, decisão original). O proxy de saída pelo servidor batia em **HTTP 429** da BrasilAPI: o limite é por IP e a saída do container usa um IP único/compartilhado — 429 mesmo numa consulta isolada (teste lado a lado: host do usuário = 200, container = 429). A consulta **voltou ao navegador** (como no RepoA), usando o IP do próprio usuário. Docs-only aqui; o código já foi publicado em `main` (`96c45c8`, `7b308bd`).
+### O que mudou (já em produção/main)
+- **Removidos:** rota `GET /clients/cnpj_lookup`, serviço `Cnpj::Lookup` e seus testes (sem código morto).
+- **Navegador:** o Stimulus `cnpj_lookup_controller.js` chama a **BrasilAPI** direto (host fixo no cliente; só dígitos; trata 200/404/429/erro; mapeia razão social/fantasia/telefone/endereço). API pública, sem chave/segredo — mover para o cliente não expõe credencial.
+- **CSP:** `connect-src 'self' https://brasilapi.com.br` (allowlist; nenhuma outra origem externa liberada).
+- **Validação de máscara** preservada como no RepoA (recebe com/sem máscara → só 14 dígitos).
+### Fonte arquitetural
+**ADR-022** — status **Revertida** + Addendum (2026-06-23). O Omni deixa de ter chamada HTTP de saída (a única era esta).
+### Observação de integridade
+Auditoria de coordenação atualizou os docs de produto que ainda descreviam "proxy no Rails" como estado atual (PRODUCT_BACKLOG, FEATURE_MATRIX, INDEX, PROJECT_STATUS) e o resíduo do ROADMAP que listava PB-016 como pendência (PB-016 está concluída/publicada). As entradas históricas da PB-006 são mantidas (append-only) — esta entrada as supersede.
+
 ## 2026-06-22 — [Produto Operacional · PB-016] Sincronização completa pelo Omni — CONCLUÍDA (a + b)
 ### Resumo
 O Omni passa a **orquestrar a importação internamente**: o botão "Sincronizar agora" executa **coleta (pipeline) + importação**, e há **agendamento configurável em Configurações** — sem PowerShell e sem Agendador de Tarefas do Windows. **Aceite do PO.** **Addendum ao ADR-011.** PB-016 integralmente concluída (fatias a e b).
