@@ -21,7 +21,11 @@ module App
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Timezone operacional = Brasília (alias Rails → America/Sao_Paulo). A UI, os
+    # lançamentos, o agrupamento por dia e as derivações de data usam Brasília; o
+    # banco persiste em UTC (default_timezone :utc). Ver ADR-023.
+    config.time_zone = "Brasilia"
+    config.active_record.default_timezone = :utc
     # config.eager_load_paths << Rails.root.join("extras")
 
     # PB-003a — permite múltiplos timers abertos em tarefas diferentes (default true).

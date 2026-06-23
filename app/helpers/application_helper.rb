@@ -102,4 +102,32 @@ module ApplicationHelper
     parts << "#{secs} s" if secs.positive? && hours.zero?
     parts.join(" ").presence || "0 min"
   end
+
+  # Exibição de data/hora no timezone OPERACIONAL (Brasília — config.time_zone),
+  # independente de o instante estar armazenado em UTC (ADR-023). Use estes helpers
+  # em vez de `strftime` direto em horários relevantes (TimeEntry etc.).
+  DATETIME_FMT = "%d/%m/%Y %H:%M".freeze
+  TIME_FMT     = "%H:%M".freeze
+
+  # Data + hora local: "17/06/2026 09:00" (ou um placeholder quando nil).
+  def local_datetime(value, placeholder: "—")
+    return placeholder if value.blank?
+
+    value.in_time_zone.strftime(DATETIME_FMT)
+  end
+
+  # Só a hora local: "09:00".
+  def local_time(value, placeholder: "—")
+    return placeholder if value.blank?
+
+    value.in_time_zone.strftime(TIME_FMT)
+  end
+
+  # Só a data local (para cabeçalho de agrupamento por dia): "17/06/2026".
+  def local_date(value, placeholder: "—")
+    return placeholder if value.blank?
+
+    # `value` pode ser Date (já no dia operacional, derivado no model) ou Time.
+    (value.respond_to?(:in_time_zone) ? value.in_time_zone : value).strftime("%d/%m/%Y")
+  end
 end

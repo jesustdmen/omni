@@ -15,7 +15,7 @@
     <%# PB-003c — timer em andamento: campos temporais read-only; só descrição é editável. %>
     <p class="muted">Timer em andamento — os campos de tempo são geridos pelo cronômetro (iniciar/parar). Apenas a descrição é editável aqui.</p>
     <div><strong>Tarefa:</strong> <%= time_entry.task&.title %></div>
-    <div><strong>Início:</strong> <%= time_entry.start_time&.strftime("%d/%m/%Y %H:%M") %></div>
+    <div><strong>Início:</strong> <%= local_datetime(time_entry.start_time) %></div>
     <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
   <% else %>
     <div>

@@ -26,7 +26,8 @@ class TimeEntry < ApplicationRecord
   # Inicia um timer para a tarefa (registro running). As validações aplicam as
   # regras de unicidade/paralelismo. Retorna o TimeEntry (persistido ou com erros).
   def self.start_for(task, at: Time.current)
-    create(task: task, start_time: at, date: at.to_date, is_running: true, duration: 0)
+    # `date` deriva do início no timezone da aplicação (Brasília), não em UTC.
+    create(task: task, start_time: at, date: at.in_time_zone.to_date, is_running: true, duration: 0)
   end
 
   def running?
@@ -44,13 +45,13 @@ class TimeEntry < ApplicationRecord
   private
 
   # PB-003c — centraliza derivações no model:
-  #  - `date` SEMPRE deriva de `start_time.to_date` (inclusive em running) — a data
-  #    nunca diverge do início;
+  #  - `date` SEMPRE deriva do início no timezone da aplicação (Brasília) — nunca em
+  #    UTC, p/ não divergir do dia operacional perto da meia-noite (ADR-023);
   #  - `duration` só é derivada para apontamento NÃO running com início+término
   #    coerentes (running é gerido por start_for/stop!: fica 0 até parar);
   #  - NÃO computa duration quando término < início (deixa a validação acusar erro).
   def derive_date_and_duration
-    self.date = start_time.to_date if start_time.present?
+    self.date = start_time.in_time_zone.to_date if start_time.present?
 
     return if is_running
     return if start_time.blank? || end_time.blank?

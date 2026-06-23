@@ -26,8 +26,8 @@
   <dl>
     <dt>Tarefa</dt><dd><%= link_to task_code_label(@time_entry.task), @time_entry.task %></dd><%# PB-014 %>
     <dt>Data</dt><dd><%= @time_entry.date %></dd>
-    <dt>Início</dt><dd><%= @time_entry.start_time&.strftime("%d/%m/%Y %H:%M") %></dd>
-    <dt>Término</dt><dd><%= @time_entry.end_time&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
+    <dt>Início</dt><dd><%= local_datetime(@time_entry.start_time) %></dd>
+    <dt>Término</dt><dd><%= local_datetime(@time_entry.end_time) %></dd>
     <dt>Duração</dt><dd><%= duration_label(@time_entry.duration) %></dd>
     <dt>Em execução</dt><dd><%= @time_entry.is_running ? "Sim" : "Não" %></dd>
     <dt>Descrição</dt><dd><%= @time_entry.description.presence || "—" %></dd>

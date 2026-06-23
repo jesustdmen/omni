@@ -9,6 +9,21 @@
 
 ## Entradas
 
+## 2026-06-23 — [Correção técnica/operacional] Timezone operacional = Brasília (banco em UTC) — ADR-023
+### Resumo
+Apontamentos, timers, agrupamento por dia e exibição passam a usar **Brasília** (`America/Sao_Paulo`, UTC−3) como timezone operacional; o banco continua em **UTC**. Aceite visual do PO. **Sem backfill / sem UPDATE de dados.** Decisão em **ADR-023** (impacta horas/Fechamentos/Relatórios).
+### Entregue
+- **Config Rails:** `config.time_zone = "Brasilia"` + `config.active_record.default_timezone = :utc` (banco persiste UTC).
+- **Parse idiomático:** `datetime-local` passa a ser interpretado no `Time.zone` (Brasília) — `"2026-06-17T09:00"` = 09:00 BR (12:00 UTC no banco); sem parser custom.
+- **`TimeEntry`:** `date` deriva do dia operacional via `start_time.in_time_zone.to_date` (em `derive_date_and_duration` e `start_for`); `duration` (segundos por diferença de instantes) e `stop!` inalterados.
+- **Exibição:** helpers centrais `local_datetime`/`local_time`/`local_date` (`ApplicationHelper`) substituem `strftime` direto nos pontos de TimeEntry: `time_entries/{index,running,show,_form}` e a seção de timer/histórico em `tasks/show`. Padronização PT-BR ampla = trabalho futuro (não nesta etapa).
+### Validação
+Suíte **629 runs / 2428 assertions / 0** falhas/erros/skips — novo `test/integration/timezone_brasilia_test.rb` (8 testes/30 asserts): config em Brasília; create retroativo 09:00→09:30 (duration 1800, date 17/06, UTC +3h, UI 09:00/09:30); fronteira 00:30 e **22:00 BR** → date no dia BR; `start_for` deriva date em Brasília; `stop!`/duration; histórico agrupa pelo dia BR. rubocop **192/0**; brakeman **0**; `git diff --check` limpo; zeitwerk OK.
+### Dados existentes (sem backfill)
+Nenhum UPDATE. Os 2 registros existentes permanecem com o instante UTC original e passam a ser **exibidos em Brasília** (ex.: 05:29 UTC → 02:29 BR); o `date` salvo segue coerente com o dia de Brasília. Total inalterado.
+### Fora de escopo (cumprido)
+Sem migration/backfill; sem tradução/PT-BR geral; sem mexer em Fechamentos/Relatórios.
+
 ## 2026-06-23 — [Melhoria UX transversal] Paginação amigável em todas as listas + turnos
 ### Resumo
 Navegação de paginação consistente em todo o app, com aceite visual do PO. Pequena melhoria UX transversal (não há item de backlog dedicado; sem migration/schema/dependência).
