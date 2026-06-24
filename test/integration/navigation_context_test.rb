@@ -6,7 +6,7 @@ require "test_helper"
 # apontamentos por origem, breadcrumbs acessíveis e autenticação.
 class NavigationContextTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @client = Client.create!(name: "ACME LTDA", trade_name: "Acme", cnpj: "12345678000199", status: "active")
     @task = @client.tasks.create!(title: "Corrigir relatório", type: "support", status: "todo")

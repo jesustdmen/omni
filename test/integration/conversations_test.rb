@@ -2,7 +2,7 @@ require "test_helper"
 
 class ConversationsTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     WorkspaceMap.create!(workspace_hash: "wsR", folder: "c:/proj-resolvido")
     WorkspaceMap.create!(workspace_hash: "wsO", folder: nil)

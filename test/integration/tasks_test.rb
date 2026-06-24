@@ -2,7 +2,7 @@ require "test_helper"
 
 class TasksTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @client = Client.create!(name: "ACME")
     @project = @client.projects.create!(name: "Portal")

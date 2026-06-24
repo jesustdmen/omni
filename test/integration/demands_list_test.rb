@@ -3,7 +3,7 @@ require "test_helper"
 # PB-005 — lista operacional de /demands: busca, filtros, paginação, ações, conversão.
 class DemandsListTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @acme = Client.create!(name: "ACME")
     @globex = Client.create!(name: "Globex")

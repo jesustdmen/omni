@@ -3,7 +3,7 @@ require "test_helper"
 # PB-004a — lista operacional de /tasks: busca, filtros, paginação, ações e vazios.
 class TasksListTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @acme = Client.create!(name: "ACME")
     @globex = Client.create!(name: "Globex")

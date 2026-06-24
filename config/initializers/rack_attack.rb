@@ -13,6 +13,17 @@ class Rack::Attack
     req.ip if req.path == "/users/sign_in" && req.post?
   end
 
+  # PB-017 — Login por CONTA/E-MAIL: 5 tentativas / 15 min para o MESMO e-mail,
+  # independente do IP (anti credential-stuffing distribuído por muitos IPs).
+  # Lê o e-mail do corpo do POST de sessão; normaliza (downcase/strip) para
+  # contar variações como a mesma conta. Não dispara quando o e-mail está ausente.
+  throttle("logins/email", limit: 5, period: 15.minutes) do |req|
+    if req.path == "/users/sign_in" && req.post?
+      email = req.params.dig("user", "email").to_s.downcase.strip
+      email.presence # discriminador = e-mail; nil/"" não conta (sem falso-positivo)
+    end
+  end
+
   self.throttled_responder = lambda do |_req|
     [ 429, { "content-type" => "text/plain" }, [ "Muitas requisições. Tente novamente mais tarde.\n" ] ]
   end

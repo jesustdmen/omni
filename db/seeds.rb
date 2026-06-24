@@ -1,8 +1,12 @@
 # Seeds idempotentes (executáveis em qualquer ambiente).
 #
-# F7.1 — admin inicial OPT-IN por ENV (readiness de produção). Sem senha padrão;
-# senha nunca aparece em log. Sem a flag, é no-op seguro (mantém `db:seed:replant`
-# do CI verde). Comportamento de idempotência:
+# F7.1 / PB-017 — admin inicial OPT-IN por ENV (readiness de produção + Auth/Admin
+# seguro single-user). A credencial de LOGIN do Admin vive no User (hash bcrypt);
+# é informada por ENV apenas no momento do seed — sem senha padrão, sem senha
+# hardcoded, senha NUNCA aparece em log. (A credencial de SMTP é separada: fica em
+# ENV/credentials de produção, nunca no banco de usuário nem no código.)
+# Sem a flag, é no-op seguro (mantém `db:seed:replant` do CI verde).
+# Comportamento de idempotência:
 #   - busca por e-mail; se não existe, cria com role "admin";
 #   - se já existe, NÃO duplica e NÃO sobrescreve a senha; apenas promove a admin
 #     quando ainda não for;

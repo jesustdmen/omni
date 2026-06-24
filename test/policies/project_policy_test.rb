@@ -2,7 +2,7 @@ require "test_helper"
 
 class ProjectPolicyTest < ActiveSupport::TestCase
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     @client = Client.create!(name: "ACME")
     @project = @client.projects.create!(name: "Portal")
   end

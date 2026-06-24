@@ -3,7 +3,7 @@ require "test_helper"
 # F5.3 (UI-10) — criar tarefa a partir da conversa + vínculo primary/manual atômico.
 class ConversationTasksTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @client = Client.create!(name: "ACME")
     @conv = Conversation.create!(thread_id: "t-conv-1", source: "codex_session",

@@ -3,7 +3,7 @@ require "test_helper"
 # PB-014 — exibição e busca do código legível de tarefa (TSK-000001).
 class TaskCodeDisplayTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @client = Client.create!(name: "ACME LTDA", trade_name: "Acme", cnpj: "12345678000199")
     @task = @client.tasks.create!(title: "Corrigir relatório", type: "support")

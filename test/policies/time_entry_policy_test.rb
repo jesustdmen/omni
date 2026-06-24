@@ -2,7 +2,7 @@ require "test_helper"
 
 class TimeEntryPolicyTest < ActiveSupport::TestCase
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     @client = Client.create!(name: "ACME")
     @task = @client.tasks.create!(title: "T", type: "support")
     # PB-003c — apontamento não running exige end_time; date/duration derivados.

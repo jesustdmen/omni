@@ -3,7 +3,7 @@ require "test_helper"
 # PB-007 — lista operacional de /projects: busca, filtros, paginação, ações, duplicação.
 class ProjectsListTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @acme = Client.create!(name: "ACME")
     @globex = Client.create!(name: "Globex")

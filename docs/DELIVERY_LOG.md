@@ -9,6 +9,60 @@
 
 ## Entradas
 
+## 2026-06-24 — [Produto Operacional · PB-017] Auth/Admin seguro (single-user) — IMPLEMENTADO E VALIDADO (aguardando aceite do PO)
+### Resumo
+Endurecimento de autenticação/Admin para uso **single-user / somente Admin**, aplicando a skill **secure-auth** (checklist item a item). **Sem cadastro público; sem credenciais no código.** Devise mantido (ADR-003, **addendum 2026-06-24**). Implementação validada por checks verdes; **aceite manual do PO pendente** (gate de integridade) — esta entrada registra a validação técnica, não o aceite visual.
+### Entregue (validado)
+- **Cadastro público desabilitado:** `:registerable` removido do `User`; `devise_for :users, skip: [:registrations]` — somem `GET /users/sign_up`, `POST /users`, `/users/cancel`, `GET/PATCH/PUT/DELETE /users(/edit)`. `:recoverable` mantido. Rota inexistente → **404**; `POST /users` não cria usuário.
+- **Política de senha:** `password_length` **6 → 10** (teto 128; sem cap baixo, sem bloquear colar).
+- **Reset de senha (recoverable):** `reset_password_within` **6h → 30min** (token aleatório/single-use). `paranoid = true` (fluxo "esqueci a senha" não enumera contas; e-mail inexistente não envia e-mail e responde igual).
+- **Mailer:** `mailer_sender` deixa de ser placeholder → ENV `OMNI_MAIL_FROM` (fallback neutro `no-reply@omni.localhost` dev/test). **SMTP separado** (ENV/credentials de produção; nunca no banco de usuário/código).
+- **Rate limit de login:** mantido por **IP** (5/15min) + **adicionado por conta/e-mail** (5/15min, e-mail normalizado downcase/strip; e-mail ausente não conta) — anti credential-stuffing distribuído.
+- **Cookies de sessão:** `SameSite=Lax` tornado explícito (`config/initializers/session_store.rb`); HttpOnly por default; Secure em produção via `force_ssl` (F7.1). Regeneração de sessão no login (Warden) e **invalidação de sessões após troca de senha** (validação contra `authenticatable_salt`) — cobertas por teste.
+- **Seed admin:** preservado (opt-in por ENV, idempotente, sem senha padrão/hardcoded, senha nunca logada); comentário atualizado para a separação de credenciais do PB-017.
+### Arquivos (código/config/docs)
+`app/models/user.rb`, `config/routes.rb`, `config/initializers/devise.rb`, `config/initializers/rack_attack.rb`, `config/initializers/session_store.rb` (novo), `db/seeds.rb`, `docs/adr/ADR-003-devise-authentication.md` (addendum). Testes: `test/integration/authentication_test.rb`, `test/integration/rate_limit_test.rb`, `test/integration/password_reset_test.rb` (novo), `test/models/user_test.rb`, e ajuste mecânico de senha de fixture (`secret123`→`secret12345`, ≥10 chars) em 34 arquivos de teste.
+### Validação
+`bin/rails test` **647 runs / 2483 assertions / 0 falhas / 0 erros / 0 skips** (com `OMNI_RUN_PIPELINE_INTERNALLY=0`; +18 testes/+55 asserts de auth sobre o baseline 629/2428). rubocop **194/0**; brakeman **0**; `git diff --check` limpo (só avisos LF→CRLF informativos); `zeitwerk:check` OK. **Sem credenciais no diff** (apenas senhas dummy de teste; `secret_key`/`pepper`/`master.key`/SMTP fora do diff). Cobertura nova: login válido/inválido (mensagem genérica), `GET /users/sign_up`→404, `POST /users` não cria, helpers de registro ausentes, `:registerable` ausente/`:recoverable` presente, senha <10 rejeitada / =10 aceita, reset envia e-mail+token, token expira em 30min, reset com senha curta rejeitado, paranoid não enumera, troca de senha muda o salt, sessão ativa cai após troca de senha, rate limit por IP e por e-mail (com normalização e sem falso-positivo sem e-mail).
+### Nota de integridade (baseline)
+O baseline em `9dc89aa` tem **2 falhas pré-existentes** quando o container roda com `OMNI_RUN_PIPELINE_INTERNALLY=1` (`run_conversations_sync_test.rb:223` e `sync_executions_test.rb:152` — território PB-016/pipeline, **sem relação com auth**); com a flag em `0` (default/CI) a suíte é 100% verde. PB-017 **não introduz** novas falhas. Registrado para transparência.
+### Riscos residuais & premissas (secure-auth)
+- **Custo bcrypt = 10** (`zz_devise_overrides.rb`, compat. RepoA; ~50–100 ms/hash) está **abaixo** do alvo 100–300 ms do checklist secure-auth. **NÃO classificado como PASS pleno** — é **risco residual ACEITO pelo PO nesta fase** (compat. ADR-003 + contexto single-user). **Elevar o custo = melhoria futura** (segura via re-hash oportunístico no login; sem quebrar hashes existentes); fica como decisão do PO — não alterado nesta fatia.
+- **Invalidação "global" de sessões** depende do mecanismo do Devise (salt derivado do hash); não há tela "sair de todos os dispositivos" dedicada (não exigida no single-user). Se evoluir para multiusuário, reavaliar.
+- **Entrega/SMTP real não exercida** (sem segredo no repo): o reset por e-mail está **preparado** (token+template+expiry+remetente por ENV); o envio real depende de configurar SMTP em produção (F7).
+- `users.is_active` existe no schema mas é **dormente** (não usado por código) — fora de escopo (PB-017).
+- Fora de escopo cumprido: sem `is_active`/inativação, multiusuário, roles avançados, `:lockable`, MFA, OAuth, passkeys, PB-018/status configurável.
+### Reset manual seguro (procedimento — Windows/PowerShell, sem ecoar senha)
+Sem cadastro público, a recuperação/troca manual de senha é feita pelo `rails runner`,
+com a senha vinda de uma **variável de ambiente local efêmera** — nunca digitada inline,
+nunca como argumento de linha de comando, nunca no histórico/echo nem no chat.
+
+Conceito: a senha é capturada por `Read-Host -AsSecureString` (PowerShell **não** ecoa),
+colocada numa env var **apenas no processo atual**, repassada ao container via `-e` (o
+Rails a lê com `ENV.fetch`) e **removida** logo em seguida.
+
+```powershell
+# 1) Capturar a senha SEM eco (PowerShell esconde a digitação):
+$sec = Read-Host -AsSecureString "Nova senha do admin (>=10 chars)"
+$env:OMNI_RESET_EMAIL = "voce@dominio"
+# Converte para texto só na env var do processo atual (não vai para o histórico):
+$env:OMNI_RESET_PWD = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
+  [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))
+
+# 2) Trocar a senha no app (o runner lê da ENV; a senha não aparece na linha):
+docker exec -e OMNI_RESET_EMAIL -e OMNI_RESET_PWD omni_web `
+  bin/rails runner "u = User.find_by!(email: ENV.fetch('OMNI_RESET_EMAIL')); u.password = u.password_confirmation = ENV.fetch('OMNI_RESET_PWD'); u.save!; puts 'senha trocada (salt novo -> sessoes antigas invalidadas)'"
+
+# 3) Limpar as variáveis sensíveis do processo atual:
+Remove-Item Env:OMNI_RESET_PWD, Env:OMNI_RESET_EMAIL
+```
+
+> A troca de senha muda o `encrypted_password` → muda o `authenticatable_salt` → **invalida
+> as sessões antigas**. Em produção, rode no host onde o app/worker executa, com a mesma
+> disciplina (senha via secret/ENV efêmera, nunca em argumento ou histórico).
+
+Alternativa (link por e-mail): `docker exec omni_web bin/rails runner "User.find_by!(email: 'voce@dominio').send_reset_password_instructions"` — gera token que **expira em 30 min**. **Nunca** passar a senha como argumento de linha de comando nem colá-la no chat.
+
 ## 2026-06-23 — [Correção técnica/operacional] Timezone operacional = Brasília (banco em UTC) — ADR-023
 ### Resumo
 Apontamentos, timers, agrupamento por dia e exibição passam a usar **Brasília** (`America/Sao_Paulo`, UTC−3) como timezone operacional; o banco continua em **UTC**. Aceite visual do PO. **Sem backfill / sem UPDATE de dados.** Decisão em **ADR-023** (impacta horas/Fechamentos/Relatórios).

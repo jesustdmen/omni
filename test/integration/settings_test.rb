@@ -3,7 +3,7 @@ require "test_helper"
 # PB-016a — Configurações hospeda o agendador de importação (decisão de produto).
 class SettingsTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
   end
 

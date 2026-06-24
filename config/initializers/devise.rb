@@ -24,7 +24,11 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = "please-change-me-at-config-initializers-devise@example.com"
+  # PB-017 — remetente dos e-mails do Devise (ex.: reset de senha) por ENV, sem
+  # placeholder. Fallback seguro/neutro para dev/test (não é um endereço real e
+  # não vaza domínio). A credencial de SMTP fica em ENV/credentials (produção),
+  # NUNCA no banco de usuário nem no código (separada da credencial de login).
+  config.mailer_sender = ENV.fetch("OMNI_MAIL_FROM", "no-reply@omni.localhost")
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
@@ -90,7 +94,9 @@ Devise.setup do |config|
   # It will change confirmation, password recovery and other workflows
   # to behave the same regardless if the e-mail provided was right or wrong.
   # Does not affect registerable.
-  # config.paranoid = true
+  # PB-017 — ligado: o fluxo "esqueci a senha" responde igual para e-mail
+  # existente ou inexistente (anti-enumeração de contas).
+  config.paranoid = true
 
   # By default Devise will store the user in session. You can skip storage for
   # particular strategies by setting this option.
@@ -181,7 +187,9 @@ Devise.setup do |config|
 
   # ==> Configuration for :validatable
   # Range for password length.
-  config.password_length = 6..128
+  # PB-017 — mínimo elevado de 6 → 10 (mais resistente a brute-force/credential
+  # stuffing). Teto 128 preservado; sem cap baixo e sem bloquear colar senha.
+  config.password_length = 10..128
 
   # Email regex used to validate email formats. It simply asserts that
   # one (and only one) @ exists in the given string. This is mainly
@@ -227,7 +235,10 @@ Devise.setup do |config|
   # Time interval you can reset your password with a reset password key.
   # Don't put a too small interval or your users won't have the time to
   # change their passwords.
-  config.reset_password_within = 6.hours
+  # PB-017 — janela curta (30 min) para o token de reset: reduz a janela de
+  # uso indevido de um link de recuperação interceptado/vazado. O token segue
+  # aleatório e single-use (padrão do Devise).
+  config.reset_password_within = 30.minutes
 
   # When set to false, does not sign a user in automatically after their password is
   # reset. Defaults to true, so a user is signed in automatically after a reset.

@@ -4,7 +4,7 @@ require "test_helper"
 # ADR-014 — domínio compartilhado no MVP (qualquer usuário autenticado lê).
 class ConversationPolicyTest < ActiveSupport::TestCase
   setup do
-    @user = User.create!(username: "p", email: "p@example.com", password: "secret123")
+    @user = User.create!(username: "p", email: "p@example.com", password: "secret12345")
     @conv = Conversation.create!(thread_id: "t-policy-1", source: "x")
   end
 

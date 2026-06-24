@@ -3,7 +3,7 @@ require "test_helper"
 # PB-006 — listas operacionais de /clients (abas Empresas/Contatos) + 1 principal/cliente.
 class ClientsContactsListTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @acme = Client.create!(name: "ACME LTDA", trade_name: "Acme", cnpj: "12345678000199", phone: "1133334444", status: "active")
     @globex = Client.create!(name: "GLOBEX SA", trade_name: "Globex", cnpj: "98765432000100", status: "inactive")

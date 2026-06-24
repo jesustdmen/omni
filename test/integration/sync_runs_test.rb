@@ -2,7 +2,7 @@ require "test_helper"
 
 class SyncRunsTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @run = SyncRun.create!(source_label: "summaries.jsonl", schema_version: "4", status: "partial",
                            lines_processed: 2399, imported: 1635, updated: 0, skipped: 1, error_lines: 0,

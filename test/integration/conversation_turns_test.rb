@@ -7,7 +7,7 @@ require "tempfile"
 # turn_index_test.rb); não toca o arquivo real de 229 MiB.
 class ConversationTurnsTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
   end
 

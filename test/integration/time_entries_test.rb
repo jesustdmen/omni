@@ -2,7 +2,7 @@ require "test_helper"
 
 class TimeEntriesTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     sign_in @user
     @client = Client.create!(name: "ACME")
     @task = @client.tasks.create!(title: "Bug X", type: "support")

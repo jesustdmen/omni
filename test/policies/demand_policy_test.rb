@@ -2,7 +2,7 @@ require "test_helper"
 
 class DemandPolicyTest < ActiveSupport::TestCase
   setup do
-    @user = User.create!(username: "u", email: "u@example.com", password: "secret123")
+    @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
     @demand = Demand.create!(title: "D", origin: "email", priority: "low")
   end
 

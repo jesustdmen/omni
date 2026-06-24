@@ -1,5 +1,9 @@
 Rails.application.routes.draw do
-  devise_for :users
+  # PB-017 — uso single-user/somente-Admin: cadastro público desabilitado.
+  # `skip: :registrations` remove TODAS as rotas de registro do Devise
+  # (GET /users/sign_up, POST /users, /users/cancel, GET/PATCH/PUT/DELETE /users).
+  # Sessão e recuperação de senha (recoverable) permanecem.
+  devise_for :users, skip: [ :registrations ]
 
   # Health check (load balancers / uptime).
   get "up" => "rails/health#show", as: :rails_health_check
