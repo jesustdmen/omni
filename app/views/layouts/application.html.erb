@@ -20,6 +20,8 @@
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%# PB-018 — cores dos status configuráveis via <style nonce> (CSP-safe; sem style inline). %>
+    <%= configurable_status_styles_tag if user_signed_in? %>
     <%= javascript_importmap_tags %>
   </head>
 

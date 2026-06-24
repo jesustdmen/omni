@@ -10,9 +10,10 @@
 <%# PB-005 — busca + filtros combináveis (GET; preserva via query params). %>
 <%= form_with url: demands_path, method: :get, class: "filters" do |f| %>
   <%= f.search_field :q, value: params[:q], placeholder: "Buscar título, descrição ou observações" %>
-  <%= f.select :priority, options_for_select([ [ "Prioridade: todas", "" ] ] + @priorities.map { |p| [ p.humanize, p ] }, params[:priority]) %>
-  <%= f.select :origin, options_for_select([ [ "Origem: todas", "" ] ] + @origins.map { |o| [ o.humanize, o ] }, params[:origin]) %>
-  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
+  <%= f.select :priority, options_for_select([ [ "Prioridade: todas", "" ] ] + @priorities.map { |p| [ Demand.priority_label(p), p ] }, params[:priority]) %>
+  <%= f.select :origin, options_for_select([ [ "Origem: todas", "" ] ] + @origins.map { |o| [ Demand.origin_label(o), o ] }, params[:origin]) %>
+  <%# PB-018 — Demanda tem status fixo; rótulos PT-BR (Pendente/Convertida). %>
+  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ Demand::STATUS_LABELS.fetch(s, s.humanize), s ] }, params[:status]) %>
   <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
   <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
   <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
@@ -36,9 +37,9 @@
             <% end %>
           </td>
           <td><%= demand.client&.name || "—" %></td>
-          <td><%= demand.origin&.humanize || "—" %></td>
-          <td><%= status_badge(demand.priority) %></td>
-          <td><%= status_badge(demand.status) %></td>
+          <td><%= demand.origin.present? ? demand.origin_label : "—" %></td>
+          <td><%= status_badge(demand.priority, label: demand.priority_label) %></td>
+          <td><%= status_badge(demand.status, label: demand.status_label) %></td>
           <td><%= demand.created_at.strftime("%d/%m/%Y") %></td>
           <td>
             <%# PB-013b — propaga o contexto da lista. %>

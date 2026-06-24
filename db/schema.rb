@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -37,6 +37,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
     t.index ["created_at"], name: "index_clients_on_created_at"
     t.index ["name"], name: "index_clients_on_name"
     t.index ["workspace_paths"], name: "index_clients_on_workspace_paths", using: :gin
+  end
+
+  create_table "configurable_statuses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "color", null: false
+    t.datetime "created_at", null: false
+    t.string "entity_type", null: false
+    t.boolean "final", default: false, null: false
+    t.string "key", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_type", "key"], name: "idx_configurable_statuses_entity_key", unique: true
+    t.index ["entity_type", "position"], name: "idx_configurable_statuses_entity_position"
+    t.check_constraint "entity_type::text = ANY (ARRAY['task'::character varying, 'project'::character varying]::text[])", name: "configurable_statuses_entity_type_check"
   end
 
   create_table "contacts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -142,11 +157,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
     t.string "name", null: false
     t.date "start_date"
     t.string "status", default: "planning", null: false
+    t.string "status_entity", default: "project", null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_projects_on_client_id"
     t.index ["created_at"], name: "index_projects_on_created_at"
     t.index ["status"], name: "index_projects_on_status"
-    t.check_constraint "status::text = ANY (ARRAY['planning'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'on_hold'::character varying]::text[])", name: "projects_status_check"
+    t.check_constraint "status_entity::text = 'project'::text", name: "projects_status_entity_check"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -340,6 +356,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
     t.datetime "last_conversation_at"
     t.uuid "project_id"
     t.string "status", default: "todo", null: false
+    t.string "status_entity", default: "task", null: false
     t.string "title", null: false
     t.string "type", null: false
     t.datetime "updated_at", null: false
@@ -350,7 +367,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
     t.index ["project_id"], name: "index_tasks_on_project_id"
     t.index ["status"], name: "index_tasks_on_status"
     t.index ["type"], name: "index_tasks_on_type"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'todo'::character varying, 'in_progress'::character varying, 'done'::character varying, 'canceled'::character varying]::text[])", name: "tasks_status_check"
+    t.check_constraint "status_entity::text = 'task'::text", name: "tasks_status_entity_check"
   end
 
   create_table "time_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -423,6 +440,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
   add_foreign_key "conversations", "users", on_delete: :nullify
   add_foreign_key "demands", "clients", on_delete: :nullify
   add_foreign_key "projects", "clients", on_delete: :cascade
+  add_foreign_key "projects", "configurable_statuses", column: ["status_entity", "status"], primary_key: ["entity_type", "key"], name: "fk_projects_status", on_update: :cascade, on_delete: :restrict
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -431,6 +449,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_140000) do
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "sync_run_items", "sync_runs", on_delete: :cascade
   add_foreign_key "tasks", "clients", on_delete: :cascade
+  add_foreign_key "tasks", "configurable_statuses", column: ["status_entity", "status"], primary_key: ["entity_type", "key"], name: "fk_tasks_status", on_update: :cascade, on_delete: :restrict
   add_foreign_key "tasks", "demands", on_delete: :restrict
   add_foreign_key "tasks", "projects", on_delete: :nullify
   add_foreign_key "time_entries", "tasks", on_delete: :cascade

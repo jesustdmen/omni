@@ -355,14 +355,16 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Aprovado** (não liberado para execução — depende de PB-017 e de decisão explícita do PO para virar `Pronto para execução`). |
+| Status | **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite manual do PO** (checks verdes; sem commit/push). Não "Entregue" no gate até o aceite visual. |
 | Problema que resolve | Tarefas e Projetos precisam de status **configuráveis** pelo usuário (nome, cor, ordem, finalizador) em vez de status fixos no código; e os termos de domínio PT-BR precisam ficar estabilizados para evitar drift de nomenclatura. |
 | Origem/evidência | Decisão de produto na coordenação da onda pós-`04901b6`. |
-| Critério de aceite | Status de **Tarefas e Projetos** configuráveis (campos abaixo); **Demandas permanecem fixas**; status em uso **não excluível livremente** (exige migração para status válido antes); termos de domínio preservados. |
+| Critério de aceite | ✅ Status de **Tarefas e Projetos** configuráveis (campos abaixo); ✅ **Demandas permanecem fixas**; ✅ status em uso **não excluível livremente** (bloqueio claro; FK ON DELETE RESTRICT no banco); ✅ termos de domínio preservados. |
 | Decisões | • **Status configurável** para **Tarefas e Projetos** agora. • **Demandas ficam fixas:** `pending`→**Pendente**, `converted`→**Convertida**. • **Campos do status:** nome, **chave/código**, cor, ordem, ativo, **finalizador**. • Status **em uso não pode ser excluído livremente** — deve ser alterado/movido para status válido antes. • **finalizador** afeta **apenas filtros/exibição** por enquanto (sem regra de negócio adicional). • **Termos preservados:** **Demanda, Apontamentos, Conversas, Sync**. • **Cliente = cliente atendido**; **Empresa prestadora = domínio futuro separado** (não nesta frente). |
-| Fora de escopo | Status configurável para Demandas; workflow/transições com regra de negócio a partir de `finalizador`; "Empresa prestadora" (domínio futuro). |
-| Dependências | PB-017 (precede); WD-03 (Projetos), WD-04 (Tarefas). |
+| Fora de escopo | Status configurável para Demandas; workflow/transições com regra de negócio a partir de `finalizador`; reatribuição em massa de registros entre status; "Empresa prestadora" (domínio futuro). |
+| Dependências | PB-017 (precede); WD-03 (Projetos), WD-04 (Tarefas); **ADR-024** (modelagem). |
 | Relacionado | WD-03, WD-04, WD-05/WD-06 (Demandas — fixas), WD-10/UI-07 (Configurações). |
+
+**Implementação (2026-06-24; aguardando aceite):** tabela `configurable_statuses` (entity_type/key/name/color/position/active/final; único entity_type+key) + **seed** dos status atuais. Integridade no **banco** via **FK composta** `(status_entity, status) → configurable_statuses(entity_type, key)` **ON DELETE RESTRICT** (CHECKs fixos de status removidos) — **ADR-024**. `tasks.status`/`projects.status` seguem como **key string** (impacto mínimo). CRUD em **Configurações** (`/settings`): criar/editar/inativar/excluir-se-não-usado (key imutável). Selects de novos registros só mostram **ativos** (+ o status atual do registro); listas/badges/show/dashboard/busca usam **rótulo+cor configurados**; **Demanda fixa** com rótulos PT-BR. `final` só visual. Suíte **671/2573/0**; rubocop 200/0; brakeman 0. Ver `DELIVERY_LOG`/`PROJECT_STATUS`.
 
 ---
 
@@ -378,4 +380,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Melhoria UX transversal (2026-06-23):** paginação amigável (« Primeira/Última », "Página X de Y") + "Mostrar tudo" (teto + aviso) em todas as listas e nos turnos de `/conversations/:id`. Sem item de backlog dedicado; registrada no DELIVERY_LOG/FEATURE_MATRIX.
 
-**Próxima onda aprovada (coordenação, pós-`04901b6`):** **PB-017 — Auth/Admin seguro** (**Pronto para execução**, P0/P1 — base de segurança que vem **primeiro**) → **PB-018 — Status configurável + termos PT-BR** (**Aprovado**, depende de PB-017 e de liberação explícita do PO). Contrato registrado neste documento; **nada será implementado sem autorização explícita** e PB-017/PB-018 **não estão entregues**.
+**Onda pós-`04901b6` — andamento:** **PB-017 — Auth/Admin seguro** ENTREGUE (publicada em `main`, `477829d`, 2026-06-24; addendum ao ADR-003). **PB-018 — Status configurável + termos PT-BR** **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite manual do PO** (checks verdes; sem commit/push; ADR-024). Status configurável de Tarefas/Projetos com integridade no banco (FK composta); Demanda fixa.
+
+**Próxima decisão do PO:** aceitar a PB-018 (gate) e definir a próxima frente. **Nada novo será implementado sem autorização explícita.** Itens não iniciados (fora desta onda): Contratos, Fechamentos, Relatórios, Empresa prestadora, Desktop.

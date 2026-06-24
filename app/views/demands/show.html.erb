@@ -11,7 +11,7 @@
   <div class="page-head__titles">
     <h1><%= @demand.title %></h1>
     <div class="badge-row">
-      <%= status_badge(@demand.status) %>
+      <%= status_badge(@demand.status, label: @demand.status_label) %>
       <%= status_badge(@demand.priority) %>
     </div>
   </div>
@@ -25,10 +25,10 @@
 
 <div class="card">
   <dl>
-    <dt>Origem</dt><dd><%= @demand.origin&.humanize || "—" %></dd>
-    <dt>Prioridade</dt><dd><%= @demand.priority %></dd>
+    <dt>Origem</dt><dd><%= @demand.origin.present? ? @demand.origin_label : "—" %></dd>
+    <dt>Prioridade</dt><dd><%= @demand.priority_label %></dd>
     <dt>Cliente</dt><dd><%= @demand.client ? link_to(@demand.client.name, @demand.client) : "—" %></dd>
-    <dt>Status</dt><dd><%= @demand.status %></dd>
+    <dt>Status</dt><dd><%= @demand.status_label %></dd>
     <dt>Descrição</dt><dd><%= @demand.description.presence || "—" %></dd>
     <dt>Observações</dt><dd><%= @demand.observations.presence || "—" %></dd>
     <% if @demand.converted? %>

@@ -14,11 +14,11 @@
   <div><%= f.label :title, "Título" %><br><%= f.text_field :title %></div>
   <div>
     <%= f.label :origin, "Origem" %><br>
-    <%= f.select :origin, options_for_select(Demand::ORIGINS.map { |o| [o.humanize, o] }, demand.origin), prompt: "Selecione a origem" %>
+    <%= f.select :origin, options_for_select(Demand::ORIGINS.map { |o| [Demand.origin_label(o), o] }, demand.origin), prompt: "Selecione a origem" %>
   </div>
   <div>
     <%= f.label :priority, "Prioridade" %><br>
-    <%= f.select :priority, options_for_select(Demand::PRIORITIES.map { |p| [p.humanize, p] }, demand.priority), prompt: "Selecione a prioridade" %>
+    <%= f.select :priority, options_for_select(Demand::PRIORITIES.map { |p| [Demand.priority_label(p), p] }, demand.priority), prompt: "Selecione a prioridade" %>
   </div>
   <div>
     <%= f.label :client_id, "Cliente (opcional)" %><br>

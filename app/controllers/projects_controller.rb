@@ -18,7 +18,9 @@ class ProjectsController < ApplicationController
       .limit(@per_page)
       .offset((@page - 1) * @per_page)
     @clients = Client.ordered.pluck(:name, :id)
-    @statuses = Project::STATUSES
+    # PB-018 — opções de filtro da tabela de status configuráveis (entity 'project').
+    # Inclui inativos (filtrar registros antigos). Pares [label, key].
+    @status_options = ConfigurableStatus.for_entity(Project::STATUS_ENTITY).ordered.pluck(:name, :key)
     @filters_active = project_filters_active?
   end
 
@@ -88,7 +90,7 @@ class ProjectsController < ApplicationController
   def filtered_projects(scope)
     scope = apply_project_search(scope)
     scope = scope.where(client_id: params[:client_id]) if valid_client?(params[:client_id])
-    scope = scope.where(status: params[:status]) if Project::STATUSES.include?(params[:status])
+    scope = scope.where(status: params[:status]) if Project.status_key?(params[:status])
     scope
   end
 
@@ -106,7 +108,7 @@ class ProjectsController < ApplicationController
   end
 
   def project_filters_active?
-    params[:q].present? || valid_client?(params[:client_id]) || Project::STATUSES.include?(params[:status])
+    params[:q].present? || valid_client?(params[:client_id]) || Project.status_key?(params[:status])
   end
 
   # sanitized_per_page / show_all_per_page? vêm de Paginated.

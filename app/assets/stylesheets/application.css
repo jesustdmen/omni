@@ -378,7 +378,27 @@ p { margin: 0 0 12px; }
 .badge--cyan    { background: var(--tone-cyan-bg);    color: var(--tone-cyan-text);    border-color: var(--tone-cyan-border); }
 .badge--pink    { background: var(--tone-pink-bg);    color: var(--tone-pink-text);    border-color: var(--tone-pink-border); }
 
+/* PB-018 — badge de status configurável. As CORES vêm de classes
+   `.cfg-status--<entity>-<key>` emitidas num <style nonce> no layout (a CSP
+   restrita bloqueia style inline — ADR-012). Aqui ficam só os aspectos comuns;
+   sem cor própria, o badge cai no neutro do `.badge` base como fallback. */
+.badge--config.badge--final { font-weight: 700; }
+.badge--config.badge--final::after { content: "✓"; font-size: .85em; opacity: .8; }
+
 .badge-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
+
+/* PB-018 — administração de status configuráveis em Configurações. */
+.status-admin__swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,.15); vertical-align: middle; }
+.status-admin__list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.status-admin__item { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 8px; border: 1px solid var(--tone-neutral-border); border-radius: var(--radius-md, 8px); }
+.status-admin__item .status-admin__edit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; }
+.status-admin__item input[type="text"] { min-width: 9em; }
+.status-admin__item label { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; white-space: nowrap; }
+.status-admin__del { display: inline; margin: 0; }
+.status-admin__row--inactive { opacity: .6; }
+.status-admin__new { margin-top: 12px; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); align-items: end; }
+.status-admin__new label { display: flex; flex-direction: column; font-size: .8rem; gap: 3px; }
+.status-admin__new label.status-admin__check { flex-direction: row; align-items: center; gap: 6px; }
 
 /* ------------------------------------------------------------------ */
 /* Tabelas / listas                                                   */

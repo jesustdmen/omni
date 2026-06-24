@@ -11,7 +11,7 @@
   <div class="page-head__titles">
     <h1><%= @project.name %></h1>
     <div class="badge-row">
-      <%= status_badge(@project.status) %>
+      <%= configurable_status_badge(Project::STATUS_ENTITY, @project.status) %>
       <span class="muted"><%= @project.client.name %></span>
     </div>
   </div>
@@ -26,7 +26,7 @@
 <div class="card">
   <dl>
     <dt>Cliente</dt><dd><%= link_to @project.client.name, @project.client %></dd>
-    <dt>Status</dt><dd><%= @project.status %></dd>
+    <dt>Status</dt><dd><%= @project.status_label %></dd>
     <dt>Descrição</dt><dd><%= @project.description.presence || "—" %></dd>
     <dt>Início</dt><dd><%= @project.start_date || "—" %></dd>
     <dt>Término</dt><dd><%= @project.end_date || "—" %></dd>

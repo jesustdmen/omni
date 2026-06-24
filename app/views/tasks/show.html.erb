@@ -13,8 +13,8 @@
     <h1><%= @task.title %></h1>
     <div class="badge-row">
       <%= task_code_tag(@task, css: "badge badge--neutral task-code") %>
-      <%= status_badge(@task.status) %>
-      <%= status_badge(@task.type) %>
+      <%= configurable_status_badge(Task::STATUS_ENTITY, @task.status) %>
+      <%= status_badge(@task.type, label: @task.type_label) %>
       <span class="muted"><%= @task.client.name %></span>
     </div>
   </div>
@@ -47,8 +47,8 @@
     <dl>
       <dt>Código</dt><dd><%= @task.code %></dd>
       <dt>Título</dt><dd><%= @task.title %></dd>
-      <dt>Tipo</dt><dd><%= @task.type %></dd>
-      <dt>Status</dt><dd><%= @task.status %></dd>
+      <dt>Tipo</dt><dd><%= @task.type_label %></dd>
+      <dt>Status</dt><dd><%= @task.status_label %></dd>
       <dt>Cliente</dt><dd><%= link_to @task.client.name, @task.client %></dd>
       <dt>Projeto</dt><dd><%= @task.project ? link_to(@task.project.name, @task.project) : "—" %></dd>
       <dt>Descrição</dt><dd><%= @task.description.presence || "—" %></dd>
@@ -260,9 +260,9 @@
       <dl>
         <dt>Título</dt><dd><%= link_to d.title, demand_path(d) %></dd>
         <dt>Descrição</dt><dd><%= d.description.presence || "—" %></dd>
-        <dt>Origem</dt><dd><%= d.origin&.humanize || "—" %></dd>
-        <dt>Prioridade</dt><dd><%= status_badge(d.priority) %></dd>
-        <dt>Status</dt><dd><%= status_badge(d.status) %></dd>
+        <dt>Origem</dt><dd><%= d.origin.present? ? d.origin_label : "—" %></dd>
+        <dt>Prioridade</dt><dd><%= status_badge(d.priority, label: d.priority_label) %></dd>
+        <dt>Status</dt><dd><%= status_badge(d.status, label: d.status_label) %></dd>
         <dt>Convertida em</dt><dd><%= d.converted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
       </dl>
       <%= link_to "Abrir demanda", demand_path(d), class: "btn btn--outline btn--sm" %>

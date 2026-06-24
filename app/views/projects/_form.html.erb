@@ -21,7 +21,8 @@
   <div><%= f.label :end_date, "Término (prazo/fim)" %><br><%= f.date_field :end_date %></div>
   <div>
     <%= f.label :status, "Status" %><br>
-    <%= f.select :status, Project::STATUSES.map { |s| [ Project::STATUS_LABELS[s], s ] } %>
+    <%# PB-018 — opções de status configuráveis (ativos + o atual do projeto). %>
+    <%= f.select :status, options_for_select(ConfigurableStatus.select_options(Project::STATUS_ENTITY, current_key: project.status), project.status) %>
   </div>
   <div><%= f.label :budget, "Orçamento (informativo)" %><br><%= f.text_field :budget %></div>
 

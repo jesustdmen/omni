@@ -2,12 +2,12 @@ class Project < ApplicationRecord
   belongs_to :client
   has_many :tasks, dependent: :nullify
 
-  # PB-007 — lista fechada de status (espelha o CHECK no banco) + labels PT-BR.
-  STATUSES = %w[planning in_progress completed on_hold].freeze
-  STATUS_LABELS = {
-    "planning" => "Planejamento", "in_progress" => "Em andamento",
-    "completed" => "Concluído", "on_hold" => "Em espera"
-  }.freeze
+  # PB-018 — status configurável (tabela `configurable_statuses`, entity_type='project').
+  # A coluna `status` (string) guarda a KEY; rótulo/cor/opções vêm da tabela.
+  # `status_entity` é constante ('project'), travada por CHECK + readonly — viabiliza
+  # a FK composta (status_entity, status) -> configurable_statuses(entity_type, key).
+  STATUS_ENTITY = "project".freeze
+  attr_readonly :status_entity
 
   # Default em memória (espelha o default do banco) para satisfazer a validação
   # de presença em registros novos.
@@ -16,14 +16,37 @@ class Project < ApplicationRecord
   scope :ordered, -> { order(:name, :id) }
 
   validates :name, presence: true
-  validates :status, presence: true, inclusion: { in: STATUSES }
+  validates :status, presence: true
+  validate :status_is_assignable
   validate :end_not_before_start
 
+  # Substitui o antigo `Project::STATUSES` (lista fixa removida na PB-018).
+  def self.status_keys
+    ConfigurableStatus.keys_for(STATUS_ENTITY)
+  end
+
+  def self.status_key?(value)
+    value.present? && status_keys.include?(value.to_s)
+  end
+
   def status_label
-    STATUS_LABELS.fetch(status, status)
+    ConfigurableStatus.label_for(STATUS_ENTITY, status)
   end
 
   private
+
+  # PB-018 — mesmo critério da Task: status deve existir para 'project'; valores
+  # novos exigem status ativo; valor já persistido inalterado é aceito mesmo inativo.
+  def status_is_assignable
+    return if status.blank?
+
+    row = ConfigurableStatus.for_entity(STATUS_ENTITY).find_by(key: status)
+    if row.nil?
+      errors.add(:status, "não é um status válido de projeto")
+    elsif !row.active? && status_changed?
+      errors.add(:status, "está inativo e não pode ser atribuído")
+    end
+  end
 
   def end_not_before_start
     return if start_date.blank? || end_date.blank?

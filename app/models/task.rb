@@ -4,6 +4,19 @@ class Task < ApplicationRecord
 
   # Lista fechada confirmada no validator do RepoA (server/src/validators/tasks.ts).
   TYPES = %w[support question implementation development commercial].freeze
+  # PB-018 (termos PT-BR) — rótulos de exibição do tipo (lista fixa, não configurável).
+  TYPE_LABELS = {
+    "support" => "Suporte", "question" => "Dúvida", "implementation" => "Implementação",
+    "development" => "Desenvolvimento", "commercial" => "Comercial"
+  }.freeze
+
+  def self.type_label(value)
+    TYPE_LABELS.fetch(value.to_s, value.to_s)
+  end
+
+  def type_label
+    self.class.type_label(type)
+  end
 
   belongs_to :client
   belongs_to :project, optional: true
@@ -18,14 +31,13 @@ class Task < ApplicationRecord
   has_many :conversation_links, dependent: :delete_all
   has_many :conversations, through: :conversation_links
 
-  # status string + Rails enum (default todo); CHECK no banco garante os valores.
-  enum :status, {
-    pending: "pending",
-    todo: "todo",
-    in_progress: "in_progress",
-    done: "done",
-    canceled: "canceled"
-  }, default: "todo", validate: true
+  # PB-018 — status configurável (tabela `configurable_statuses`, entity_type='task').
+  # A coluna `status` (string) guarda a KEY; rótulo/cor/opções vêm da tabela.
+  # `status_entity` é constante ('task') e travada por CHECK + readonly — viabiliza
+  # a FK composta (status_entity, status) -> configurable_statuses(entity_type, key).
+  STATUS_ENTITY = "task".freeze
+  attr_readonly :status_entity
+  attribute :status, :string, default: "todo" # espelha o default do banco
 
   # PB-014 — código legível (`TSK-000001`). `code_number` é gerado pela sequence do
   # banco (DEFAULT nextval); somente leitura no app (nunca atribuído pela aplicação).
@@ -34,6 +46,21 @@ class Task < ApplicationRecord
   validates :title, presence: true
   validates :type, presence: true, inclusion: { in: TYPES }
   validates :status, presence: true
+  validate :status_is_assignable
+
+  # Substitui o antigo `Task.statuses.keys` / `Task.statuses.key?` (enum removido na
+  # PB-018). Fonte agora é a tabela de status configuráveis.
+  def self.status_keys
+    ConfigurableStatus.keys_for(STATUS_ENTITY)
+  end
+
+  def self.status_key?(value)
+    value.present? && status_keys.include?(value.to_s)
+  end
+
+  def status_label
+    ConfigurableStatus.label_for(STATUS_ENTITY, status)
+  end
   # PB-004c — no máximo 1 tarefa por demanda (espelha o índice único parcial).
   validates :demand_id, uniqueness: true, allow_nil: true
   validate :project_belongs_to_same_client
@@ -72,6 +99,21 @@ class Task < ApplicationRecord
   end
 
   private
+
+  # PB-018 — o status precisa existir na tabela para 'task'. Para NOVOS valores
+  # (registro novo ou troca de status), exige que o status esteja ATIVO. Um valor
+  # já persistido e inalterado é aceito mesmo se ficou inativo (não quebra registros
+  # antigos). A FK no banco é a rede de proteção final.
+  def status_is_assignable
+    return if status.blank? # 'presence' já trata vazio
+
+    row = ConfigurableStatus.for_entity(STATUS_ENTITY).find_by(key: status)
+    if row.nil?
+      errors.add(:status, "não é um status válido de tarefa")
+    elsif !row.active? && status_changed?
+      errors.add(:status, "está inativo e não pode ser atribuído")
+    end
+  end
 
   def project_belongs_to_same_client
     return if project.blank? || client.blank?

@@ -11,7 +11,7 @@
 <%= form_with url: projects_path, method: :get, class: "filters" do |f| %>
   <%= f.search_field :q, value: params[:q], placeholder: "Buscar nome ou descrição" %>
   <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
-  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ Project::STATUS_LABELS[s], s ] }, params[:status]) %>
+  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @status_options, params[:status]) %>
   <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
   <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
   <%= link_to "Limpar filtros", projects_path, class: "btn btn--ghost btn--sm" %>
@@ -33,7 +33,7 @@
             <% end %>
           </td>
           <td><%= project.client.name %></td>
-          <td><%= status_badge(project.status_label) %></td>
+          <td><%= configurable_status_badge(Project::STATUS_ENTITY, project.status) %></td>
           <td><%= [ project.start_date, project.end_date ].compact.map { |d| d.strftime("%d/%m/%Y") }.join(" → ").presence || "—" %></td>
           <td><%= project.budget.presence || "—" %></td>
           <td>

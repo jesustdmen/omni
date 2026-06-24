@@ -50,7 +50,7 @@
       <ul class="list-tight">
         <% @recent_tasks.each do |task| %>
           <li>
-            <%= status_badge(task.status) %>
+            <%= configurable_status_badge(Task::STATUS_ENTITY, task.status) %>
             <span class="grow"><%= task_code_tag(task) %> <%= link_to task.title, task %></span><%# PB-014 %>
             <span class="muted"><%= task.client.name %></span>
           </li>

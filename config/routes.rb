@@ -54,4 +54,8 @@ Rails.application.routes.draw do
 
   # PB-016a — Configurações: hospeda o agendador de importação (decisão de produto).
   get "settings", to: "settings#show", as: :settings
+
+  # PB-018 — status configuráveis (Tarefas/Projetos) administrados em Configurações.
+  # `entity_type` (task|project) vem como parâmetro de escopo para CRUD por entidade.
+  resources :configurable_statuses, only: %i[create update destroy], path: "settings/statuses"
 end

@@ -1,0 +1,87 @@
+# PB-018 — status configuráveis disponíveis nos testes (espelham o seed da migration).
+# `fixtures :all` (test_helper) carrega isto no banco de teste, satisfazendo a FK
+# composta (status_entity, status) -> configurable_statuses(entity_type, key) usada
+# por tasks/projects criados nos testes.
+
+# --- Tarefas ---
+task_pending:
+  entity_type: task
+  key: pending
+  name: Pendente
+  color: "#9CA3AF"
+  position: 1
+  active: true
+  final: false
+
+task_todo:
+  entity_type: task
+  key: todo
+  name: A fazer
+  color: "#6B7280"
+  position: 2
+  active: true
+  final: false
+
+task_in_progress:
+  entity_type: task
+  key: in_progress
+  name: Em andamento
+  color: "#3B82F6"
+  position: 3
+  active: true
+  final: false
+
+task_done:
+  entity_type: task
+  key: done
+  name: Concluída
+  color: "#8B5CF6"
+  position: 4
+  active: true
+  final: true
+
+task_canceled:
+  entity_type: task
+  key: canceled
+  name: Cancelada
+  color: "#EF4444"
+  position: 5
+  active: true
+  final: true
+
+# --- Projetos ---
+project_planning:
+  entity_type: project
+  key: planning
+  name: Planejamento
+  color: "#6B7280"
+  position: 1
+  active: true
+  final: false
+
+project_in_progress:
+  entity_type: project
+  key: in_progress
+  name: Em andamento
+  color: "#3B82F6"
+  position: 2
+  active: true
+  final: false
+
+project_completed:
+  entity_type: project
+  key: completed
+  name: Concluído
+  color: "#8B5CF6"
+  position: 3
+  active: true
+  final: true
+
+project_on_hold:
+  entity_type: project
+  key: on_hold
+  name: Em espera
+  color: "#F59E0B"
+  position: 4
+  active: true
+  final: false

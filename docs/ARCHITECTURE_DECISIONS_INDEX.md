@@ -27,6 +27,7 @@
 | ADR-021 | Lazy-load de turnos via índice de offsets em `sessions.jsonl` | ✅ Aceito | 2026-06-17 | 5 | Alto | 009,018,008,012,013 | implementar índice (`conversation_turn_refs`) + fingerprint na fatia pré-F5 |
 | ADR-022 | Consulta de CNPJ: proxy no Rails → **revertida p/ navegador** | ↩️ Revertida (addendum 2026-06-23) | 2026-06-21 | PB-006 | Médio | 011 | proxy removido: IP do container era rate-limitado (429); consulta volta ao navegador (IP do usuário, como RepoA); host fixo no cliente |
 | ADR-023 | Timezone operacional = Brasília; banco persiste UTC | ✅ Aceito | 2026-06-23 | timezone | Médio | — | `config.time_zone="Brasilia"` + `default_timezone=:utc`; parse de datetime-local e `date` de TimeEntry em Brasília; impacta horas/Fechamentos/Relatórios; sem backfill |
+| ADR-024 | Status configurável (Tarefas/Projetos) com FK composta | ✅ Aceito | 2026-06-24 | PB-018 | Médio | 016 | tabela `configurable_statuses` (entity_type,key,name,color,position,active,final); `status` segue string/key; FK composta `(status_entity,status)→(entity_type,key)` ON DELETE RESTRICT; CHECKs fixos removidos; Demanda fixa; `final` só visual |
 
 ## Manutenção
 - Ao aceitar um ADR: mudar Status para **Aceito** e preencher *Aprovado em*.

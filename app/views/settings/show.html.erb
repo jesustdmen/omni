@@ -41,3 +41,52 @@
     </p>
   </div>
 </div>
+
+<%# PB-018 — Status configuráveis de Tarefas e Projetos. Demanda fica fixa. %>
+<% [ [ "task", "Status de Tarefas", @task_statuses ], [ "project", "Status de Projetos", @project_statuses ] ].each do |entity, heading, statuses| %>
+  <div class="card" id="status-<%= entity %>">
+    <div class="subhead"><h2><%= heading %></h2></div>
+    <p class="muted">
+      Nome, cor, ordem e <em>finalizador</em> são personalizáveis. A chave é fixa após criada.
+      Status <strong>inativo</strong> não aparece para novos registros, mas continua válido nos antigos.
+      Um status <strong>em uso</strong> não pode ser excluído — inative-o ou mova os registros antes.
+      O <em>finalizador</em> é apenas visual (filtros/exibição), sem regra de negócio.
+    </p>
+
+    <% if statuses.empty? %>
+      <p class="muted">Nenhum status cadastrado.</p>
+    <% end %>
+    <ul class="status-admin__list">
+      <% statuses.each do |s| %>
+        <li class="status-admin__item <%= "status-admin__row--inactive" unless s.active? %>">
+          <%= form_with model: s, url: configurable_status_path(s), method: :patch, class: "status-admin__edit" do |f| %>
+            <span class="status-admin__swatch" style="background: <%= s.color %>"></span>
+            <%= f.number_field :position, value: s.position, "aria-label": "Ordem", style: "width:4em" %>
+            <%= f.text_field :name, value: s.name, "aria-label": "Nome do status" %>
+            <%= f.color_field :color, value: (s.color.length == 7 ? s.color : "#9ca3af"), "aria-label": "Cor" %>
+            <code title="Chave (fixa)"><%= s.key %></code>
+            <label><%= f.check_box :active, checked: s.active? %> Ativo</label>
+            <label><%= f.check_box :final, checked: s.final? %> Finalizador</label>
+            <%= f.submit "Salvar", class: "btn btn--sm" %>
+          <% end %>
+          <%= button_to "Excluir", configurable_status_path(s), method: :delete,
+                class: "btn btn--sm btn--danger",
+                form: { class: "status-admin__del" },
+                data: { turbo_confirm: "Excluir o status “#{s.name}”? (Só é possível se não estiver em uso.)" } %>
+        </li>
+      <% end %>
+    </ul>
+
+    <%# Novo status desta entidade. %>
+    <%= form_with model: ConfigurableStatus.new, url: configurable_statuses_path, class: "status-admin__new" do |f| %>
+      <%= f.hidden_field :entity_type, value: entity %>
+      <label>Chave (snake_case)<%= f.text_field :key, placeholder: "ex.: em_revisao", required: true %></label>
+      <label>Nome<%= f.text_field :name, placeholder: "ex.: Em revisão", required: true %></label>
+      <label>Cor<%= f.color_field :color, value: "#3B82F6" %></label>
+      <label>Ordem<%= f.number_field :position, value: (statuses.map(&:position).max.to_i + 1) %></label>
+      <label class="status-admin__check">Ativo<%= f.check_box :active, checked: true %></label>
+      <label class="status-admin__check">Finalizador<%= f.check_box :final, checked: false %></label>
+      <%= f.submit "Adicionar status", class: "btn btn--primary btn--sm" %>
+    <% end %>
+  </div>
+<% end %>

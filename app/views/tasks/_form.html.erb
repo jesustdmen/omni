@@ -29,11 +29,12 @@
   <div><%= f.label :title, "Título" %><br><%= f.text_field :title %></div>
   <div>
     <%= f.label :type, "Tipo" %><br>
-    <%= f.select :type, options_for_select(Task::TYPES.map { |t| [t.humanize, t] }, task.type), prompt: "Selecione o tipo" %>
+    <%= f.select :type, options_for_select(Task::TYPES.map { |t| [Task.type_label(t), t] }, task.type), prompt: "Selecione o tipo" %>
   </div>
   <div>
     <%= f.label :status, "Status" %><br>
-    <%= f.select :status, options_for_select(Task.statuses.keys.map { |s| [s.humanize, s] }, task.status) %>
+    <%# PB-018 — opções de status configuráveis (ativos + o atual do registro). %>
+    <%= f.select :status, options_for_select(ConfigurableStatus.select_options(Task::STATUS_ENTITY, current_key: task.status), task.status) %>
   </div>
   <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
 

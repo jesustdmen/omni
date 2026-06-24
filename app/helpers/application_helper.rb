@@ -19,13 +19,87 @@ module ApplicationHelper
     "ok" => :success, "partial" => :warning, "error" => :danger
   }.freeze
 
-  def status_badge(value, tone: nil)
+  def status_badge(value, tone: nil, label: nil)
     return "—" if value.blank?
 
     key = value.to_s.downcase
     tone ||= STATUS_TONES.fetch(key, :neutral)
-    tag.span(value.to_s.humanize, class: "badge badge--#{tone}")
+    # `label:` permite exibir um rótulo PT-BR mantendo o tom pela key (ex.: Demanda).
+    text = label.presence || value.to_s.humanize
+    tag.span(text, class: "badge badge--#{tone}")
   end
+
+  # PB-018 — badge de status CONFIGURÁVEL (Tarefas/Projetos): usa o rótulo PT-BR e a
+  # COR definidos na tabela `configurable_statuses`. A cor NÃO vai por `style` inline
+  # (bloqueado pela CSP restrita — ADR-012), e sim por uma CLASSE
+  # `cfg-status--<entity>-<key>` cujas regras são emitidas num `<style nonce>`
+  # (ver `configurable_status_styles_tag`, incluído no layout). `final` acrescenta
+  # uma classe utilitária (só apresentação). Status sem registro cai no badge tonal.
+  def configurable_status_badge(entity, key)
+    return "—" if key.blank?
+
+    row = configurable_statuses_for(entity)[key.to_s]
+    return status_badge(key) if row.nil? # registro órfão (não deveria ocorrer): degrade
+
+    classes = [ "badge", "badge--config", configurable_status_class(entity, row.key) ]
+    classes << "badge--final" if row.final?
+    tag.span(row.name, class: classes.join(" "),
+                       title: (row.final? ? "Status finalizador" : nil))
+  end
+
+  # PB-018 — bloco <style> (com nonce, aceito pela CSP) com a cor de cada status
+  # configurado de Tarefas e Projetos. Renderizado UMA vez no layout. Sem style
+  # inline → compatível com `style-src 'self' 'nonce-…'`. Os valores hex são
+  # validados no model (allowlist de formato); ainda assim sanitizamos aqui.
+  def configurable_status_styles_tag
+    rows = ConfigurableStatus.all.to_a
+    return "".html_safe if rows.empty?
+
+    css = rows.filter_map do |s|
+      color = sanitize_hex(s.color)
+      next if color.nil?
+
+      sel = ".#{configurable_status_class(s.entity_type, s.key)}"
+      "#{sel}{background:#{hex_to_rgba(color, 0.14)};color:#{color};border-color:#{color};}"
+    end.join("\n")
+
+    # Usa o nonce REAL da requisição (o mesmo do header CSP) — `nonce: true` não
+    # resolve aqui. content_security_policy_nonce vem do helper do Rails.
+    tag.style(css.html_safe, nonce: content_security_policy_nonce) # rubocop:disable Rails/OutputSafety
+  end
+
+  private
+
+  # Classe CSS estável e segura por status (só [a-z0-9_] do key; entity fixo).
+  def configurable_status_class(entity, key)
+    safe_key = key.to_s.gsub(/[^a-z0-9_]/, "")
+    "cfg-status--#{entity}-#{safe_key}"
+  end
+
+  # Aceita só "#rgb"/"#rrggbb"; devolve a forma longa "#rrggbb" ou nil (descarta).
+  def sanitize_hex(hex)
+    h = hex.to_s.strip.delete("#").downcase
+    h = h.chars.map { |c| c * 2 }.join if h.length == 3
+    return nil unless h.match?(/\A\h{6}\z/)
+
+    "##{h}"
+  end
+
+  # Converte "#rrggbb" para "rgba(r,g,b,alpha)" (fundo tonal do badge).
+  def hex_to_rgba(hex, alpha)
+    h = hex.to_s.delete("#")
+    r, g, b = h.scan(/../).map { |p| p.to_i(16) }
+    "rgba(#{r},#{g},#{b},#{alpha})"
+  end
+
+  # Cache por request: 1 query por entidade exibida (evita N+1 nos badges da lista).
+  def configurable_statuses_for(entity)
+    @configurable_statuses_cache ||= {}
+    @configurable_statuses_cache[entity.to_s] ||=
+      ConfigurableStatus.for_entity(entity).index_by(&:key)
+  end
+
+  public
 
   # Nome de arquivo SEGURO para exibir em telas (sem path/PII). Retorna só o
   # basename, lidando com separadores "/" e "\" e com o esquema "file://".

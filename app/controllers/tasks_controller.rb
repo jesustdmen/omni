@@ -25,7 +25,9 @@ class TasksController < ApplicationController
 
     # Opções de filtro (conjuntos pequenos).
     @clients = Client.order(:name).pluck(:name, :id)
-    @statuses = Task.statuses.keys
+    # PB-018 — opções de filtro vêm da tabela de status configuráveis (entity 'task').
+    # Inclui inativos para permitir filtrar registros antigos. Pares [label, key].
+    @status_options = ConfigurableStatus.for_entity(Task::STATUS_ENTITY).ordered.pluck(:name, :key)
     @types = Task::TYPES
     @filters_active = filters_active?
   end
@@ -102,7 +104,7 @@ class TasksController < ApplicationController
   def filtered_tasks(scope)
     scope = apply_search(scope)
     # Status/Tipo: só aplicam se forem valores conhecidos (allowlist).
-    scope = scope.where(status: params[:status]) if Task.statuses.key?(params[:status])
+    scope = scope.where(status: params[:status]) if Task.status_key?(params[:status])
     scope = scope.where(type: params[:type]) if Task::TYPES.include?(params[:type])
     # Cliente: aplica só se houver cliente com esse id (id inválido → ignora).
     scope = scope.where(client_id: params[:client_id]) if valid_client?(params[:client_id])
@@ -130,7 +132,7 @@ class TasksController < ApplicationController
   end
 
   def filters_active?
-    params[:q].present? || Task.statuses.key?(params[:status]) ||
+    params[:q].present? || Task.status_key?(params[:status]) ||
       Task::TYPES.include?(params[:type]) || valid_client?(params[:client_id])
   end
 

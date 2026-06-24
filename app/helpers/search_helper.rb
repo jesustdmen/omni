@@ -35,9 +35,9 @@ module SearchHelper
   # Contexto relacionado relevante (1 linha curta).
   def search_result_context(record)
     case record
-    when Task     then "#{record.client.name} · #{record.status.to_s.humanize}"
-    when Demand   then [ record.client&.name, record.status.to_s.humanize ].compact.join(" · ")
-    when Project  then "#{record.client.name} · #{record.try(:status_label) || record.status}"
+    when Task     then "#{record.client.name} · #{record.status_label}"
+    when Demand   then [ record.client&.name, record.status_label ].compact.join(" · ")
+    when Project  then "#{record.client.name} · #{record.status_label}"
     when Client   then [ record.trade_name.presence, format_cnpj(record.cnpj) ].compact.join(" · ")
     when Contact  then [ record.client.name, record.email ].compact.join(" · ")
     when Conversation then [ status_badge(record.source), conversation_workspace_label(record) ].compact_blank.join(" ").html_safe
