@@ -377,14 +377,16 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Pronto para execução** (Etapa 0 aprovada; aguarda autorização de implementação). |
+| Status | **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite manual do PO** (checks verdes; sem commit/push). Não "Entregue" no gate até o aceite. |
 | Problema que resolve | Não existe a entidade "empresa pela qual presto o serviço" (distinta do Cliente atendido). É a base do domínio comercial (contratos, fechamentos, PDF). |
 | Origem/evidência | Etapa 0 (auditoria read-only); **ADR-025**. Schema atual não tem provider/contract/valor. |
-| Critério de aceite | CRUD de **`provider_companies`** com `name` NOT NULL, `trade_name`, `cnpj` (só dígitos, **único entre prestadoras**), `email`, `phone`, `address`, `active` (default true); **UI em Configurações** (`/settings`). |
+| Critério de aceite | ✅ CRUD de **`provider_companies`** com `name` NOT NULL, `trade_name`, `cnpj` (só dígitos, **único entre prestadoras**), `email`, `phone`, `address`, `active` (default true); **UI em Configurações** (`/settings`). |
 | Decisões | • CNPJ **único entre prestadoras**, **sem** cruzar unicidade com `clients`. • **Logo e dados fiscais → PB-022/PDF** (não agora). • Single-admin enxerga todas (sem User↔Prestadora). • Não renomear Client→Empresa. |
 | Fora de escopo | Logo/dados fiscais; vínculo User↔Prestadora (N:N futuro); contratos (PB-019b). |
 | Dependências | **ADR-025**. |
-| Relacionado | WD-10/UI-07 (Configurações), PB-019b. |
+| Relacionado | WD-10/UI-07 (Configurações), WD-11, PB-019b. |
+
+**Implementação (2026-06-24; aguardando aceite):** `provider_companies` (uuid; name NOT NULL; trade_name/cnpj/email/phone/address; active default true; índice único parcial de cnpj `WHERE cnpj IS NOT NULL` — único só entre prestadoras). `ProviderCompany` normaliza CNPJ p/ dígitos (vazio→nil), único entre prestadoras, **cnpj igual a Client permitido**. **CRUD no padrão do Omni** (decisão do PO — não inline): página de **lista** + **Nova/Editar** com `_form` em card (igual Clientes/Projetos), em `/settings/provider-companies`. **Configurações virou um hub por domínio** (decisão do PO): `/settings` = índice de cards → sub-páginas `/settings/sync` (PB-016b), `/settings/status` (PB-018) e Empresa Prestadora. Controller resourceful (index/new/create/edit/update/destroy; `policy_scope`; `return_to`) + `ProviderCompanyPolicy` (ADR-014). Suíte **703/2699/0**; rubocop 0; brakeman 0. Ver `DELIVERY_LOG`/`PROJECT_STATUS`. **Contratos/Cálculo/Fechamentos/Relatórios não iniciados.**
 
 ### PB-019b — Contratos (CRUD básico)
 

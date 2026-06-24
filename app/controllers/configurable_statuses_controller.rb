@@ -16,10 +16,10 @@ class ConfigurableStatusesController < ApplicationController
     @status = ConfigurableStatus.new(create_params)
     authorize @status
     if @status.save
-      redirect_to settings_path(anchor: "status-#{@status.entity_type}"),
+      redirect_to settings_status_path(anchor: "status-#{@status.entity_type}"),
                   notice: "Status “#{@status.name}” criado."
     else
-      redirect_to settings_path(anchor: "status-#{@status.entity_type}"),
+      redirect_to settings_status_path(anchor: "status-#{@status.entity_type}"),
                   alert: "Não foi possível criar o status: #{error_text(@status)}"
     end
   end
@@ -27,10 +27,10 @@ class ConfigurableStatusesController < ApplicationController
   def update
     authorize @status
     if @status.update(update_params)
-      redirect_to settings_path(anchor: "status-#{@status.entity_type}"),
+      redirect_to settings_status_path(anchor: "status-#{@status.entity_type}"),
                   notice: "Status “#{@status.name}” atualizado."
     else
-      redirect_to settings_path(anchor: "status-#{@status.entity_type}"),
+      redirect_to settings_status_path(anchor: "status-#{@status.entity_type}"),
                   alert: "Não foi possível atualizar o status: #{error_text(@status)}"
     end
   end
@@ -38,7 +38,7 @@ class ConfigurableStatusesController < ApplicationController
   def destroy
     authorize @status
     if @status.in_use?
-      redirect_to settings_path(anchor: "status-#{@status.entity_type}"),
+      redirect_to settings_status_path(anchor: "status-#{@status.entity_type}"),
                   alert: "O status “#{@status.name}” está em uso e não pode ser excluído. " \
                          "Mova os registros para outro status antes de excluir."
       return
@@ -46,11 +46,11 @@ class ConfigurableStatusesController < ApplicationController
 
     begin
       @status.destroy!
-      redirect_to settings_path(anchor: "status-#{@status.entity_type}"),
+      redirect_to settings_status_path(anchor: "status-#{@status.entity_type}"),
                   notice: "Status “#{@status.name}” excluído."
     rescue ActiveRecord::InvalidForeignKey
       # Rede de proteção: corrida entre a checagem e o delete (FK RESTRICT no banco).
-      redirect_to settings_path(anchor: "status-#{@status.entity_type}"),
+      redirect_to settings_status_path(anchor: "status-#{@status.entity_type}"),
                   alert: "O status “#{@status.name}” está em uso e não pode ser excluído."
     end
   end

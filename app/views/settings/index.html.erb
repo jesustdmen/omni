@@ -1,0 +1,42 @@
+<% content_for :title, "Configurações" %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Configurações</h1>
+    <p class="page-head__sub">Preferências operacionais do Omni.</p>
+  </div>
+</div>
+
+<%# Hub de Configurações — cada domínio em sua própria sub-página. %>
+<div class="settings-hub">
+  <div class="card settings-hub__card">
+    <div class="subhead"><h2>Sincronização de conversas</h2></div>
+    <p class="muted">
+      Importa (e coleta, quando o agente está ativo) as conversas do VS Code/Codex/Claude.
+      <% if @schedule.enabled %>
+        <span class="badge badge--info">agendamento ativo</span> a cada <%= @schedule.interval_label %>.
+      <% else %>
+        <span class="badge badge--neutral">agendamento desativado</span>
+      <% end %>
+    </p>
+    <p><%= link_to "Abrir sincronização", settings_sync_path, class: "btn btn--primary btn--sm" %></p>
+  </div>
+
+  <div class="card settings-hub__card">
+    <div class="subhead"><h2>Status</h2></div>
+    <p class="muted">
+      Status configuráveis de Tarefas (<%= @task_statuses_count %>) e Projetos (<%= @project_statuses_count %>) —
+      nome, cor, ordem e finalizador. Demanda permanece fixa.
+    </p>
+    <p><%= link_to "Abrir status", settings_status_path, class: "btn btn--primary btn--sm" %></p>
+  </div>
+
+  <div class="card settings-hub__card">
+    <div class="subhead"><h2>Empresa Prestadora</h2></div>
+    <p class="muted">
+      Empresas pelas quais você presta serviço (distintas dos clientes atendidos).
+      Base para os contratos. <%= @provider_companies_count %> cadastrada(s).
+    </p>
+    <p><%= link_to "Gerenciar empresas prestadoras", provider_companies_path, class: "btn btn--primary btn--sm" %></p>
+  </div>
+</div>

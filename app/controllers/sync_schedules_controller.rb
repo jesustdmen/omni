@@ -13,9 +13,9 @@ class SyncSchedulesController < ApplicationController
 
     if schedule.update(enabled: enabled, interval_minutes: interval)
       msg = enabled ? "Agendamento ativado (a cada #{schedule.interval_label})." : "Agendamento desativado."
-      redirect_to settings_path, notice: msg
+      redirect_to settings_sync_path, notice: msg
     else
-      redirect_to settings_path, alert: "Não foi possível salvar o agendamento."
+      redirect_to settings_sync_path, alert: "Não foi possível salvar o agendamento."
     end
   end
 end

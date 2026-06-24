@@ -8,9 +8,9 @@ class ConfigurableStatusesTest < ActionDispatch::IntegrationTest
     @client = Client.create!(name: "ACME")
   end
 
-  # --- Página de Configurações lista os status por entidade ---
-  test "Configurações mostra seções de status de tarefas e projetos" do
-    get settings_path
+  # --- Sub-página de Status (Configurações) lista os status por entidade ---
+  test "Configurações › Status mostra seções de tarefas e projetos" do
+    get settings_status_path
     assert_response :success
     assert_select "#status-task"
     assert_select "#status-project"
@@ -28,7 +28,7 @@ class ConfigurableStatusesTest < ActionDispatch::IntegrationTest
     end
     s = ConfigurableStatus.find_by(entity_type: "task", key: "em_revisao")
     assert_equal "Em revisão", s.name
-    assert_redirected_to settings_path(anchor: "status-task")
+    assert_redirected_to settings_status_path(anchor: "status-task")
   end
 
   test "rejeita criação com key inválida (não cria)" do

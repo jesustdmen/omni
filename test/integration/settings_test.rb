@@ -1,6 +1,6 @@
 require "test_helper"
 
-# PB-016a — Configurações hospeda o agendador de importação (decisão de produto).
+# Configurações — hub com sub-páginas por domínio (sync, status, prestadoras).
 class SettingsTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
@@ -13,18 +13,26 @@ class SettingsTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path
   end
 
-  test "Configurações mostra o painel de agendamento (liga/desliga + intervalo)" do
+  test "hub de Configurações lista os domínios (sync, status, prestadoras)" do
     get settings_path
     assert_response :success
     assert_select "h1", "Configurações"
+    assert_select "a[href=?]", settings_sync_path
+    assert_select "a[href=?]", settings_status_path
+    assert_select "a[href=?]", provider_companies_path
+  end
+
+  test "sub-página de sincronização mostra o painel de agendamento" do
+    get settings_sync_path
+    assert_response :success
     assert_select ".sync-schedule form[action=?]", sync_schedule_path
     assert_select "select[name=?]", "sync_schedule[interval_minutes]"
     assert_select "input[type=checkbox][name=?]", "sync_schedule[enabled]"
   end
 
-  test "ativar agendamento salva enabled + intervalo e volta a Configurações" do
+  test "ativar agendamento salva enabled + intervalo e volta à sub-página de sync" do
     patch sync_schedule_path, params: { sync_schedule: { enabled: "1", interval_minutes: "30" } }
-    assert_redirected_to settings_path
+    assert_redirected_to settings_sync_path
     s = SyncSchedule.current
     assert s.enabled
     assert_equal 30, s.interval_minutes
@@ -39,7 +47,7 @@ class SettingsTest < ActionDispatch::IntegrationTest
   test "desativar agendamento" do
     SyncSchedule.current.update!(enabled: true, interval_minutes: 60)
     patch sync_schedule_path, params: { sync_schedule: { enabled: "0", interval_minutes: "60" } }
-    assert_redirected_to settings_path
+    assert_redirected_to settings_sync_path
     assert_not SyncSchedule.current.enabled
   end
 
@@ -49,10 +57,17 @@ class SettingsTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path
   end
 
-  test "estado do agendamento aparece em Configurações" do
+  test "estado do agendamento aparece na sub-página de sync" do
     SyncSchedule.current.update!(enabled: true, interval_minutes: 120)
-    get settings_path
+    get settings_sync_path
     assert_select ".sync-schedule__state", /ativo/i
     assert_select ".sync-schedule__state", /2 h/
+  end
+
+  test "sub-página de status mostra Tarefas e Projetos" do
+    get settings_status_path
+    assert_response :success
+    assert_select "#status-task"
+    assert_select "#status-project"
   end
 end

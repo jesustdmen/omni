@@ -52,10 +52,16 @@ Rails.application.routes.draw do
   # PB-016a — configuração do agendamento interno (singleton; liga/desliga + intervalo).
   resource :sync_schedule, only: %i[update]
 
-  # PB-016a — Configurações: hospeda o agendador de importação (decisão de produto).
-  get "settings", to: "settings#show", as: :settings
+  # Configurações: hub com sub-páginas por domínio (sync, status, prestadoras).
+  get "settings", to: "settings#index", as: :settings
+  get "settings/sync", to: "settings#sync", as: :settings_sync       # PB-016b — agendador
+  get "settings/status", to: "settings#status", as: :settings_status # PB-018 — status configurável
 
   # PB-018 — status configuráveis (Tarefas/Projetos) administrados em Configurações.
   # `entity_type` (task|project) vem como parâmetro de escopo para CRUD por entidade.
   resources :configurable_statuses, only: %i[create update destroy], path: "settings/statuses"
+
+  # PB-019a — Empresa Prestadora (frente comercial; cadastro em Configurações,
+  # padrão de CRUD do Omni: lista + páginas Nova/Editar).
+  resources :provider_companies, except: %i[show], path: "settings/provider-companies"
 end

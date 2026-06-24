@@ -181,7 +181,7 @@ class SyncExecutionsTest < ActionDispatch::IntegrationTest
     assert_response :success
     # o form de agendamento NÃO mora aqui (foi para Configurações)
     assert_select ".sync-schedule form[action=?]", sync_schedule_path, count: 0
-    # mas há um atalho para Configurações
-    assert_select ".sync-schedule-hint a[href=?]", settings_path
+    # mas há um atalho para Configurações › Sincronização
+    assert_select ".sync-schedule-hint a[href=?]", settings_sync_path
   end
 end

@@ -1,0 +1,43 @@
+<% content_for :title, "Configurações · Sincronização" %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Sincronização de conversas</h1>
+    <p class="page-head__sub">Agendamento da importação (interno, sem Tarefa do Windows).</p>
+  </div>
+</div>
+
+<%# PB-016b — agendador de importação. Liga/desliga + intervalo; disparo interno (SolidQueue). %>
+<div class="card">
+  <p class="muted">
+    Importa (e coleta, quando o agente está ativo) as conversas do VS Code/Codex/Claude.
+    Você pode sincronizar manualmente em <%= link_to "Sync", sync_runs_path %>, ou agendar aqui para rodar sozinho.
+  </p>
+
+  <div class="sync-schedule">
+    <%= form_with model: @schedule, url: sync_schedule_path, method: :patch, class: "sync-schedule__form" do |f| %>
+      <span class="sync-schedule__title">Agendamento automático</span>
+      <label class="sync-schedule__toggle">
+        <%= f.check_box :enabled %> Ativado
+      </label>
+      <label>
+        A cada
+        <%= f.select :interval_minutes,
+              options_for_select(SyncSchedule::INTERVAL_OPTIONS.map { |m| [ m < 60 ? "#{m} min" : "#{m / 60} h", m ] }, @schedule.interval_minutes) %>
+      </label>
+      <%= f.submit "Salvar agendamento", class: "btn btn--primary btn--sm" %>
+    <% end %>
+
+    <p class="muted sync-schedule__state">
+      <% if @schedule.enabled %>
+        <span class="badge badge--info">ativo</span>
+        Roda a cada <%= @schedule.interval_label %><% if @schedule.last_enqueued_at %> · último disparo <%= @schedule.last_enqueued_at.strftime("%d/%m/%Y %H:%M") %><% end %>.
+      <% else %>
+        <span class="badge badge--neutral">desativado</span>
+        Sincronize manualmente em <%= link_to "Sync", sync_runs_path %>.
+      <% end %>
+    </p>
+  </div>
+</div>
+
+<%= link_to "Voltar para Configurações", settings_path, class: "back-link" %>

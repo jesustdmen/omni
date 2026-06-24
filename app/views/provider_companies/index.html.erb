@@ -1,0 +1,55 @@
+<% content_for :title, "Empresas prestadoras" %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Empresas prestadoras</h1>
+    <p class="page-head__sub">Empresas pelas quais você presta serviço (distintas dos clientes atendidos). Base para os contratos.</p>
+  </div>
+  <div class="page-head__actions">
+    <%= link_to "Nova empresa", new_provider_company_path(return_to: request.fullpath), class: "btn btn--primary" %>
+  </div>
+</div>
+
+<% companies = @provider_companies.to_a %>
+<% if companies.any? %>
+  <table class="projects-list">
+    <thead>
+      <tr><th>Razão social / nome</th><th>Nome fantasia</th><th>CNPJ</th><th>Contato</th><th>Ativa</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% companies.each do |pc| %>
+        <tr>
+          <td class="projects-list__name"><%= link_to pc.name, edit_provider_company_path(pc, return_to: request.fullpath) %></td>
+          <td><%= pc.trade_name.presence || "—" %></td>
+          <td><%= format_cnpj(pc.cnpj) %></td>
+          <td><%= [ pc.email.presence, pc.phone.presence ].compact.join(" · ").presence || "—" %></td>
+          <td>
+            <% if pc.active? %>
+              <span class="badge badge--success">Ativa</span>
+            <% else %>
+              <span class="badge badge--neutral">Inativa</span>
+            <% end %>
+          </td>
+          <td>
+            <div class="te-actions">
+              <%= link_to action_icon("pencil"), edit_provider_company_path(pc, return_to: request.fullpath),
+                    class: "btn btn--ghost btn--icon te-action--edit", title: "Editar", "aria-label": "Editar empresa prestadora" %>
+              <%= button_to action_icon("trash"), provider_company_path(pc), method: :delete,
+                    class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                    params: { return_to: request.fullpath },
+                    title: "Excluir", "aria-label": "Excluir empresa prestadora",
+                    data: { turbo_confirm: "Excluir a empresa prestadora “#{pc.name}”?" } %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="empty">
+    <p>Nenhuma empresa prestadora cadastrada ainda.</p>
+    <%= link_to "Nova empresa", new_provider_company_path(return_to: request.fullpath), class: "btn btn--primary" %>
+  </div>
+<% end %>
+
+<%= link_to "Voltar para Configurações", settings_path, class: "back-link" %>

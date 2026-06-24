@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -163,6 +163,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_120000) do
     t.index ["created_at"], name: "index_projects_on_created_at"
     t.index ["status"], name: "index_projects_on_status"
     t.check_constraint "status_entity::text = 'project'::text", name: "projects_status_entity_check"
+  end
+
+  create_table "provider_companies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "address"
+    t.string "cnpj"
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "name", null: false
+    t.string "phone"
+    t.string "trade_name"
+    t.datetime "updated_at", null: false
+    t.index ["cnpj"], name: "index_provider_companies_on_cnpj_unique", unique: true, where: "(cnpj IS NOT NULL)"
+    t.index ["name"], name: "index_provider_companies_on_name"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|

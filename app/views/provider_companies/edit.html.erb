@@ -1,0 +1,7 @@
+<% content_for :title, "Editar empresa prestadora" %>
+
+<div class="page-head"><div class="page-head__titles"><h1>Editar empresa prestadora</h1></div></div>
+
+<div class="card form-card"><%= render "form", provider_company: @provider_company %></div>
+
+<%= link_to "Voltar", (@return_to.presence || provider_companies_path), class: "back-link" %>
