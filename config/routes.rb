@@ -70,4 +70,7 @@ Rails.application.routes.draw do
 
   # PB-020a — Apuração de horas trabalhadas (read-only; sem contrato/valor).
   resources :work_time_reports, only: %i[index]
+
+  # PB-020 (Triagem) — Inbox/Central de Triagem de conversas (read-only nesta fatia).
+  get "triage", to: "triage#index", as: :triage
 end

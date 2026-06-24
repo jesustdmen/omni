@@ -1,0 +1,106 @@
+<% content_for :title, "Triagem de conversas" %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Central de Triagem</h1>
+    <p class="page-head__sub">
+      <%= @counts[:total] %> conversas recentes na fila
+      <% if @last_sync %> · último sync <%= local_datetime(@last_sync.created_at) %><% end %>.
+      Estado derivado dos vínculos e do workspace — sugestões pedem confirmação humana.
+    </p>
+  </div>
+</div>
+
+<%# Cards por estado (derivado). Clicáveis = filtram a fila principal. %>
+<div class="triage-cards">
+  <% [
+       [ "pending",  "Pendentes",       "total na fila" ],
+       [ "noclient", "Sem cliente",     "exigem você" ],
+       [ "suggested","Cliente sugerido","confirmar cliente" ],
+       [ "personal", "Pessoais",        "parecem não ser trabalho" ],
+       [ "linked",   "Vinculadas",      "já viraram/ligadas a tarefa" ]
+     ].each do |state, label, sub| %>
+    <%= link_to triage_path(state: (@state == state ? nil : state)),
+          class: "triage-card triage-card--#{state} #{'is-active' if @state == state}" do %>
+      <span class="triage-card__count"><%= @counts[state] %></span>
+      <span class="triage-card__label"><%= label %></span>
+      <span class="triage-card__sub"><%= sub %></span>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="triage-grid">
+  <%# Fila principal (pendentes de triagem, ou filtrada por estado). %>
+  <section class="card triage-queue">
+    <div class="subhead">
+      <h2>
+        <% if @state %>Fila: <%= ConversationTriage::LABELS[@state] %><% else %>Prioridade de triagem<% end %>
+        <span class="muted">(<%= @queue_total %>)</span>
+      </h2>
+      <% if @state %><%= link_to "Limpar filtro", triage_path, class: "hf-link" %><% end %>
+    </div>
+
+    <% if @queue.empty? %>
+      <p class="muted">Nenhuma conversa neste estado.</p>
+    <% end %>
+    <ul class="triage-list">
+      <% @queue.each do |c| %>
+        <% t = @triage[c.id] %>
+        <li class="triage-row">
+          <div class="triage-row__main">
+            <%= status_badge(c.source) %>
+            <%= link_to (c.title.presence || "— sem título —"), conversation_path(c, return_to: triage_path(state: @state)),
+                  class: "triage-row__title" %>
+            <span class="badge badge--neutral"><%= t.label %></span>
+          </div>
+          <div class="triage-row__meta muted">
+            <span class="mono">📁 <%= t.folder.presence || (c.workspace_hash.present? ? "#{c.workspace_hash.truncate(12)} (órfão)" : "—") %></span>
+            <span>· <%= local_datetime(c.last_ts) %></span>
+            <span>· <%= c.message_count %> msgs</span>
+            <% if t.suggested? && t.suggested_client %>
+              <span>· inferência: <strong><%= t.suggested_client.name %></strong> <span class="muted">(confirmar)</span></span>
+            <% end %>
+          </div>
+          <div class="triage-row__actions">
+            <%# Ações reaproveitam telas existentes; nenhuma decisão automática aqui. %>
+            <% unless t.linked? %>
+              <%= link_to "Criar tarefa", new_conversation_task_path(c, return_to: triage_path(state: @state)), class: "btn btn--primary btn--sm" %>
+            <% end %>
+            <%= link_to "Abrir / triar", conversation_path(c, return_to: triage_path(state: @state)), class: "btn btn--outline btn--sm" %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+
+  <%# Fila SEM CLIENTE — destaque próprio (workspace não resolveu o cliente). %>
+  <section class="card triage-noclient">
+    <div class="triage-noclient__head">
+      <span class="triage-noclient__icon" aria-hidden="true">∅</span>
+      <div>
+        <div class="triage-noclient__title">Fila sem cliente</div>
+        <div class="triage-noclient__sub">workspace não bateu — só você resolve</div>
+      </div>
+      <span class="triage-noclient__count"><%= @counts["noclient"] %></span>
+    </div>
+    <ul class="triage-list">
+      <% if @no_client.empty? %>
+        <li class="muted" style="padding:9px 0">Nenhuma conversa sem cliente.</li>
+      <% end %>
+      <% @no_client.first(10).each do |c| %>
+        <li class="triage-row triage-row--compact">
+          <%= status_badge(c.source) %>
+          <%= link_to (c.title.presence || "— sem título —"), conversation_path(c, return_to: triage_path),
+                class: "triage-row__title" %>
+          <span class="muted mono"><%= local_date(c.last_ts) %></span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+</div>
+
+<p class="muted triage-note">
+  <em>Triagem read-only nesta fatia:</em> os estados são derivados (vínculo, workspace, pessoal);
+  ainda não há persistência de decisão de triagem, sugestão por IA, confiança numérica nem ações em lote.
+  Criar tarefa e vincular usam as telas já existentes.
+</p>

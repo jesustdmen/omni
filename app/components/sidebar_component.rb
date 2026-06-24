@@ -25,6 +25,7 @@ class SidebarComponent < ViewComponent::Base
         Item.new("Contratos", "/contracts")
       ]),
       Group.new("Conversas", [
+        Item.new("Triagem", "/triage"),
         Item.new("Conversas", "/conversations"),
         Item.new("Sync", "/sync_runs")
       ]),

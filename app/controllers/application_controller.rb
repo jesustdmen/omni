@@ -27,7 +27,7 @@ class ApplicationController < ActionController::Base
     # resourceful; a autenticação (Devise) é a barreira. ADR-014 (domínio compartilhado).
     # `settings` (PB-016a): página de Configurações (read-only; ações de escrita têm
     # seus próprios controllers com Pundit, ex.: sync_schedule).
-    devise_controller? || params[:controller].to_s.match?(%r{\A(rails/|dashboard\z|pages\z|search\z|settings\z|work_time_reports\z)})
+    devise_controller? || params[:controller].to_s.match?(%r{\A(rails/|dashboard\z|pages\z|search\z|settings\z|work_time_reports\z|triage\z)})
   end
 
   def user_not_authorized
