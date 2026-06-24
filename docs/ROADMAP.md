@@ -20,6 +20,16 @@
 
 ## Fases do projeto
 
+> **Nota (2026-06-24) — trilha operacional/comercial (pós-baseline):** além das fases F0–F7 abaixo,
+> o produto evoluiu por uma **onda operacional orientada a PBs** (ver `PRODUCT_BACKLOG.md` /
+> `PROJECT_STATUS.md`, que são a fonte viva de status): PB-003 (controle de tempo), PB-004/005/006/007
+> (listas operacionais), PB-013 (busca/navegação), PB-014 (código de tarefa), PB-016 (sync interno),
+> PB-017 (auth), PB-018 (status configurável) e a **frente comercial** PB-019a/b (Empresa Prestadora +
+> Contratos, entregues). A **frente comercial** segue a sequência:
+> **Apuração de horas → Validação → Precificação → Fechamento → Relatório/PDF** — onde a **apuração não
+> depende de contrato** (contrato é precificação; ADR-025 + addendum). Os marcos F-* abaixo não foram
+> reescritos para refletir essa onda; consulte `PRODUCT_BACKLOG`/`PROJECT_STATUS` para o estado atual.
+
 ### Fase 0 — Decisão arquitetural — ✅ Concluída (baseline aprovado, 2026-06-16)
 - **Objetivo:** transformar o diagnóstico em decisões revisáveis.
 - **Entregáveis:** ADRs 001–017 (Aceito); escopo MVP/v1/Roadmap; modelo de dados + DDL de revisão; estratégia de import; corpus (planejado); matriz de riscos; 6 documentos de controle.

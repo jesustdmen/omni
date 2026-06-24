@@ -94,3 +94,31 @@ Não renomear Client→Empresa; não gravar contrato/valor no apontamento; não 
 falta de contrato; não usar `final` (status configurável) como regra comercial; não criar
 User↔Prestadora, mensalidade/pacote, nem `rounding_rule` nesta frente; não iniciar Fechamentos/
 Relatórios/Desktop antes da sua fatia.
+
+---
+
+## Addendum — 2026-06-24 (fronteira Apuração × Precificação; sem mudar a decisão)
+
+Esclarecimento de fronteira após auditoria Planejado vs Realizado. **Não altera** a decisão de
+Empresa Prestadora/Contratos; apenas posiciona o contrato na camada certa.
+
+- **Apuração de horas antecede o contrato.** Conversas importadas/vinculadas a tarefas são
+  **evidência primária** de trabalho; apontamentos manuais (`TimeEntry`) também compõem a apuração.
+  A apuração (somar/consolidar horas por tarefa/cliente/projeto/período) **não depende de contrato**.
+- **Contrato pertence à camada de PRECIFICAÇÃO** — é **uma forma de precificar** horas apuradas,
+  não a origem nem um pré-requisito da apuração. Horas **sem contrato** permanecem **visíveis**
+  como "sem contrato"/"sem valor"; nunca escondidas, nunca bloqueadas.
+- **Fluxo oficial:** Conversas/Tarefas → **Apuração** (PB-020a) → **Validação** humana (PB-020b) →
+  **Precificação** (PB-020c, usa contrato quando existir) → **Fechamento/snapshot** (PB-021) →
+  **Relatório/PDF** (PB-022).
+- **Fechamento congela o snapshot APÓS a validação** (não a partir da prévia). O relatório/PDF
+  nasce do **snapshot do fechamento**, nunca da prévia.
+- **Cálculo:** `duration` (segundos) → horas decimais; valor = horas × `hourly_rate` em
+  **BigDecimal/decimal** (sem float); arredondamento **apenas visual** nesta fase
+  (`rounding_rule` comercial definitiva fica para etapa posterior).
+- Reafirmado: `TimeEntry`/`Task`/`Project` **não** recebem `contract_id`/valor; sem snapshot em
+  `Contract`.
+
+**Pendências de decisão do PO** (registradas, não decididas aqui): granularidade da validação
+(PB-020b); quais status de contrato valorizam na precificação (PB-020c — ex.: Suspenso); tratamento
+de horas sem contrato no fechamento (PB-021).

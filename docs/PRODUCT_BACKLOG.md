@@ -409,28 +409,55 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Implementação (2026-06-24; aguardando aceite):** `contracts` (uuid; FKs provider RESTRICT / client RESTRICT / project NULLIFY; `modality` só `hourly` + CHECK; `hourly_rate` decimal(12,4); `status` enum CHECK; `start_date` NOT NULL; `end_date` null; CHECK `end_date >= start_date`; `notes`; `active`). Model `Contract` com validações + **overlap em Rails** (geral×geral e mesmo-projeto bloqueados; geral+projeto coexistem; `ended` não ocupa; `[start, end||∞]`). CRUD padrão Omni (`ContractsController` resourceful + busca/filtros/paginação) + `ContractPolicy` (ADR-014); **sidebar grupo "Comercial" › Contratos**. `has_many :contracts` em provider/client (restrict) e project (nullify). **TimeEntry/Task intocados.** Suíte **736/2802/0**; rubocop 0; brakeman 0. Ver `DELIVERY_LOG`/`PROJECT_STATUS`. **Cálculo/Fechamentos/Relatórios/PDF não iniciados.**
 
-### PB-020 — Cálculo de horas / preview (valoração)
+### PB-020 — Apuração → Validação → Precificação (frente comercial)
+
+> **Saneamento (2026-06-24):** a PB-020 foi **redividida** para separar **apuração de horas** (independente de contrato) de **precificação** (que usa contrato). Antes, a PB-020 fundia "cálculo de horas" com "valoração por contrato" — drift conceitual corrigido. **Premissa oficial do PO:** conversas importadas/vinculadas a tarefas são **evidência primária** de trabalho; apontamentos manuais (`TimeEntry`) também compõem a apuração; **apuração NÃO depende de contrato**; **contrato é uma forma de precificação**, não a origem da apuração; horas **sem contrato** permanecem visíveis como "sem contrato"/"sem valor". **Fluxo:** Conversas/Tarefas → **Apuração** → **Validação** → **Precificação** → **Fechamento** (PB-021) → **Relatório/PDF** (PB-022).
+
+#### PB-020a — Apuração de horas trabalhadas
 
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Aprovado** (depende de PB-019b). |
-| Problema que resolve | Transformar horas apontadas em valor, por contrato e período, sem fechar. |
-| Critério de aceite | Resolver o contrato **por data do apontamento**, com **prioridade Projeto > Cliente**; **sem contrato = horas sem valor**; **arredondamento** definido **aqui**; cálculos em **decimal** (sem float); preview read-only. |
-| Decisões | • `rounding_rule` entra **nesta** fatia. • Não grava nada na `TimeEntry`. |
-| Fora de escopo | Fechamento/snapshot (PB-021); PDF (PB-022). |
-| Dependências | PB-019b; **ADR-023** (timezone — dia operacional Brasília); **ADR-025**. |
+| Status | **Aprovado** (depende de PB-003/PB-004; **não** depende de contrato). |
+| Problema que resolve | Consolidar **horas trabalhadas** por tarefa/cliente/projeto/período a partir das evidências (apontamentos `TimeEntry` e tarefas vinculadas a conversas), **sem qualquer dependência de contrato/valor**. |
+| Critério de aceite | Tela/serviço de **apuração** que lista e totaliza **horas** por período + filtros (cliente/projeto/tarefa); `duration` (segundos) → horas decimais (BigDecimal, sem float); **não** exige contrato; **não** grava em `TimeEntry`/`Task`. Horas existem mesmo sem contrato. Read-only. |
+| Decisões | • **Contrato é opcional** e **não participa** desta fatia. • Conversas vinculadas a tarefas contam como evidência de trabalho via os apontamentos da tarefa. • Sem `rounding_rule` (arredondamento só visual nesta fase). |
+| Fora de escopo | Qualquer valor monetário/contrato (→ PB-020c); validação/ajuste (→ PB-020b); fechamento (PB-021); PDF (PB-022). |
+| Dependências | PB-003 (TimeEntry), PB-004 (tarefa/vínculo), **ADR-023** (dia operacional Brasília). |
+
+#### PB-020b — Validação/ajuste da apuração
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovado** (depende de PB-020a). |
+| Problema que resolve | Permitir **revisão humana** da apuração antes de precificar/fechar (marcar horas como conferidas, sinalizar divergências), sem alterar a fonte. |
+| Critério de aceite | Mecanismo de **validação** da apuração de um período (estado "conferido"/pendências) que **precede** precificação e fechamento. Decisão de produto sobre granularidade (por período × por apontamento) — **pendente do PO** (ver §7). |
+| Fora de escopo | Precificação (PB-020c); congelamento/snapshot (PB-021). |
+| Dependências | PB-020a. |
+
+#### PB-020c — Prévia de precificação (usa contrato quando existir)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovado** (depende de PB-020a; usa PB-019b). |
+| Problema que resolve | **Estimar valor** das horas apuradas aplicando o **contrato** quando houver, **sem fechar**. Apuração já existe sem isto; aqui só se acrescenta o preço. |
+| Critério de aceite | **Prévia** (PT-BR; rótulos "Prévia"/"Apuração"/"Valor estimado", sem "billing/preview/unpriced") que resolve o contrato **por data do apontamento**, **prioridade Projeto > Cliente**; **sem contrato = "sem valor"** (linha visível, nunca escondida/bloqueada); `valor = horas × hourly_rate` em **decimal** (sem float); arredondamento **só visual** nesta fase (`rounding_rule` definitiva fica para fatia posterior). **Read-only**; **não** grava em `TimeEntry`/`Contract`. |
+| Decisões | • Contrato é **camada de precificação**, opcional. • **Status de contrato que valoriza** (Ativo? Suspenso?): **pendente do PO** (ver §7). • Sem persistência financeira (snapshot → PB-021). |
+| Fora de escopo | Fechamento/snapshot (PB-021); relatório/PDF (PB-022); `rounding_rule` comercial definitiva; gravar valor em qualquer registro. |
+| Dependências | PB-020a; PB-019b (Contratos); **ADR-025**. |
 
 ### PB-021 — Fechamentos (snapshot)
 
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Aprovado** (depende de PB-020). |
-| Problema que resolve | Congelar um período como fonte oficial e imutável para relatório. |
-| Critério de aceite | Fechar um período **congela snapshot**: empresa prestadora, cliente, contrato, período, **horas**, **valor/hora**, **total**, **regras aplicadas**. Snapshot é a **fonte oficial** do relatório; **alterar contrato depois não altera fechamentos**. |
+| Status | **Aprovado** (depende de PB-020b/PB-020c). |
+| Problema que resolve | Congelar um período **já validado** como fonte oficial e imutável para relatório. |
+| Critério de aceite | Fechar um período **congela snapshot** (após a **validação**, PB-020b): empresa prestadora, cliente, contrato (quando houver), período, **horas apuradas**, **valor/hora**, **total**, **regras aplicadas**. Snapshot é a **fonte oficial** do relatório; **alterar contrato depois não altera fechamentos**. Horas **sem contrato** podem ser fechadas como horas sem valor (decisão de produto — ver §7). |
 | Fora de escopo | PDF/layout (PB-022); cancelamento/reabertura avançada (a definir). |
-| Dependências | PB-020; **ADR-025**. |
+| Dependências | PB-020b (validação), PB-020c (precificação); **ADR-025**. |
 
 ### PB-022 — Relatórios / PDF
 
@@ -439,7 +466,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Prioridade | P1/P2 |
 | Status | **Aprovado** (depende de PB-021). |
 | Problema que resolve | Entregar o documento de horas/valores ao cliente. |
-| Critério de aceite | Relatório/PDF que **consome o snapshot** do fechamento; **logo e dados fiscais** da Empresa Prestadora entram **aqui**. |
+| Critério de aceite | Relatório/PDF que **consome o snapshot do fechamento** (nunca a prévia); **logo e dados fiscais** da Empresa Prestadora entram **aqui**. |
 | Fora de escopo | Envio automático por e-mail (a definir); integrações fiscais. |
 | Dependências | PB-021; PB-019a (dados/logo da prestadora). |
 
@@ -461,4 +488,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Frente comercial (ADR-025) — andamento:** **PB-019a** (Empresa Prestadora CRUD + hub de Configurações) ENTREGUE (`54b556e`, 2026-06-24). **PB-019b** (Contratos CRUD) **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite do PO**. **PB-020/PB-021/PB-022** (Cálculo/Fechamentos/Relatórios-PDF) Aprovadas, **não iniciadas**.
 
-**Próxima decisão do PO:** aceitar a **PB-019b** (gate) e, em seguida, autorizar **PB-020 — Cálculo/preview**. **Nada novo será implementado sem autorização explícita.** Itens não iniciados: Cálculo (PB-020), Fechamentos (PB-021), Relatórios/PDF (PB-022), Desktop, Revisão de código.
+**Saneamento documental (2026-06-24, docs-only):** PB-020 redividida em **PB-020a (Apuração) / PB-020b (Validação) / PB-020c (Prévia de precificação)** — corrige o drift que fundia apuração com valoração por contrato. **Apuração não depende de contrato; contrato é precificação.** Fluxo: Conversas/Tarefas → Apuração → Validação → Precificação → Fechamento (PB-021) → Relatório/PDF (PB-022).
+
+**Próxima decisão do PO:** autorizar **PB-020a — Apuração de horas** (sem contrato), primeira etapa da trilha comercial. **Nada novo será implementado sem autorização explícita.** Itens não iniciados: Apuração/Validação/Precificação (PB-020a/b/c), Fechamentos (PB-021), Relatórios/PDF (PB-022), Desktop, Revisão de código. **Decisões pendentes do PO:** granularidade da validação (PB-020b); status de contrato que valoriza (PB-020c — Suspenso?); horas sem contrato no fechamento (PB-021).
