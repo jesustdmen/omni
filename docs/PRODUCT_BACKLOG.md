@@ -368,6 +368,79 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 ---
 
+## 6.1. Frente comercial — Empresa Prestadora + Contratos (Etapa 0, 2026-06-24)
+
+> **Contrato aprovado em auditoria read-only (Etapa 0).** Modelagem em **ADR-025**. Base para **Cálculo de horas → Fechamentos → Relatórios/PDF**. **Nada implementado** nesta etapa (docs-only). **Decisões negativas:** não renomear Client→Empresa; Empresa Prestadora é domínio separado; sem User↔Prestadora agora (single-admin vê todas); sem mensalidade/pacote; sem `rounding_rule` agora; `final` (status) não vira regra comercial; não tocar TimeEntry/Task/Project nesta etapa.
+
+### PB-019a — Empresa Prestadora (CRUD)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Pronto para execução** (Etapa 0 aprovada; aguarda autorização de implementação). |
+| Problema que resolve | Não existe a entidade "empresa pela qual presto o serviço" (distinta do Cliente atendido). É a base do domínio comercial (contratos, fechamentos, PDF). |
+| Origem/evidência | Etapa 0 (auditoria read-only); **ADR-025**. Schema atual não tem provider/contract/valor. |
+| Critério de aceite | CRUD de **`provider_companies`** com `name` NOT NULL, `trade_name`, `cnpj` (só dígitos, **único entre prestadoras**), `email`, `phone`, `address`, `active` (default true); **UI em Configurações** (`/settings`). |
+| Decisões | • CNPJ **único entre prestadoras**, **sem** cruzar unicidade com `clients`. • **Logo e dados fiscais → PB-022/PDF** (não agora). • Single-admin enxerga todas (sem User↔Prestadora). • Não renomear Client→Empresa. |
+| Fora de escopo | Logo/dados fiscais; vínculo User↔Prestadora (N:N futuro); contratos (PB-019b). |
+| Dependências | **ADR-025**. |
+| Relacionado | WD-10/UI-07 (Configurações), PB-019b. |
+
+### PB-019b — Contratos (CRUD básico)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovado** (depende de PB-019a; aguarda autorização de implementação). |
+| Problema que resolve | Sem contrato não há base para valorar horas, fechar períodos e emitir relatórios. |
+| Origem/evidência | Etapa 0; **ADR-025**. |
+| Critério de aceite | CRUD de **`contracts`** com `provider_company_id` NOT NULL, `client_id` NOT NULL, `project_id` NULL, `start_date` NOT NULL, `end_date` NULL, `modality` (**só `hourly`**), `hourly_rate` `decimal(12,4)` **NOT NULL**, `status` **enum fixo** (`draft`/Rascunho, `active`/Ativo, `suspended`/Suspenso, `ended`/Encerrado), `notes`, `active`; **UI de Contratos como item próprio na sidebar**; **validação de sobreposição** (abaixo) com testes. |
+| Decisões | • Contrato = **Empresa Prestadora + Cliente**, **Projeto opcional**. • Contrato de **projeto tem prioridade** sobre o geral do cliente (no cálculo futuro). • Modalidade **só `hourly`** agora; `hourly_rate` **obrigatório**. • Status **enum fixo** (não configurável). • Monetário em **decimal** (sem float). • **Sem `rounding_rule`** (→ PB-020). |
+| Regra — apontamento sem contrato | Cliente/projeto **sem contrato pode ter apontamentos**; horas existem **sem valor monetário**; **nunca bloquear** a captura de tempo por falta de contrato (UI sinaliza "sem contrato" no futuro). |
+| Regra — mudança de contrato | `TimeEntry` **não grava** contrato nem valor; preview futuro calcula pelo contrato **vigente na data**; **fechamento congela snapshot**; alterar contrato depois **não altera** fechamentos já fechados. |
+| Regra — sobreposição | **Permitir** contrato **geral + de projeto** no mesmo período (projeto prioritário). **Proibir** dois **gerais** sobrepostos (mesma prestadora+cliente) e dois do **mesmo projeto** sobrepostos. Implementar **validação Rails + testes** na PB-019b. |
+| Fora de escopo | Cálculo/valoração (PB-020); fechamento (PB-021); PDF (PB-022); modalidades monthly/package; `rounding_rule`; constraint EXCLUDE no banco (ver risco residual). |
+| Dependências | PB-019a; **ADR-025**; WD-01 (Client), WD-03 (Project). |
+| Relacionado | PB-020, PB-021, PB-022. |
+
+> **Risco residual (sobreposição):** nesta fatia a unicidade temporal é garantida **só na app (Rails)** — **sem** constraint `EXCLUDE` no banco. Risco de concorrência **baixo** no single-admin. **Endurecimento futuro possível** via PostgreSQL `EXCLUDE USING gist` + `btree_gist` (extensão **disponível** no PG 16; exige índices parciais por `project_id IS NULL`/`NOT NULL` e por status vigente).
+
+### PB-020 — Cálculo de horas / preview (valoração)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovado** (depende de PB-019b). |
+| Problema que resolve | Transformar horas apontadas em valor, por contrato e período, sem fechar. |
+| Critério de aceite | Resolver o contrato **por data do apontamento**, com **prioridade Projeto > Cliente**; **sem contrato = horas sem valor**; **arredondamento** definido **aqui**; cálculos em **decimal** (sem float); preview read-only. |
+| Decisões | • `rounding_rule` entra **nesta** fatia. • Não grava nada na `TimeEntry`. |
+| Fora de escopo | Fechamento/snapshot (PB-021); PDF (PB-022). |
+| Dependências | PB-019b; **ADR-023** (timezone — dia operacional Brasília); **ADR-025**. |
+
+### PB-021 — Fechamentos (snapshot)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovado** (depende de PB-020). |
+| Problema que resolve | Congelar um período como fonte oficial e imutável para relatório. |
+| Critério de aceite | Fechar um período **congela snapshot**: empresa prestadora, cliente, contrato, período, **horas**, **valor/hora**, **total**, **regras aplicadas**. Snapshot é a **fonte oficial** do relatório; **alterar contrato depois não altera fechamentos**. |
+| Fora de escopo | PDF/layout (PB-022); cancelamento/reabertura avançada (a definir). |
+| Dependências | PB-020; **ADR-025**. |
+
+### PB-022 — Relatórios / PDF
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1/P2 |
+| Status | **Aprovado** (depende de PB-021). |
+| Problema que resolve | Entregar o documento de horas/valores ao cliente. |
+| Critério de aceite | Relatório/PDF que **consome o snapshot** do fechamento; **logo e dados fiscais** da Empresa Prestadora entram **aqui**. |
+| Fora de escopo | Envio automático por e-mail (a definir); integrações fiscais. |
+| Dependências | PB-021; PB-019a (dados/logo da prestadora). |
+
+---
+
 ## 7. Próxima ação recomendada
 
 **PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c); **PB-005** (demandas), **PB-006** (clientes/contatos + CNPJ — ADR-022) e **PB-007** (projetos + duplicação) entregues. **As 4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas — lacuna operacional da PB-001 fechada.**
@@ -380,6 +453,8 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Melhoria UX transversal (2026-06-23):** paginação amigável (« Primeira/Última », "Página X de Y") + "Mostrar tudo" (teto + aviso) em todas as listas e nos turnos de `/conversations/:id`. Sem item de backlog dedicado; registrada no DELIVERY_LOG/FEATURE_MATRIX.
 
-**Onda pós-`04901b6` — andamento:** **PB-017 — Auth/Admin seguro** ENTREGUE (publicada em `main`, `477829d`, 2026-06-24; addendum ao ADR-003). **PB-018 — Status configurável + termos PT-BR** **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite manual do PO** (checks verdes; sem commit/push; ADR-024). Status configurável de Tarefas/Projetos com integridade no banco (FK composta); Demanda fixa.
+**Onda pós-`04901b6` — concluída:** **PB-017 — Auth/Admin seguro** ENTREGUE (`477829d`, 2026-06-24; addendum ao ADR-003). **PB-018 — Status configurável + termos PT-BR** ENTREGUE (`ad1a10e`, 2026-06-24; ADR-024).
 
-**Próxima decisão do PO:** aceitar a PB-018 (gate) e definir a próxima frente. **Nada novo será implementado sem autorização explícita.** Itens não iniciados (fora desta onda): Contratos, Fechamentos, Relatórios, Empresa prestadora, Desktop.
+**Frente comercial — Etapa 0 registrada (2026-06-24, docs-only):** contrato aprovado para **Empresa Prestadora + Contratos + Cálculo + Fechamentos + Relatórios/PDF** (ver §6.1 e **ADR-025**). **PB-019a** (Empresa Prestadora CRUD) **Pronto para execução**; **PB-019b/PB-020/PB-021/PB-022** Aprovadas em sequência. **Nada implementado** ainda.
+
+**Próxima decisão do PO:** autorizar a execução da **PB-019a**. **Nada novo será implementado sem autorização explícita.** Itens não iniciados: Fechamentos (PB-021), Relatórios/PDF (PB-022), Desktop, Revisão de código.
