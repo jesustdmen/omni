@@ -1,0 +1,37 @@
+<% content_for :title, "Contrato" %>
+
+<% tones = { "draft" => "neutral", "active" => "success", "suspended" => "warning", "ended" => "neutral" } %>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Contrato · <%= @contract.client.name %></h1>
+    <div class="badge-row">
+      <%= status_badge(@contract.status, tone: tones[@contract.status].to_sym, label: @contract.status_label) %>
+      <span class="muted"><%= @contract.provider_company.name %></span>
+    </div>
+  </div>
+  <div class="page-head__actions">
+    <%= link_to "Editar", edit_contract_path(@contract, return_to: request.fullpath), class: "btn btn--primary" %>
+  </div>
+</div>
+
+<div class="card">
+  <dl>
+    <dt>Empresa prestadora</dt><dd><%= @contract.provider_company.name %></dd>
+    <dt>Cliente</dt><dd><%= link_to @contract.client.name, @contract.client %></dd>
+    <dt>Projeto</dt><dd><%= @contract.project ? link_to(@contract.project.name, @contract.project) : "— (contrato geral do cliente)" %></dd>
+    <dt>Vigência</dt><dd><%= @contract.period_label || "—" %><%= " (aberta)" if @contract.end_date.blank? %></dd>
+    <dt>Status</dt><dd><%= @contract.status_label %></dd>
+    <dt>Modalidade</dt><dd>Por hora</dd>
+    <dt>Valor/hora</dt><dd>R$ <%= number_with_precision(@contract.hourly_rate, precision: 2, delimiter: ".", separator: ",") %></dd>
+    <dt>Observações</dt><dd><%= @contract.notes.presence || "—" %></dd>
+  </dl>
+</div>
+
+<div class="actions">
+  <%= button_to "Excluir contrato", contract_path(@contract), method: :delete,
+        class: "btn btn--ghost btn--danger", form_class: "inline",
+        data: { turbo_confirm: "Excluir este contrato?" } %>
+</div>
+
+<%= link_to "Voltar", (@return_to.presence || contracts_path), class: "back-link" %>

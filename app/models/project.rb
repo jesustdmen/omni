@@ -1,6 +1,9 @@
 class Project < ApplicationRecord
   belongs_to :client
   has_many :tasks, dependent: :nullify
+  # PB-019b — contratos especializados por projeto. FK ON DELETE NULLIFY (excluir o
+  # projeto desvincula o contrato, que passa a valer como geral do cliente).
+  has_many :contracts, dependent: :nullify
 
   # PB-018 — status configurável (tabela `configurable_statuses`, entity_type='project').
   # A coluna `status` (string) guarda a KEY; rótulo/cor/opções vêm da tabela.

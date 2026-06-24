@@ -1,0 +1,54 @@
+<%= form_with model: contract do |f| %>
+  <%= hidden_field_tag :return_to, @return_to if @return_to.present? %><%# PB-013b %>
+  <% if contract.errors.any? %>
+    <div class="errors">
+      <p><%= pluralize(contract.errors.count, "erro") %> impediram salvar:</p>
+      <ul>
+        <% contract.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :provider_company_id, "Empresa prestadora" %><br>
+    <%= f.collection_select :provider_company_id, ProviderCompany.ordered, :id, :name, prompt: "Selecione a empresa prestadora" %>
+  </div>
+  <div>
+    <%= f.label :client_id, "Cliente" %><br>
+    <%= f.collection_select :client_id, Client.ordered, :id, :name, prompt: "Selecione o cliente" %>
+  </div>
+  <div>
+    <%= f.label :project_id, "Projeto (opcional)" %><br>
+    <%# Sem projeto = contrato geral do cliente. Com projeto = contrato especializado. %>
+    <% project_options = Project.includes(:client).order(:name).map { |p| [ "#{p.name} — #{p.client.name}", p.id ] } %>
+    <%= f.select :project_id, options_for_select(project_options, contract.project_id),
+          include_blank: "Sem projeto (contrato geral do cliente)" %>
+    <span class="muted">Deve pertencer ao mesmo cliente selecionado.</span>
+  </div>
+  <div>
+    <%= f.label :start_date, "Data inicial" %><br>
+    <%= f.date_field :start_date %>
+  </div>
+  <div>
+    <%= f.label :end_date, "Data final (opcional)" %><br>
+    <%= f.date_field :end_date %>
+    <span class="muted">Em branco = vigência aberta.</span>
+  </div>
+  <div>
+    <%= f.label :status, "Status" %><br>
+    <%= f.select :status, options_for_select(Contract::STATUSES.map { |s| [ Contract::STATUS_LABELS[s], s ] }, contract.status) %>
+  </div>
+  <div>
+    <%= f.label :hourly_rate, "Valor/hora (R$)" %><br>
+    <%= f.number_field :hourly_rate, step: "0.0001", min: "0" %>
+    <span class="muted">Modalidade atual: por hora.</span>
+  </div>
+  <div><%= f.label :notes, "Observações" %><br><%= f.text_area :notes, rows: 3 %></div>
+
+  <div>
+    <%= f.submit %>
+    <%= link_to "Cancelar", (@return_to.presence || (contract.persisted? ? contract : contracts_path)), class: "btn btn--ghost btn--sm" %>
+  </div>
+<% end %>

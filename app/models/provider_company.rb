@@ -2,6 +2,10 @@
 # Domínio SEPARADO de Client. Base da frente comercial (ADR-025). Nesta fatia:
 # só cadastro básico; logo/dados fiscais e vínculo User↔Prestadora ficam fora de escopo.
 class ProviderCompany < ApplicationRecord
+  # PB-019b — contratos da prestadora. FK ON DELETE RESTRICT no banco (impede excluir
+  # prestadora com contratos); `restrict_with_error` dá a mensagem amigável no app.
+  has_many :contracts, dependent: :restrict_with_error
+
   before_validation :normalize_cnpj
 
   validates :name, presence: true

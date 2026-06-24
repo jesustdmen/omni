@@ -393,10 +393,10 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Aprovado** (depende de PB-019a; aguarda autorização de implementação). |
+| Status | **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite manual do PO** (checks verdes; sem commit/push). Não "Entregue" no gate até o aceite. |
 | Problema que resolve | Sem contrato não há base para valorar horas, fechar períodos e emitir relatórios. |
 | Origem/evidência | Etapa 0; **ADR-025**. |
-| Critério de aceite | CRUD de **`contracts`** com `provider_company_id` NOT NULL, `client_id` NOT NULL, `project_id` NULL, `start_date` NOT NULL, `end_date` NULL, `modality` (**só `hourly`**), `hourly_rate` `decimal(12,4)` **NOT NULL**, `status` **enum fixo** (`draft`/Rascunho, `active`/Ativo, `suspended`/Suspenso, `ended`/Encerrado), `notes`, `active`; **UI de Contratos como item próprio na sidebar**; **validação de sobreposição** (abaixo) com testes. |
+| Critério de aceite | ✅ CRUD de **`contracts`** com `provider_company_id` NOT NULL, `client_id` NOT NULL, `project_id` NULL, `start_date` NOT NULL, `end_date` NULL, `modality` (**só `hourly`**), `hourly_rate` `decimal(12,4)` **NOT NULL**, `status` **enum fixo** (`draft`/Rascunho, `active`/Ativo, `suspended`/Suspenso, `ended`/Encerrado), `notes`, `active`; ✅ **UI de Contratos como item próprio na sidebar** (grupo Comercial); ✅ **validação de sobreposição** (abaixo) com testes. |
 | Decisões | • Contrato = **Empresa Prestadora + Cliente**, **Projeto opcional**. • Contrato de **projeto tem prioridade** sobre o geral do cliente (no cálculo futuro). • Modalidade **só `hourly`** agora; `hourly_rate` **obrigatório**. • Status **enum fixo** (não configurável). • Monetário em **decimal** (sem float). • **Sem `rounding_rule`** (→ PB-020). |
 | Regra — apontamento sem contrato | Cliente/projeto **sem contrato pode ter apontamentos**; horas existem **sem valor monetário**; **nunca bloquear** a captura de tempo por falta de contrato (UI sinaliza "sem contrato" no futuro). |
 | Regra — mudança de contrato | `TimeEntry` **não grava** contrato nem valor; preview futuro calcula pelo contrato **vigente na data**; **fechamento congela snapshot**; alterar contrato depois **não altera** fechamentos já fechados. |
@@ -406,6 +406,8 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Relacionado | PB-020, PB-021, PB-022. |
 
 > **Risco residual (sobreposição):** nesta fatia a unicidade temporal é garantida **só na app (Rails)** — **sem** constraint `EXCLUDE` no banco. Risco de concorrência **baixo** no single-admin. **Endurecimento futuro possível** via PostgreSQL `EXCLUDE USING gist` + `btree_gist` (extensão **disponível** no PG 16; exige índices parciais por `project_id IS NULL`/`NOT NULL` e por status vigente).
+
+**Implementação (2026-06-24; aguardando aceite):** `contracts` (uuid; FKs provider RESTRICT / client RESTRICT / project NULLIFY; `modality` só `hourly` + CHECK; `hourly_rate` decimal(12,4); `status` enum CHECK; `start_date` NOT NULL; `end_date` null; CHECK `end_date >= start_date`; `notes`; `active`). Model `Contract` com validações + **overlap em Rails** (geral×geral e mesmo-projeto bloqueados; geral+projeto coexistem; `ended` não ocupa; `[start, end||∞]`). CRUD padrão Omni (`ContractsController` resourceful + busca/filtros/paginação) + `ContractPolicy` (ADR-014); **sidebar grupo "Comercial" › Contratos**. `has_many :contracts` em provider/client (restrict) e project (nullify). **TimeEntry/Task intocados.** Suíte **736/2802/0**; rubocop 0; brakeman 0. Ver `DELIVERY_LOG`/`PROJECT_STATUS`. **Cálculo/Fechamentos/Relatórios/PDF não iniciados.**
 
 ### PB-020 — Cálculo de horas / preview (valoração)
 
@@ -457,6 +459,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Onda pós-`04901b6` — concluída:** **PB-017 — Auth/Admin seguro** ENTREGUE (`477829d`, 2026-06-24; addendum ao ADR-003). **PB-018 — Status configurável + termos PT-BR** ENTREGUE (`ad1a10e`, 2026-06-24; ADR-024).
 
-**Frente comercial — Etapa 0 registrada (2026-06-24, docs-only):** contrato aprovado para **Empresa Prestadora + Contratos + Cálculo + Fechamentos + Relatórios/PDF** (ver §6.1 e **ADR-025**). **PB-019a** (Empresa Prestadora CRUD) **Pronto para execução**; **PB-019b/PB-020/PB-021/PB-022** Aprovadas em sequência. **Nada implementado** ainda.
+**Frente comercial (ADR-025) — andamento:** **PB-019a** (Empresa Prestadora CRUD + hub de Configurações) ENTREGUE (`54b556e`, 2026-06-24). **PB-019b** (Contratos CRUD) **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite do PO**. **PB-020/PB-021/PB-022** (Cálculo/Fechamentos/Relatórios-PDF) Aprovadas, **não iniciadas**.
 
-**Próxima decisão do PO:** autorizar a execução da **PB-019a**. **Nada novo será implementado sem autorização explícita.** Itens não iniciados: Fechamentos (PB-021), Relatórios/PDF (PB-022), Desktop, Revisão de código.
+**Próxima decisão do PO:** aceitar a **PB-019b** (gate) e, em seguida, autorizar **PB-020 — Cálculo/preview**. **Nada novo será implementado sem autorização explícita.** Itens não iniciados: Cálculo (PB-020), Fechamentos (PB-021), Relatórios/PDF (PB-022), Desktop, Revisão de código.

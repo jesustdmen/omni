@@ -3,6 +3,8 @@ class Client < ApplicationRecord
   has_many :projects, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :demands, dependent: :nullify
+  # PB-019b — contratos do cliente. FK RESTRICT no banco; mensagem amigável no app.
+  has_many :contracts, dependent: :restrict_with_error
 
   before_validation :normalize_cnpj
 

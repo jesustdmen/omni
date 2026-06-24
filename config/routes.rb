@@ -64,4 +64,7 @@ Rails.application.routes.draw do
   # PB-019a — Empresa Prestadora (frente comercial; cadastro em Configurações,
   # padrão de CRUD do Omni: lista + páginas Nova/Editar).
   resources :provider_companies, except: %i[show], path: "settings/provider-companies"
+
+  # PB-019b — Contratos (frente comercial; item próprio na sidebar).
+  resources :contracts
 end

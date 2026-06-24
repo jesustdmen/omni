@@ -1,0 +1,68 @@
+<% content_for :title, "Contratos" %>
+
+<% tones = { "draft" => "neutral", "active" => "success", "suspended" => "warning", "ended" => "neutral" } %>
+
+<div class="page-head">
+  <div class="page-head__titles"><h1>Contratos</h1></div>
+  <div class="page-head__actions">
+    <%= link_to "Novo contrato", new_contract_path(return_to: request.fullpath), class: "btn btn--primary" %>
+  </div>
+</div>
+
+<%= form_with url: contracts_path, method: :get, class: "filters" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Buscar nas observações" %>
+  <%= f.select :provider_company_id, options_for_select([ [ "Empresa: todas", "" ] ] + @provider_companies, params[:provider_company_id]) %>
+  <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
+  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + Contract::STATUSES.map { |s| [ Contract::STATUS_LABELS[s], s ] }, params[:status]) %>
+  <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
+  <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
+  <%= link_to "Limpar filtros", contracts_path, class: "btn btn--ghost btn--sm" %>
+<% end %>
+
+<% contracts = @contracts.to_a %>
+<% if contracts.any? %>
+  <table class="projects-list">
+    <thead>
+      <tr><th>Cliente</th><th>Empresa prestadora</th><th>Projeto</th><th>Vigência</th><th>Valor/hora</th><th>Status</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% contracts.each do |c| %>
+        <tr>
+          <td class="projects-list__name"><%= link_to c.client.name, contract_path(c, return_to: request.fullpath) %></td>
+          <td><%= c.provider_company.name %></td>
+          <td><%= c.project&.name || "— geral" %></td>
+          <td><%= c.period_label || "—" %><%= " (aberta)" if c.end_date.blank? %></td>
+          <td>R$ <%= number_with_precision(c.hourly_rate, precision: 2, delimiter: ".", separator: ",") %></td>
+          <td><%= status_badge(c.status, tone: tones[c.status].to_sym, label: c.status_label) %></td>
+          <td>
+            <div class="te-actions">
+              <%= link_to action_icon("eye"), contract_path(c, return_to: request.fullpath),
+                    class: "btn btn--ghost btn--icon te-action--view", title: "Ver", "aria-label": "Ver contrato" %>
+              <%= link_to action_icon("pencil"), edit_contract_path(c, return_to: request.fullpath),
+                    class: "btn btn--ghost btn--icon te-action--edit", title: "Editar", "aria-label": "Editar contrato" %>
+              <%= button_to action_icon("trash"), contract_path(c), method: :delete,
+                    class: "btn btn--ghost btn--icon te-action--delete", form_class: "inline",
+                    params: { return_to: request.fullpath },
+                    title: "Excluir", "aria-label": "Excluir contrato",
+                    data: { turbo_confirm: "Excluir este contrato?" } %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if (note = per_page_cap_notice(@total_count)) %><p class="muted pagination__cap-note"><%= note %></p><% end %>
+  <%= pagination_nav(current: @page, total_pages: @total_pages, total_count: @total_count, unit: "contrato(s)",
+        url: ->(p) { contracts_path(request.query_parameters.merge(page: p)) }) %>
+<% elsif @filters_active %>
+  <div class="empty">
+    <p>Nenhum contrato para os filtros atuais.</p>
+    <%= link_to "Limpar filtros", contracts_path, class: "btn btn--outline btn--sm" %>
+  </div>
+<% else %>
+  <div class="empty">
+    <p>Nenhum contrato cadastrado ainda.</p>
+    <%= link_to "Novo contrato", new_contract_path, class: "btn btn--primary" %>
+  </div>
+<% end %>

@@ -1,0 +1,7 @@
+<% content_for :title, "Editar contrato" %>
+
+<div class="page-head"><div class="page-head__titles"><h1>Editar contrato</h1></div></div>
+
+<div class="card form-card"><%= render "form", contract: @contract %></div>
+
+<%= link_to "Voltar", (@return_to.presence || @contract), class: "back-link" %>

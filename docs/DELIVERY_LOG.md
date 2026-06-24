@@ -9,6 +9,26 @@
 
 ## Entradas
 
+## 2026-06-24 — [Frente comercial · PB-019b] Contratos (CRUD) — IMPLEMENTADO E VALIDADO (aguardando aceite do PO)
+### Resumo
+Segunda fatia da frente comercial (ADR-025): **CRUD de Contratos** (Empresa Prestadora + Cliente, Projeto opcional), no padrão de CRUD do Omni, com **Contratos** como **item próprio na sidebar** (grupo "Comercial"). Só modalidade **`hourly`** com `hourly_rate` obrigatório. Sobreposição validada em **Rails** (sem EXCLUDE/btree_gist nesta fatia — risco residual de concorrência conforme ADR-025). **NÃO** inicia cálculo/preview/fechamento/snapshot/relatório/PDF; **TimeEntry/Task intocados**. Validado por checks verdes; **aceite manual do PO pendente**.
+### Entregue (validado)
+- **`contracts`** (uuid): FKs `provider_company_id` (RESTRICT) + `client_id` (RESTRICT) + `project_id` (NULLIFY, opcional); `modality` (default `hourly`, CHECK só hourly), `hourly_rate` `decimal(12,4)`, `status` (CHECK enum `draft/active/suspended/ended`), `start_date` NOT NULL, `end_date` null (vigência aberta), `notes`, `active`; CHECK `end_date >= start_date`; índices (provider+client, status, start_date).
+- **Model `Contract`:** associações; validações **provider/client/start_date obrigatórios**, **hourly_rate > 0**, **end_date ≥ start_date**, **project pertence ao client**, status no enum, modality só hourly; `STATUS_LABELS` PT-BR; `status_label`/`general?`/`period_label`.
+- **Sobreposição (ADR-025):** bloqueia 2 contratos **gerais** sobrepostos (mesma prestadora+cliente) e 2 do **mesmo projeto** sobrepostos; **permite** geral + de projeto no mesmo período (escopos distintos). Interseção `[start, end||∞]`; contratos **`ended` não ocupam** período (histórico); edição não conflita consigo mesma. **Validação Rails + testes** (sem EXCLUDE no banco).
+- **CRUD no padrão Omni:** `ContractsController` resourceful (index com **busca em observações + filtros** prestadora/cliente/status + **paginação**; show; new/create/edit/update/destroy; `policy_scope`; `return_to`/PB-013b) + `ContractPolicy` (ADR-014). Views index/show/new/edit/_form; status como badge tonal (draft=neutro/active=verde/suspended=âmbar/ended=neutro) com rótulo PT-BR; valor/hora formatado.
+- **Sidebar:** novo grupo **"Comercial" › Contratos** (`SidebarComponent`).
+- **Integridade de exclusão:** `has_many :contracts` em ProviderCompany/Client (`restrict_with_error`) e Project (`nullify`) — prestadora/cliente com contrato não são excluíveis (FK RESTRICT + mensagem amigável); excluir projeto desvincula o contrato (vira geral).
+### Arquivos
+Novos: `db/migrate/20260624140000_create_contracts.rb`, `app/models/contract.rb`, `app/controllers/contracts_controller.rb`, `app/policies/contract_policy.rb`, `app/views/contracts/{index,show,new,edit,_form}.html.erb`, `test/models/contract_test.rb`, `test/integration/contracts_test.rb`. Modificados: `config/routes.rb`, `app/components/sidebar_component.rb`, `app/models/{provider_company,client,project}.rb` (has_many :contracts), `db/schema.rb`.
+### Validação
+`bin/rails test` **736 runs / 2802 assertions / 0 falhas / 0 erros / 0 skips** (`OMNI_RUN_PIPELINE_INTERNALLY=0`; +33: 17 model + 16 integração). rubocop **0 offenses**; brakeman **0**; `git diff --check` limpo; `zeitwerk:check` OK. Migration aplicada em dev e test. Cobertura: validações (obrigatórios, rate>0, período, projeto×cliente, enum, modalidade); **overlap** (geral×geral bloqueado; períodos distintos ok; vigência aberta; geral+projeto coexistem; mesmo-projeto bloqueado; `ended` não ocupa; auto-edição); CRUD completo; busca/filtros; auth; **escopo negativo: TimeEntry sem coluna de contrato/valor**.
+### Riscos residuais & premissas
+- **Sobreposição garantida só na app (Rails)** — sem constraint EXCLUDE no banco nesta fatia. Risco de concorrência **baixo** no single-admin; endurecimento futuro via `EXCLUDE USING gist` + `btree_gist` (disponível no PG 16; exige índices parciais por `project_id IS NULL`/`NOT NULL` e por status ocupante). Conforme ADR-025.
+- Só `hourly`/`hourly_rate`; monthly/package, `rounding_rule`, cálculo, fechamento e PDF seguem fatias futuras (PB-020/021/022).
+### Fora de escopo (cumprido)
+Sem cálculo/preview/fechamento/snapshot/relatório/PDF/Desktop; **TimeEntry/Task não alterados** (sem `contract_id`/valor); sem EXCLUDE/btree_gist; sem dados artificiais no banco dev; ADR-025 inalterado; PB-017/PB-018/PB-019a intactas.
+
 ## 2026-06-24 — [Frente comercial · PB-019a] Empresa Prestadora (CRUD) + Configurações como hub por domínio — IMPLEMENTADO E VALIDADO (aguardando aceite do PO)
 ### Resumo
 Primeira fatia da frente comercial (ADR-025): cadastro de **Empresa Prestadora** (a empresa pela qual o serviço é prestado), **separada de Cliente**, no **padrão de CRUD do Omni** (lista + Nova/Editar em card — decisão do PO, após rejeitar a edição inline). **Configurações virou um HUB**: `/settings` é um índice de cards e cada domínio (Sincronização, Status, Empresa Prestadora) tem sua **sub-página**. Implementação validada por checks verdes; **aceite manual do PO pendente** (gate). **Contratos/Cálculo/Fechamentos/Relatórios/PDF NÃO foram iniciados.** PB-017/PB-018 intactas (funcionalidade preservada; só mudou o roteamento para sub-páginas).

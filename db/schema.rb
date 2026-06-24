@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -66,6 +66,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_130000) do
     t.index ["client_id"], name: "idx_contacts_one_primary_per_client", unique: true, where: "is_primary"
     t.index ["client_id"], name: "index_contacts_on_client_id"
     t.index ["email"], name: "index_contacts_on_email"
+  end
+
+  create_table "contracts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.uuid "client_id", null: false
+    t.datetime "created_at", null: false
+    t.date "end_date"
+    t.decimal "hourly_rate", precision: 12, scale: 4
+    t.string "modality", default: "hourly", null: false
+    t.text "notes"
+    t.uuid "project_id"
+    t.uuid "provider_company_id", null: false
+    t.date "start_date", null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_contracts_on_client_id"
+    t.index ["project_id"], name: "index_contracts_on_project_id"
+    t.index ["provider_company_id", "client_id"], name: "index_contracts_on_provider_company_id_and_client_id"
+    t.index ["provider_company_id"], name: "index_contracts_on_provider_company_id"
+    t.index ["start_date"], name: "index_contracts_on_start_date"
+    t.index ["status"], name: "index_contracts_on_status"
+    t.check_constraint "end_date IS NULL OR end_date >= start_date", name: "contracts_period_check"
+    t.check_constraint "modality::text = 'hourly'::text", name: "contracts_modality_check"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'active'::character varying, 'suspended'::character varying, 'ended'::character varying]::text[])", name: "contracts_status_check"
   end
 
   create_table "conversation_links", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -446,6 +470,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_130000) do
 
   add_foreign_key "checklist_items", "tasks", on_delete: :cascade
   add_foreign_key "contacts", "clients", on_delete: :cascade
+  add_foreign_key "contracts", "clients", on_delete: :restrict
+  add_foreign_key "contracts", "projects", on_delete: :nullify
+  add_foreign_key "contracts", "provider_companies", on_delete: :restrict
   add_foreign_key "conversation_links", "conversations", on_delete: :cascade
   add_foreign_key "conversation_links", "tasks", on_delete: :cascade
   add_foreign_key "conversation_links", "users", column: "created_by_id", on_delete: :nullify
