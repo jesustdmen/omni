@@ -418,12 +418,14 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Aprovado** (depende de PB-003/PB-004; **não** depende de contrato). |
+| Status | **IMPLEMENTADO E VALIDADO (2026-06-24) — aguardando aceite manual do PO** (checks verdes; sem commit/push). Não "Entregue" no gate até o aceite. |
 | Problema que resolve | Consolidar **horas trabalhadas** por tarefa/cliente/projeto/período a partir das evidências (apontamentos `TimeEntry` e tarefas vinculadas a conversas), **sem qualquer dependência de contrato/valor**. |
-| Critério de aceite | Tela/serviço de **apuração** que lista e totaliza **horas** por período + filtros (cliente/projeto/tarefa); `duration` (segundos) → horas decimais (BigDecimal, sem float); **não** exige contrato; **não** grava em `TimeEntry`/`Task`. Horas existem mesmo sem contrato. Read-only. |
-| Decisões | • **Contrato é opcional** e **não participa** desta fatia. • Conversas vinculadas a tarefas contam como evidência de trabalho via os apontamentos da tarefa. • Sem `rounding_rule` (arredondamento só visual nesta fase). |
+| Critério de aceite | ✅ Tela/serviço de **apuração** (`/work_time_reports`) que lista e totaliza **horas** por período + filtros (cliente/projeto/tarefa); `duration` em **segundos (Integer, sem float)**; **não** exige contrato; **não** grava em `TimeEntry`/`Task`. Horas existem mesmo sem contrato. Read-only. |
+| Decisões | • **Contrato é opcional** e **não participa** desta fatia. • Conversas vinculadas (`Task#conversation_count`) contam como **evidência** (contagem), sem inferir tempo de turnos. • Sem `rounding_rule` (arredondamento só visual). |
 | Fora de escopo | Qualquer valor monetário/contrato (→ PB-020c); validação/ajuste (→ PB-020b); fechamento (PB-021); PDF (PB-022). |
 | Dependências | PB-003 (TimeEntry), PB-004 (tarefa/vínculo), **ADR-023** (dia operacional Brasília). |
+
+**Implementação (2026-06-24; aguardando aceite):** service read-only `WorkTimeReport` (segundos Integer; totais geral/cliente/projeto; apontamentos + conversas vinculadas; opção "sem horas lançadas"; running não distorce; sem N+1) + `WorkTimeReportsController#index` (rota `GET /work_time_reports`; default mês atual Brasília; `skip_pundit`) + view PT-BR + sidebar **Comercial → "Apuração"**. **Sem migration/schema**; **não grava nada**; sem contrato/valor. Suíte **754/2872/0**; rubocop 0; brakeman 0. Ver `DELIVERY_LOG`/`PROJECT_STATUS`. **PB-020b/PB-020c/PB-021/PB-022 não iniciadas.**
 
 #### PB-020b — Validação/ajuste da apuração
 

@@ -67,4 +67,7 @@ Rails.application.routes.draw do
 
   # PB-019b — Contratos (frente comercial; item próprio na sidebar).
   resources :contracts
+
+  # PB-020a — Apuração de horas trabalhadas (read-only; sem contrato/valor).
+  resources :work_time_reports, only: %i[index]
 end

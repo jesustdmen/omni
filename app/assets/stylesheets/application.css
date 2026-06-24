@@ -405,6 +405,14 @@ p { margin: 0 0 12px; }
 .settings-hub__card { display: flex; flex-direction: column; }
 .settings-hub__card p:last-child { margin-top: auto; }
 
+/* PB-020a — Apuração de horas (read-only). */
+.wtr-totals { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.wtr-row--no-hours { opacity: .7; }
+.wtr-breakdowns { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 14px; }
+.wtr-breakdown { list-style: none; padding: 0; margin: 6px 0 0; }
+.wtr-breakdown li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--tone-neutral-border); }
+.filters__check { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; white-space: nowrap; }
+
 /* ------------------------------------------------------------------ */
 /* Tabelas / listas                                                   */
 /* ------------------------------------------------------------------ */
