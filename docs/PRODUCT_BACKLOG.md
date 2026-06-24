@@ -336,6 +336,34 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 - **PB-016a — execução do pipeline pelo agente Windows (ENTREGUE 2026-06-22):** o pipeline (RepoB) é Windows-nativo (lê `%APPDATA%`/`.codex`/`.claude`; exige `APPDATA`) e **não roda no container** Linux. Solução: **agente** no host (`app/script/pipeline_agent.py`, stdlib) que o Omni aciona por **HTTP local com token**; o Rails/worker **nunca executa Python** nem monta as fontes. `Sync::PipelineRunner` (cliente HTTP: health → run) dispara o agente; `RunConversationsSync` roda **coleta antes da importação**. Segurança: **comando fixo no agente**, token, timeout, sem input do usuário, saída segura (sem credenciais/paths). **Resiliência:** agente offline → **degrada** (pula coleta, importa o output atual com aviso); falha real (exit≠0/timeout) **aborta antes de importar** (índice preservado, settle/verify da PB-015). Auto-start/auto-restart do agente no devstack (`.devstack/agent.sh` + `up.sh`). Gate por flag `OMNI_RUN_PIPELINE_INTERNALLY` (default off = comportamento PB-015). Validado ponta a ponta (coleta real, exit=0; +482 turn_refs; vínculos/tarefas preservados).
 - **PB-016b — agendamento interno configurável em `/settings` (ENTREGUE 2026-06-22):** `SyncSchedule` (singleton: ligar/desligar + intervalo, allowlist 15min…24h) + `ScheduledSyncJob` recorrente (SolidQueue `recurring.yml`, tick por minuto) disparam o **mesmo fluxo** do botão manual quando vencido e sem execução ativa. **Sem Tarefa do Windows.** O agendador mora em **Configurações** (`/settings`, decisão de produto); `/sync_runs` mantém só a sincronização manual + atalho para Configurações. Status do pipeline na UI enxuto (data/hora + status; stdout cru só em erro, resumido).
 
+### PB-017 — Auth/Admin seguro (single-user)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | **P0/P1** — base de segurança que antecede a próxima onda (deve vir antes de PB-018 e de qualquer exposição). |
+| Status | **Pronto para execução** |
+| Problema que resolve | A base de autenticação (Devise, WD-08) existe, mas o fluxo de Admin não está endurecido para uso seguro single-user: falta tratamento explícito de cadastro público, recuperação de senha e limites de tentativa. Precisa passar pelo checklist de segurança antes de avançar. |
+| Origem/evidência | Decisão de produto na coordenação da onda pós-`04901b6`; base Devise já entregue (WD-08); skill/checklist **secure-auth**. |
+| Critério de aceite | ✅ Admin loga; ✅ cadastro público bloqueado; ✅ reset por e-mail preparado; ✅ reset manual seguro documentado; ✅ rate limit por **IP e por conta**; ✅ **nenhuma credencial no diff**; ✅ checklist **secure-auth** documentado item a item (**PASS/GAP/N/A**). |
+| Decisões | • **Uso single-user** por enquanto. • **Somente Admin** (sem papéis adicionais nesta frente). • **Sem cadastro público** (registro desabilitado/bloqueado). • **E-mail/senha do Admin (login)** e **credenciais de SMTP** são **separados** — não reaproveitar um pelo outro. • **Recuperação:** reset por e-mail **+** reset manual seguro. • Usar **Devise**, **não** auth manual/cripto caseira. • Aplicar o **checklist secure-auth**. • **Fora de escopo:** `is_active`, multiusuário, MFA, OAuth, passkeys. |
+| Fora de escopo | `is_active`/desativação de conta; multiusuário; MFA/2FA; OAuth/"entrar com Google"; passkeys; qualquer cripto caseira. |
+| Dependências | WD-08 (Devise), WD-09 (Pundit); skill **secure-auth**; ADR-014 (política multiusuário — segue single-user/Admin). |
+| Relacionado | WD-08, WD-09, WD-10, OP-04, SEC. |
+
+### PB-018 — Status configurável + termos PT-BR
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovado** (não liberado para execução — depende de PB-017 e de decisão explícita do PO para virar `Pronto para execução`). |
+| Problema que resolve | Tarefas e Projetos precisam de status **configuráveis** pelo usuário (nome, cor, ordem, finalizador) em vez de status fixos no código; e os termos de domínio PT-BR precisam ficar estabilizados para evitar drift de nomenclatura. |
+| Origem/evidência | Decisão de produto na coordenação da onda pós-`04901b6`. |
+| Critério de aceite | Status de **Tarefas e Projetos** configuráveis (campos abaixo); **Demandas permanecem fixas**; status em uso **não excluível livremente** (exige migração para status válido antes); termos de domínio preservados. |
+| Decisões | • **Status configurável** para **Tarefas e Projetos** agora. • **Demandas ficam fixas:** `pending`→**Pendente**, `converted`→**Convertida**. • **Campos do status:** nome, **chave/código**, cor, ordem, ativo, **finalizador**. • Status **em uso não pode ser excluído livremente** — deve ser alterado/movido para status válido antes. • **finalizador** afeta **apenas filtros/exibição** por enquanto (sem regra de negócio adicional). • **Termos preservados:** **Demanda, Apontamentos, Conversas, Sync**. • **Cliente = cliente atendido**; **Empresa prestadora = domínio futuro separado** (não nesta frente). |
+| Fora de escopo | Status configurável para Demandas; workflow/transições com regra de negócio a partir de `finalizador`; "Empresa prestadora" (domínio futuro). |
+| Dependências | PB-017 (precede); WD-03 (Projetos), WD-04 (Tarefas). |
+| Relacionado | WD-03, WD-04, WD-05/WD-06 (Demandas — fixas), WD-10/UI-07 (Configurações). |
+
 ---
 
 ## 7. Próxima ação recomendada
@@ -350,4 +378,4 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Melhoria UX transversal (2026-06-23):** paginação amigável (« Primeira/Última », "Página X de Y") + "Mostrar tudo" (teto + aviso) em todas as listas e nos turnos de `/conversations/:id`. Sem item de backlog dedicado; registrada no DELIVERY_LOG/FEATURE_MATRIX.
 
-Próxima decisão do PO: a definir. Nada será implementado sem autorização explícita.
+**Próxima onda aprovada (coordenação, pós-`04901b6`):** **PB-017 — Auth/Admin seguro** (**Pronto para execução**, P0/P1 — base de segurança que vem **primeiro**) → **PB-018 — Status configurável + termos PT-BR** (**Aprovado**, depende de PB-017 e de liberação explícita do PO). Contrato registrado neste documento; **nada será implementado sem autorização explícita** e PB-017/PB-018 **não estão entregues**.
