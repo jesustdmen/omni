@@ -299,7 +299,23 @@ Estes contratos sao coerentes com o §2 deste documento, com a §5 (armadilhas) 
 
 ## DIAGNOSTICO TECNICO — PROXIMA FATIA: "Triagem persistida minima" (2026-06-25)
 
-> Diagnostico read-only (planejamento). **Nao implementado.** Esta secao responde as perguntas tecnicas da fatia 1 da sequencia §10. Escopo-alvo: persistir confirmacao de cliente/projeto, marcacao pessoal e ignorar/revisar; cards/filtros passam a usar estado persistido quando existir e derivado quando nao existir. **Sem** TimeEntry, **sem** apuracao, **sem** classificar gaps, **sem** IA, **sem** acoes em lote (salvo placeholder desabilitado e documentado).
+> Diagnostico read-only (planejamento). **Nao implementado.** Esta secao responde as perguntas tecnicas da fatia 1 da sequencia §10. Escopo-alvo: persistir status de revisao (open/reviewed/ignored) e confirmacao de cliente/projeto; cards/filtros passam a usar estado persistido quando existir e derivado quando nao existir. **Sem** TimeEntry, **sem** apuracao, **sem** classificar gaps, **sem** IA, **sem** acoes em lote (salvo placeholder desabilitado e documentado).
+
+## D0. Decisoes oficiais do PO (2026-06-25) — vinculam a implementacao
+
+> Estas decisoes foram **confirmadas pelo PO** apos a publicacao do contrato futuro (`d398c14`) e **prevalecem** sobre qualquer formulacao anterior/exemplo deste diagnostico. As secoes D2/D3/D4/D9 abaixo ja foram revisadas para refleti-las.
+
+```text
+1. Persistencia em TABELA DEDICADA `conversation_triages`. Nao usar colunas novas em `conversations`.
+2. `conversations.personal` continua sendo a FONTE DE PRIVACIDADE. Nao migrar `personal` agora.
+   A Triagem pode exibir "pessoal" como estado efetivo, mas NAO mistura privacidade com workflow.
+3. STATUS persistidos minimos da triagem: SOMENTE `open`, `reviewed`, `ignored`.
+   (Nao existem outros valores de status. "linked" segue DERIVADO de ConversationLink, nao e status.)
+4. CLIENTE/PROJETO confirmado NAO e status: usa campos proprios `confirmed_client_id` e
+   `confirmed_project_id`. Status = fluxo de revisao; confirmacao = decisao de vinculo comercial/operacional.
+5. Confirmar cliente/projeto PODE acontecer SEM criar tarefa. A Triagem precede criar/vincular tarefa;
+   criar tarefa continua sendo acao posterior.
+```
 
 ## D1. Qual modelo/tabela existente pode receber a decisao?
 
@@ -312,15 +328,14 @@ Estes contratos sao coerentes com o §2 deste documento, com a §5 (armadilhas) 
 Conclusao: nao ha hoje um lugar adequado para a DECISAO HUMANA de triagem (alem de `personal`).
 ```
 
-## D2. Se nao houver lugar adequado, proposta de tabela minima nova
+## D2. Tabela nova (decisao oficial: dedicada)
 
 ```text
-Proposta: tabela `conversation_triages` (1:1 com conversation; criada on-demand quando ha decisao).
+DECIDIDO (D0.1): tabela DEDICADA `conversation_triages` (1:1 com conversation; criada on-demand
+quando ha decisao). NAO usar colunas novas em `conversations`.
 Racional: nao poluir `conversations` (linha grande, sync reescreve metadados); manter a decisao
-humana isolada e auditavel, sem competir com o estado DERIVADO (que continua valido quando nao ha linha).
-Alternativa mais barata (a avaliar com o PO): apenas colunas em `conversations`
-(ignored_at/reviewed_at/triaged_by_id), reusando `personal` ja existente. Tabela dedicada e a
-recomendacao por auditoria e evolucao (campos futuros de objetivo/atividades nao entram aqui).
+humana isolada e auditavel, sem competir com o estado DERIVADO (que continua valido quando nao ha linha);
+acomodar campos futuros (objetivo/atividades) sem inchar a conversa.
 ```
 
 ## D3. Campos necessarios (tabela minima)
@@ -329,25 +344,33 @@ recomendacao por auditoria e evolucao (campos futuros de objetivo/atividades nao
 conversation_triages:
 - id (uuid)
 - conversation_id (uuid, FK ON DELETE CASCADE, UNIQUE)         # 1:1
-- status (text)                                                # allowlist: pending/personal/ignored/reviewed/linked? (ver D4)
-- suggested_client_id confirmado? -> confirmed_client_id (uuid, FK clients, nullable)
-- confirmed_project_id (uuid, FK projects, nullable)           # projeto opcional, coerente com contratos
+- status (text, NOT NULL, default 'open')                      # CHECK allowlist: SOMENTE open|reviewed|ignored (D0.3)
+                                                               #   -> status = FLUXO DE REVISAO. NAO inclui cliente/pessoal/linked.
+- confirmed_client_id (uuid, FK clients, nullable)             # CAMPO PROPRIO (D0.4) — NAO e status
+- confirmed_project_id (uuid, FK projects, nullable)           # CAMPO PROPRIO (D0.4) — projeto opcional, coerente com contratos
 - note (text, nullable)                                        # motivo de ignorar/observacao
 - triaged_by_id (bigint, FK users)                             # quem decidiu (auditoria)
 - created_at / updated_at
-Observacao: NAO inclui campos de tempo/atividade/gap/IA (fatias futuras).
+Observacoes:
+- `personal` NAO entra aqui: continua em `conversations.personal` (D0.2) — privacidade, nao workflow.
+- "linked" NAO entra aqui: segue DERIVADO de ConversationLink (D4).
+- NAO inclui campos de tempo/atividade/gap/IA (fatias futuras).
 ```
 
 ## D4. Compatibilidade com o estado derivado atual
 
 ```text
-- Regra de leitura: estado EFETIVO = decisao persistida quando existir; senao, ConversationTriage.derive.
-- ConversationTriage ganha um caminho que, dado um indice de decisoes (conversation_id => registro),
-  sobrepoe o derivado — mantendo index_for sem N+1 (1 query a mais para carregar as decisoes da janela).
-- `personal`: hoje boolean em conversations. Decisao: ou continuar usando o boolean como fonte de "pessoal"
-  (e a nova tabela cobre ignored/reviewed/cliente confirmado), ou migrar "pessoal" para o status persistido.
-  Recomendacao: manter `personal` como esta nesta fatia (menor risco) e a tabela cobre o resto.
+- Regra de leitura: estado EFETIVO compoe DUAS dimensoes, sem misturar privacidade com workflow:
+    (a) PRIVACIDADE: `conversations.personal` (boolean) — fonte unica de "pessoal" (D0.2);
+    (b) WORKFLOW: `conversation_triages.status` (open|reviewed|ignored) quando houver linha;
+        sem linha, vale o estado DERIVADO atual (ConversationTriage.derive).
+- `personal` NAO migra para status (D0.2): segue boolean em conversations. A Triagem pode EXIBIR
+  "pessoal" como estado efetivo, mas a decisao de privacidade nao vira valor de status.
 - `linked` continua DERIVADO de ConversationLink (nao duplicar verdade): a tabela nao guarda "linked".
+- confirmacao de cliente/projeto e ORTOGONAL ao status: uma conversa pode estar `open` e ja ter
+  `confirmed_client_id`; ou `reviewed` sem cliente. Cards/filtros tratam status e confirmacao separadamente.
+- ConversationTriage ganha um caminho que, dado um indice de decisoes (conversation_id => registro),
+  sobrepoe o status derivado — mantendo index_for sem N+1 (1 query a mais para carregar as decisoes da janela).
 - Cards/filtros: contadores passam a considerar o estado efetivo; filtro por estado idem.
 ```
 
@@ -408,8 +431,10 @@ Resultado: primeira camada de PERSISTENCIA da triagem, isolada, auditavel, rever
 em TimeEntry/Apuracao/contrato.
 ```
 
-> **Recomendacao do executor:** a fatia e viavel e de baixo risco SE aprovada uma **tabela nova aditiva**
-> (a entrega atual foi deliberadamente "sem tabela"; persistir exige sair desse contrato). Antes de
-> implementar, o PO precisa decidir: (a) tabela dedicada × colunas em `conversations`; (b) se "pessoal"
-> migra para o status persistido ou continua boolean; (c) o conjunto exato de status persistidos;
-> (d) se "confirmar cliente" sem criar tarefa e desejavel ou se a confirmacao deve continuar so via tarefa.
+> **Recomendacao do executor:** a fatia e viavel e de baixo risco com uma **tabela nova aditiva**
+> (a entrega atual foi deliberadamente "sem tabela"; persistir exige sair desse contrato). As quatro
+> decisoes que estavam em aberto **ja foram resolvidas pelo PO** (ver D0): (a) **tabela dedicada**
+> `conversation_triages`; (b) **`personal` continua boolean** (nao migra); (c) status = **somente
+> `open`/`reviewed`/`ignored`**; (d) **confirmar cliente/projeto pode ocorrer sem criar tarefa**, em
+> **campos proprios** (`confirmed_client_id`/`confirmed_project_id`), nunca como status. Implementacao
+> so apos autorizacao explicita do PO.
