@@ -438,3 +438,57 @@ em TimeEntry/Apuracao/contrato.
 > `open`/`reviewed`/`ignored`**; (d) **confirmar cliente/projeto pode ocorrer sem criar tarefa**, em
 > **campos proprios** (`confirmed_client_id`/`confirmed_project_id`), nunca como status. Implementacao
 > so apos autorizacao explicita do PO.
+
+---
+
+## VOCABULARIO CANONICO DA TRIAGEM (PT-BR) — 2026-06-25
+
+> Regra de linguagem do Omni. **UI, mensagens e documentacao usam PT-BR.** Nomes
+> tecnicos internos (tabela, coluna, enum, classe, metodo, rota tecnica, chave de
+> simbolo) **podem** permanecer em ingles por convencao do Rails, mas **nao devem
+> vazar para o usuario final** (tela/doc/texto de teste descritivo). Quando um termo
+> interno aparece na tela, expor sempre o rotulo PT-BR correspondente.
+
+Rotulos oficiais dos **estados efetivos** exibidos (chave interna → rotulo PT-BR):
+
+```text
+linked    -> Vinculada
+personal  -> Pessoal
+ignored   -> Ignorada
+reviewed  -> Revisada
+suggested -> Cliente sugerido
+noclient  -> Sem cliente
+pending   -> Pendente
+```
+
+Rotulos oficiais do **status persistido** da decisao de triagem:
+
+```text
+open     -> Aberta
+reviewed -> Revisada
+ignored  -> Ignorada
+```
+
+Outros termos canonicos:
+
+```text
+Triagem                 (nao "inbox")
+Decisao de triagem      (status persistido: Aberta/Revisada/Ignorada)
+Estado efetivo          (derivado + decisao persistida; evitar "overlay")
+Estado derivado         (calculado de vinculo/workspace/pessoal)
+Cliente sugerido        (sugestao por workspace; pede confirmacao humana)
+Cliente confirmado      (decisao humana; campo proprio confirmed_client_id)
+Confirmacao humana      (nao "confirmed" em texto de UI)
+Lista permitida         (nao "allowlist" em texto de UI/doc/teste)
+Somente leitura         (nao "read-only" em texto de UI/doc/teste)
+```
+
+Onde os termos internos podem ficar em ingles (sem vazar):
+
+```text
+- tabela `conversation_triages`; colunas status/confirmed_client_id/confirmed_project_id/triaged_by_id;
+- valores de status no banco/enum: open|reviewed|ignored (CHECK + lista permitida no model);
+- classe ConversationTriageDecision (model) e ConversationTriage (service de estado efetivo);
+- rota tecnica aninhada `conversation_triage` (PATCH);
+- campos de simbolo do Struct Result (state/persisted_status/...), expostos via rotulo PT-BR.
+```
