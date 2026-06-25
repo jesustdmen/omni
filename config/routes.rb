@@ -42,6 +42,8 @@ Rails.application.routes.draw do
     resources :links, controller: "conversation_links", only: %i[create destroy]
     # F5.3 (UI-10) — criar tarefa a partir da conversa (vínculo primary/manual automático).
     resources :tasks, controller: "conversation_tasks", only: %i[new create]
+    # PB-020 (Triagem persistida mínima) — decisão humana 1:1 (status + cliente/projeto confirmado).
+    resource :triage, controller: "conversation_triages", only: %i[update]
   end
   # PB-013 — busca global (read-only) sobre os dados funcionais.
   get "search", to: "search#index"

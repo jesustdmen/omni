@@ -4,6 +4,9 @@ class Conversation < ApplicationRecord
   # destroy: ao excluir uma conversa, remove os links e recomputa as tarefas afetadas.
   has_many :conversation_links, dependent: :destroy
   has_many :tasks, through: :conversation_links
+  # PB-020 (Triagem persistida mínima) — decisão humana 1:1 (status/cliente/projeto confirmado).
+  # FK ON DELETE CASCADE no banco; dependent: :destroy mantém o ORM coerente.
+  has_one :triage, class_name: "ConversationTriageDecision", dependent: :destroy
 
   validates :thread_id, presence: true, uniqueness: true
   validates :message_count, :user_turns, :assistant_turns, :tool_calls,

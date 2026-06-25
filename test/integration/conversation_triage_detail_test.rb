@@ -1,7 +1,8 @@
 require "test_helper"
 
 # PB-020 (Triagem) — modo triagem da conversa em /conversations/:id?mode=triage.
-# Read-only: split, evidências, cliente sugerido, gaps visuais; CTAs existentes.
+# Somente leitura (exceto a decisão de triagem): tela dividida, evidências, cliente
+# sugerido/confirmado, gaps visuais; ações existentes.
 class ConversationTriageDetailTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
@@ -55,15 +56,16 @@ class ConversationTriageDetailTest < ActionDispatch::IntegrationTest
     assert_select ".triage-detail__cta a[href=?]", origin, text: "Voltar"
   end
 
-  test "cliente sugerido é só exibido com (confirmar) — sem ação de confirmar" do
+  test "cliente sugerido é exibido como sugestão e agora há ação de confirmar (persistida)" do
     c = conversation(workspace_hash: "wh2")
     WorkspaceMap.create!(workspace_hash: "wh2", folder: "/erp/sara")
     Client.create!(name: "Sara Distribuidora", workspace_paths: [ "/erp/sara" ])
     get conversation_path(c, mode: "triage")
     assert_match "Sara Distribuidora", response.body
-    assert_match "(confirmar)", response.body
-    # nenhum form/botão "Confirmar cliente"
-    assert_select "button", text: /Confirmar cliente/i, count: 0
+    assert_match(/sugerido pelo workspace/, response.body)
+    # PB-020 persistida: agora EXISTE form para confirmar cliente (decisão humana).
+    assert_select "form[action=?]", conversation_triage_path(c)
+    assert_select "input[type=submit][value=?]", "Confirmar cliente"
   end
 
   test "gaps visuais aparecem (> 15 min) derivados dos timestamps" do
@@ -105,7 +107,7 @@ class ConversationTriageDetailTest < ActionDispatch::IntegrationTest
     assert_match(/conteúdo dos turnos está oculto/i, response.body)
   end
 
-  test "NÃO promove para TimeEntry nem grava (read-only)" do
+  test "NÃO promove para TimeEntry nem grava apontamento (somente leitura)" do
     c = conversation(workspace_hash: "wh3")
     base = Time.utc(2026, 6, 10, 9, 0, 0)
     add_ref(c, 1, base); add_ref(c, 2, base + 30.minutes)

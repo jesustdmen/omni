@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_25_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -109,6 +109,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_140000) do
     t.check_constraint "confidence IS NULL OR confidence >= 0::numeric AND confidence <= 1::numeric", name: "conversation_links_confidence_check"
     t.check_constraint "link_type = ANY (ARRAY['primary'::text, 'mention'::text])", name: "conversation_links_link_type_check"
     t.check_constraint "origin = ANY (ARRAY['manual'::text, 'auto'::text, 'suggestion'::text])", name: "conversation_links_origin_check"
+  end
+
+  create_table "conversation_triages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "confirmed_client_id"
+    t.uuid "confirmed_project_id"
+    t.uuid "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.text "note"
+    t.text "status", default: "open", null: false
+    t.bigint "triaged_by_id"
+    t.datetime "updated_at", null: false
+    t.index ["confirmed_client_id"], name: "index_conversation_triages_on_confirmed_client_id"
+    t.index ["confirmed_project_id"], name: "index_conversation_triages_on_confirmed_project_id"
+    t.index ["conversation_id"], name: "index_conversation_triages_on_conversation_id", unique: true
+    t.index ["triaged_by_id"], name: "index_conversation_triages_on_triaged_by_id"
+    t.check_constraint "status = ANY (ARRAY['open'::text, 'reviewed'::text, 'ignored'::text])", name: "conversation_triages_status_check"
   end
 
   create_table "conversation_turn_refs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -476,6 +492,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_140000) do
   add_foreign_key "conversation_links", "conversations", on_delete: :cascade
   add_foreign_key "conversation_links", "tasks", on_delete: :cascade
   add_foreign_key "conversation_links", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "conversation_triages", "clients", column: "confirmed_client_id", on_delete: :nullify
+  add_foreign_key "conversation_triages", "conversations", on_delete: :cascade
+  add_foreign_key "conversation_triages", "projects", column: "confirmed_project_id", on_delete: :nullify
+  add_foreign_key "conversation_triages", "users", column: "triaged_by_id", on_delete: :nullify
   add_foreign_key "conversation_turn_refs", "conversations", on_delete: :cascade
   add_foreign_key "conversation_turn_refs", "turn_sources", on_delete: :cascade
   add_foreign_key "conversations", "users", on_delete: :nullify

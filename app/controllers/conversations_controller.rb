@@ -52,8 +52,9 @@ class ConversationsController < ApplicationController
   helper_method :triage_mode?
 
   def load_triage
-    @triage = ConversationTriage.derive(@conversation)        # estado + cliente sugerido
+    @triage = ConversationTriage.derive(@conversation)        # estado efetivo (derivado + persistido)
     @timeline = ConversationTimeline.call(conversation: @conversation) # gaps (do índice ts)
+    @clients = Client.ordered # opções p/ confirmar cliente (decisão humana)
   end
 
   # F5.1 — leitura lazy read-only dos turnos (ADR-021/ADR-012).

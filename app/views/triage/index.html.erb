@@ -6,19 +6,21 @@
     <p class="page-head__sub">
       <%= @counts[:total] %> conversas recentes na fila
       <% if @last_sync %> · último sync <%= local_datetime(@last_sync.created_at) %><% end %>.
-      Estado derivado dos vínculos e do workspace — sugestões pedem confirmação humana.
+      Estado efetivo: derivado (vínculos/workspace) + decisão de triagem registrada — sugestões pedem confirmação humana.
     </p>
   </div>
 </div>
 
-<%# Cards por estado (derivado). Clicáveis = filtram a fila principal. %>
+<%# Cards por estado EFETIVO (derivado + persistido). Clicáveis = filtram a fila. %>
 <div class="triage-cards">
   <% [
-       [ "pending",  "Pendentes",       "total na fila" ],
-       [ "noclient", "Sem cliente",     "exigem você" ],
-       [ "suggested","Cliente sugerido","confirmar cliente" ],
-       [ "personal", "Pessoais",        "parecem não ser trabalho" ],
-       [ "linked",   "Vinculadas",      "já viraram/ligadas a tarefa" ]
+       [ "pending",  "Pendentes",        "total na fila" ],
+       [ "noclient", "Sem cliente",      "exigem você" ],
+       [ "suggested","Cliente",          "sugerido/confirmado" ],
+       [ "reviewed", "Revisadas",        "marcadas como revisadas" ],
+       [ "ignored",  "Ignoradas",        "fora da triagem" ],
+       [ "personal", "Pessoais",         "parecem não ser trabalho" ],
+       [ "linked",   "Vinculadas",       "já viraram/ligadas a tarefa" ]
      ].each do |state, label, sub| %>
     <%= link_to triage_path(state: (@state == state ? nil : state)),
           class: "triage-card triage-card--#{state} #{'is-active' if @state == state}" do %>
@@ -57,8 +59,12 @@
             <span class="mono">📁 <%= t.folder.presence || (c.workspace_hash.present? ? "#{c.workspace_hash.truncate(12)} (órfão)" : "—") %></span>
             <span>· <%= local_datetime(c.last_ts) %></span>
             <span>· <%= c.message_count %> msgs</span>
-            <% if t.suggested? && t.suggested_client %>
-              <span>· inferência: <strong><%= t.suggested_client.name %></strong> <span class="muted">(confirmar)</span></span>
+            <% if t.client %>
+              <% if t.client_confirmed? %>
+                <span>· cliente: <strong><%= t.client.name %></strong> <span class="badge badge--success">confirmado</span></span>
+              <% else %>
+                <span>· inferência: <strong><%= t.client.name %></strong> <span class="muted">(confirmar)</span></span>
+              <% end %>
             <% end %>
           </div>
           <div class="triage-row__actions">
@@ -100,7 +106,8 @@
 </div>
 
 <p class="muted triage-note">
-  <em>Triagem read-only nesta fatia:</em> os estados são derivados (vínculo, workspace, pessoal);
-  ainda não há persistência de decisão de triagem, sugestão por IA, confiança numérica nem ações em lote.
+  <em>Estado efetivo da Triagem:</em> combina o estado derivado (vínculo, workspace, pessoal) com a
+  decisão de triagem persistida (Aberta/Revisada/Ignorada) e o cliente confirmado, quando houver.
+  Ainda não há sugestão por IA, confiança numérica nem ações em lote.
   Criar tarefa e vincular usam as telas já existentes.
 </p>

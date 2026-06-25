@@ -1,6 +1,7 @@
-<%# PB-020 (Triagem) — modo triagem da conversa (read-only). Split: turnos à
-    esquerda (reusa TurnListComponent), análise/evidências à direita. Sugestões só
-    exibem (confirmar via tarefa); gaps são apenas visuais; sem TimeEntry. %>
+<%# PB-020 (Triagem) — modo triagem da conversa. Tela dividida: turnos à esquerda
+    (reusa TurnListComponent), análise/evidências à direita. A decisão de triagem
+    (Aberta/Revisada/Ignorada) e a confirmação de cliente são persistidas aqui;
+    cliente sem confirmação fica como sugestão; gaps são só visuais; sem TimeEntry. %>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <%= link_to "Triagem", triage_path %>
@@ -31,7 +32,7 @@
       <span class="muted">evidência · não relógio absoluto</span>
     </div>
     <% if @turns_hidden_personal %>
-      <p class="muted">Esta conversa é <strong>pessoal</strong>. O conteúdo dos turnos está oculto nesta fase (read-only).</p>
+      <p class="muted">Esta conversa é <strong>pessoal</strong>. O conteúdo dos turnos está oculto nesta fase (somente leitura).</p>
     <% else %>
       <%= render Conversations::TurnListComponent.new(
             result: @turns, conversation: @conversation, page: @turn_page, total_pages: @turn_total_pages,
@@ -39,19 +40,61 @@
     <% end %>
   </section>
 
-  <%# ── DIREITA · análise extraída (read-only) ── %>
+  <%# ── DIREITA · análise extraída (somente leitura, exceto a decisão de triagem) ── %>
   <aside class="triage-detail__panel">
-    <%# Cliente/projeto sugerido (só exibição; confirmação prática via tarefa). %>
+    <%# Decisão de triagem (estado persistido): Aberta / Revisada / Ignorada. %>
+    <div class="card">
+      <div class="suggest-block__head">
+        <h2>Decisão de triagem</h2>
+        <span class="badge badge--neutral"><%= @triage.label %></span>
+      </div>
+      <p class="muted">
+        <% if @triage.persisted? %>Decisão registrada: <strong><%= @triage.persisted_status_label %></strong>.
+        <% else %>Sem decisão registrada (estado derivado).<% end %>
+      </p>
+      <div class="triage-actions">
+        <% if @triage.persisted_status != "reviewed" %>
+          <%= button_to "Marcar revisada", conversation_triage_path(@conversation, status: "reviewed", return_to: request.fullpath),
+                method: :patch, class: "btn btn--outline btn--sm", form_class: "inline" %>
+        <% end %>
+        <% if @triage.persisted_status != "ignored" %>
+          <%= button_to "Ignorar", conversation_triage_path(@conversation, status: "ignored", return_to: request.fullpath),
+                method: :patch, class: "btn btn--ghost btn--sm", form_class: "inline" %>
+        <% end %>
+        <% if @triage.persisted? && @triage.persisted_status != "open" %>
+          <%= button_to "Reabrir", conversation_triage_path(@conversation, status: "open", return_to: request.fullpath),
+                method: :patch, class: "btn btn--outline btn--sm", form_class: "inline" %>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Cliente confirmado (decisão humana) × sugerido (workspace). Confirmação ≠ tarefa. %>
     <div class="card suggest-block">
       <div class="suggest-block__head">
-        <h2>Cliente provável</h2>
-        <span class="badge badge--neutral">sugestão</span>
+        <h2>Cliente</h2>
+        <% if @triage.client_confirmed? %>
+          <span class="badge badge--success">confirmado</span>
+        <% else %>
+          <span class="badge badge--neutral">sugestão</span>
+        <% end %>
       </div>
-      <% if @triage.suggested_client %>
-        <p><strong><%= @triage.suggested_client.name %></strong> <span class="muted">(confirmar)</span></p>
+      <% if @triage.client_confirmed? %>
+        <p><strong><%= @triage.client.name %></strong></p>
+      <% elsif @triage.client %>
+        <p><strong><%= @triage.client.name %></strong> <span class="muted">(sugerido pelo workspace — confirmar)</span></p>
         <p class="muted">via workspace → <span class="mono"><%= @triage.folder %></span> → clients.workspace_paths</p>
       <% else %>
-        <p class="muted">Sem cliente sugerível pelo workspace. Defina ao criar/vincular a tarefa.</p>
+        <p class="muted">Sem cliente sugerível pelo workspace. Confirme manualmente abaixo.</p>
+      <% end %>
+
+      <%# Confirmar cliente SEM criar tarefa (decisão de vínculo comercial/operacional). %>
+      <%= form_with url: conversation_triage_path(@conversation), method: :patch, class: "triage-confirm" do |f| %>
+        <%= hidden_field_tag :return_to, request.fullpath %>
+        <%= label_tag :confirmed_client_id, "Confirmar cliente" %>
+        <%= select_tag :confirmed_client_id,
+              options_for_select(@clients.map { |c| [ c.name, c.id ] }, @triage.client&.id),
+              include_blank: "— nenhum —" %>
+        <%= submit_tag "Confirmar cliente", class: "btn btn--primary btn--sm" %>
       <% end %>
     </div>
 
