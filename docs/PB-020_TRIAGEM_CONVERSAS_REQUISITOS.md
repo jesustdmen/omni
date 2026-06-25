@@ -529,3 +529,34 @@ Quando for implementada, a integracao tera **diagnostico proprio** cobrindo, no 
 Coerencia com os requisitos primordiais: a IA entra como **camada de sugestao** sobre o
 fluxo ja existente (criar/vincular tarefa, decisao de triagem); **cliente sugerido por IA
 continua diferente de cliente confirmado** (confirmacao humana prevalece — ver D0/§9).
+
+---
+
+## PENDENCIA FUTURA — Desktop Runtime / Servicos Autopersistidos (registrada em 2026-06-25)
+
+> Registro de produto (NAO implementado nesta fase). Levantado durante a entrega da IA
+> local na Triagem: a sugestao por IA depende do **indice de turnos** (`conversation_turn_refs`,
+> ADR-021) estar atualizado. Quando o `output/normalized/sessions.jsonl` muda e o indice
+> nao e reconstruido, o `LazyLoader` retorna `:stale`, o `Ai::ConversationContextBuilder`
+> devolve contexto vazio e a Triagem **degrada com seguranca** (mensagem "Nao ha contexto
+> textual suficiente para sugerir atividades com seguranca"). Hoje a reindexacao e **manual**
+> (`bin/rails sync:turn_refs[...]`), o que e aceitavel no ambiente de dev atual (devstack
+> Docker), mas **nao** para a futura versao desktop entregue ao usuario final.
+
+Requisitos para a futura versao **desktop** (web + banco + Ollama + sync de conversas +
+indexador de turnos como **servicos autopersistidos**, sem dependencia de comando manual):
+
+```text
+1. Web, banco (PostgreSQL), Ollama, sync de conversas e indexador de turnos devem ser
+   gerenciados como SERVICOS AUTOPERSISTIDOS (sobem com o app; reiniciam sozinhos).
+2. O Omni deve DETECTAR indice de turnos `:stale` (fingerprint divergente do arquivo atual).
+3. O usuario NAO deve depender de rodar `sync:turn_refs` manualmente.
+4. A UI/desktop deve ter HEALTHCHECK / status operacional dos servicos (web, banco, Ollama,
+   sync, indexador) — visivel ao usuario.
+5. A REINDEXACAO deve ser automatica (ao detectar `:stale`) ou acionavel com seguranca pela UI.
+```
+
+Coerencia: mantem a degradacao graciosa atual (sem indice = sem sugestao por IA, fluxo
+manual segue), mas remove o passo manual e torna o estado dos servicos observavel. Quando
+for implementar, exige diagnostico proprio (provavel addendum ao ADR-021/ADR-011 e ao
+plano de empacotamento desktop).
