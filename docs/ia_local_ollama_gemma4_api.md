@@ -1,111 +1,186 @@
 ***
 
-# 📘 Especificação Técnica de Integração: Módulo LLM (Ollama)
-**Versão:** 1.0.0
-**Data:** [Data de hoje]
-**Propósito:** Documentar os requisitos técnicos para que qualquer aplicação possa integrar-se com o serviço Language Model (LLM) fornecido pelo Ollama, garantindo chamadas padronizadas e tratamento de
-erros robusto.
+# 📘 Especificação Técnica de Integração: Módulo IA Local (Ollama)
+**Versão:** 2.0.0
+**Propósito:** Documentar os requisitos técnicos para o Omni integrar-se com o serviço de IA local (LLM) fornecido pelo **Ollama**, usando o **endpoint nativo** do Ollama, com chamadas padronizadas e tratamento de erro robusto.
+
+> **Correção 2.0.0 (validada contra o ambiente real):** a versão anterior documentava a
+> resposta no formato OpenAI (`choices[0].message.content`). O **endpoint nativo do Ollama
+> (`POST /api/chat`)** — o recomendado para o Omni — **não** usa `choices[]`: o texto vem em
+> **`message.content`**. O formato `choices[]` pertence ao endpoint de **compatibilidade OpenAI**
+> (`/v1/chat/completions`), que **não é** o padrão desta integração. Ver Seção II.
 
 ---
 
 ## 🌐 Sumário Executivo
-Este módulo atua como uma camada de abstração entre a lógica de negócio da Aplicação Principal e o serviço externo do LLM (Ollama). O objetivo é realizar um processamento de linguagem natural avançado,
-desde tarefas simples (gerar texto) até conversas complexas.
+Este módulo é a camada de abstração entre a lógica de negócio do Omni e o serviço de IA local (Ollama). O objetivo é obter **sugestões** de processamento de linguagem natural (ex.: objetivo principal de uma conversa, atividades de 2º nível), sempre como **rascunho** sujeito a confirmação humana.
 
-### Requisitos Pré-requisitos
-1.  **Serviço:** Ollama deve estar rodando localmente ou em um servidor acessível.
-2.  **Protocolo:** Toda comunicação será via **HTTP REST API**.
-3.  **Endpoint Base (Assumido):** `http://localhost:11434/api`
+### Pré-requisitos
+1. **Serviço:** Ollama rodando localmente (ou em host acessível).
+2. **Protocolo:** comunicação via **HTTP REST**.
+3. **Endpoint base (host):** `http://localhost:11434`
+4. **Modelo identificado no ambiente:** **`gemma4:latest`** (confirmado via `ollama list`).
+   - Fixar a tag exata (`gemma4:latest`) por reprodutibilidade; o alias `gemma4` resolve para o mesmo modelo.
+
+### URL configurável por ambiente
+A base do Ollama **deve** ser configurável por variável de ambiente:
+
+```text
+OMNI_OLLAMA_URL   (default: http://localhost:11434)
+```
+
+- **No host (dev nativo):** `http://localhost:11434`.
+- **Dentro do container Docker (omni_web):** o Ollama roda no host, então a URL provável é
+  `http://host.docker.internal:11434` (definir via `OMNI_OLLAMA_URL`).
 
 ---
 
 ## 📡 Seção I: Endpoint e Estrutura de Chamada
 
-Todas as chamadas devem ser do tipo `POST`, pois o cliente está enviando dados para que um processamento seja realizado.
-
-### A. Serviço de Geração de Conteúdo (Recomendado)
-*   **Endpoint:** `/api/chat` (Ideal para diálogos e prompts contextuais).
+### A. Endpoint recomendado (nativo do Ollama)
+*   **Endpoint:** `POST http://localhost:11434/api/chat`
 *   **Método HTTP:** `POST`
-*   **Header Obrigatório:** `Content-Type: application/json`
+*   **Header obrigatório:** `Content-Type: application/json`
 
-### B. Exemplo de Payload JSON de Entrada (O "Contrato" de Dados)
-A aplicação consumidora deve montar um corpo de requisição seguindo esta estrutura exata:
+> Este é o **endpoint nativo** do Ollama e o **padrão recomendado** para o Omni.
+> A montagem de URL completa deve derivar de `OMNI_OLLAMA_URL` + `/api/chat`.
+
+### B. Payload mínimo de entrada (validado)
+A aplicação consumidora deve montar o corpo da requisição assim:
 
 ```json
 {
-  "model": "nome_do_modelo",
+  "model": "gemma4:latest",
   "messages": [
-    { "role": "user", "content": "Seu prompt aqui. Qual o tema?" }
+    { "role": "user", "content": "Seu prompt aqui." }
   ],
-  "stream": false,         // Deve ser 'false' para processar tudo de uma vez
+  "stream": false,
+  "format": "json",
   "options": {
-    "temperature": 0.7,   // Controlo de criatividade (0.0 a 1.0)
-    "num_predict": 2048   // Limite máximo de tokens
+    "temperature": 0.7,
+    "num_predict": 2048
   }
 }
 ```
 
-#### Detalhamento dos Campos Obrigatórios:
+#### Detalhamento dos campos:
 
-| Campo | Tipo de Dado | Descrição | Validação | Exemplo |
-| :--- | :--- | :--- | :--- | :--- |
-| `model` | String | Nome do modelo LLM a ser utilizado (Ex: Llama 3). | Deve corresponder a um modelo instalado no Ollama. | `"llama3"` |
-| `messages` | Array/Array de Objetos | Histórico de conversação ou prompt inicial. A estrutura é crucial: deve conter objetos com `role` e `content`. | Obrigatório; deve ter pelo menos uma mensagem do
-tipo "user". | `[{"role": "user", "content": "Olá!"}]` |
-| `stream` | Boolean | Define se a resposta será transmitida em tempo real (streaming). **Para o nosso consumo, deve ser sempre `false`.** | `Boolean` | `false` |
+| Campo | Tipo | Descrição | Obrigatório |
+| :--- | :--- | :--- | :--- |
+| `model` | String | Nome/tag do modelo. Deve existir no Ollama (`ollama list`). Ex.: `"gemma4:latest"`. | Sim |
+| `messages` | Array de objetos | Histórico/prompt. Cada item tem `role` (`user`/`assistant`/`system`) e `content`. Deve haver ao menos uma mensagem `user`. | Sim |
+| `stream` | Boolean | Para o consumo do Omni deve ser **sempre `false`** (resposta única, não streaming). | Sim |
+| `format` | String | **Opcional.** `"json"` força o modelo a responder JSON válido — recomendado quando o Omni espera um contrato estruturado (ex.: lista de atividades). | Não |
+| `options` | Objeto | **Opcional.** Parâmetros de geração: `temperature` (criatividade), `num_predict` (limite de tokens), etc. | Não |
 
 ---
 
-## ⚙️ Seção II: Processamento e Resposta Esperada
+## ⚙️ Seção II: Resposta nativa esperada (`/api/chat`)
 
-### A. Estrutura do Payload de Saída
-Após a requisição bem-sucedida, o Ollama retornará um JSON que deve ser analisado para extrair *apenas* o conteúdo gerado pelo modelo.
+### A. Estrutura real do payload de saída
+Numa requisição bem-sucedida ao **endpoint nativo**, o Ollama retorna um JSON com o texto em **`message.content`** (confirmado no ambiente real):
 
 ```json
 {
-  "model": "llama3",
-  "created_at": "...",
-  "done": true,             // Indica se a geração está completa (true)
-  "sem": 0,
-  "total_duration": 123456789, // Em nanossegundos
-  "usage": { ... },         // Dados de token usado
-  "choices": [              // Array com as opções/escolhas geradas.
-    {
-      "index": 0,
-      "message": {           // O objeto que contém o texto final.
-        "role": "assistant",
-        "content": "Este é o conteúdo de resposta esperado pelo usuário." // <--- ESTE É O DADO CRÍTICO!
-      },
-      "finish_reason": "stop"
-    }
-  ]
+  "model": "gemma4:latest",
+  "created_at": "2026-06-25T14:00:00.000Z",
+  "message": {
+    "role": "assistant",
+    "content": "Este é o conteúdo de resposta gerado pelo modelo."
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 123456789,
+  "load_duration": 98765432,
+  "prompt_eval_count": 42,
+  "eval_count": 128
 }
 ```
 
-### B. Etapa de Processamento Obrigatória (Desserialização)
-A aplicação consumidora deve realizar os seguintes passos na ordem:
-1. Receber o objeto JSON bruto da API.
-2. Acessar o array `choices`.
-3. Acessar o primeiro elemento (`[0]`).
-4. Extrair o texto do campo `content` dentro de `message`.
+Campos nativos relevantes:
 
-**O resultado final esperado pelo resto do sistema é apenas o *texto puro* contido no campo `content`.**
+| Campo | Descrição |
+| :--- | :--- |
+| `message.role` | Papel da mensagem gerada (`"assistant"`). |
+| `message.content` | **Texto final gerado — o dado crítico a extrair.** |
+| `done` | `true` quando a geração terminou. |
+| `done_reason` | Motivo do término (ex.: `"stop"`). |
+| `total_duration` | Tempo total (nanossegundos). |
+| `load_duration` | Tempo de carga do modelo (nanossegundos) — alto na **primeira** chamada (carga fria). |
+| `prompt_eval_count` | Tokens avaliados do prompt. |
+| `eval_count` | Tokens gerados na resposta. |
+
+### B. Desserialização correta (nativo)
+A aplicação consumidora deve:
+1. Receber o JSON bruto de `/api/chat`.
+2. Acessar o objeto **`message`**.
+3. Extrair o texto de **`message.content`**.
+4. (Quando usar `format: "json"`) fazer parse do JSON contido em `message.content` e validar o contrato esperado.
+
+> ⚠️ **NÃO** extrair de `choices[0].message.content`: esse caminho **não existe** na resposta
+> nativa `/api/chat`. O resultado esperado pelo resto do sistema é o **texto puro** em
+> `message.content` (ou o objeto JSON desserializado dele, quando `format: "json"`).
+
+### C. Sobre `/v1/chat/completions` (compatibilidade OpenAI — NÃO recomendado aqui)
+O Ollama também expõe um endpoint de **compatibilidade OpenAI** em `POST /v1/chat/completions`.
+**Apenas nesse modo** a resposta vem no envelope `choices[0].message.content`.
+
+- Este **não** é o padrão recomendado para esta integração do Omni.
+- A implementação do Omni deve falar com o **endpoint nativo `/api/chat`** e ler `message.content`.
+- Caso, no futuro, se opte pelo modo de compatibilidade, **trocar o parsing** para `choices[]`
+  conscientemente — os dois formatos não são intercambiáveis.
 
 ---
 
-## 🛡️ Seção III: Tratamento de Erros e Robustez (MUST READ)
-A capacidade de lidar com falhas determina a qualidade da integração. A aplicação deve estar preparada para estes cenários.
+## ⏱️ Seção III: Timeouts recomendados
 
-| Código HTTP | Tipo de Falha | Causa Provável | Ação Obrigatória do Agente/Aplicação | Mensagem ao Usuário Final |
-| :---: | :--- | :--- | :--- | :--- |
-| `503` | Serviço Indisponível | Ollama não está rodando, ou a porta foi bloqueada. | Tentar reconectar após um tempo definido (Ex: Retry 3 vezes com intervalo de 5s). Se falhar em todas as tentativas,
-avisar o administrador. | "Serviço de Inteligência Artificial indisponível. Verifique se o módulo LLM está ativo." |
-| `400` | Bad Request (Requisição Inválida) | O payload enviado está mal formatado ou um campo obrigatório está faltando (ex: `model`). | **Não retentar a chamada.** Logar o erro de validação. Corrigir a
-lógica interna que montou o JSON. | "Erro na requisição para IA. Por favor, contate o suporte." |
-| `429` | Too Many Requests | O limite de taxa (rate limiting) do servidor foi excedido. | Implementar uma **fila** de processamento e aguardar um período maior antes da próxima tentativa (Backoff). |
-"Estamos sob alta demanda. Pedimos que aguarde um momento e tente novamente." |
-| Timeout (Não HTTP Code) | Excedeu o tempo limite. | O LLM demorou demais para gerar a resposta. | Implementar lógica de `Retry` com *exponential backoff* (a cada falha, espera-se mais tempo). Se
-persistir, tratar como falha 503. | "O processamento da requisição está lento. Pode levar um pouco mais." |
+| Fase | Recomendação | Racional |
+| :--- | :--- | :--- |
+| Conexão (open) | **2–3 s** | Detecta rápido o servidor fora do ar (Ollama parado/porta bloqueada). |
+| Leitura (read) — 1ª chamada | **até 120 s** | A **carga fria** do `gemma4:latest` (~9.6 GB) é cara (`load_duration` alto). |
+| Leitura (read) — chamadas seguintes | menor (ex.: 20–30 s) | Com o modelo já residente, a geração é mais rápida. |
+
+Opcional: usar `keep_alive` para manter o modelo carregado entre chamadas e reduzir a latência subsequente.
 
 ---
-***Este documento deve ser anexado ao repositório de código do módulo de Backend/Integração. Ele é o guia oficial para qualquer desenvolvedor que precise consumir o serviço LLM.***
+
+## 🛡️ Seção IV: Tratamento de erro e degradação segura (MUST READ)
+
+A falha da IA **não pode** comprometer o fluxo de produto. Regras obrigatórias:
+
+```text
+- A Triagem manual continua funcionando normalmente sem a IA.
+- Erro/indisponibilidade do Ollama NÃO bloqueia a tela nem estoura exceção para o usuário.
+- Resposta inválida, vazia ou fora do contrato vira "sem sugestão" (degradação graciosa).
+```
+
+| Cenário | Causa provável | Ação da aplicação | Mensagem ao usuário |
+| :--- | :--- | :--- | :--- |
+| Conexão recusada / timeout de conexão | Ollama parado ou porta bloqueada | Tratar como **IA indisponível**; seguir no fluxo manual. Sem retry agressivo dentro da requisição da tela. | "Sugestão por IA indisponível no momento. Continue pela Triagem manual." |
+| Timeout de leitura | Carga fria/geração lenta | Encerrar como "sem sugestão" (ou oferecer tentar de novo). Nunca travar a tela. | "A IA demorou para responder. Tente novamente em instantes." |
+| Resposta não-JSON / fora do contrato | Modelo devolveu texto inesperado | Descartar como **"sem sugestão"**; logar (redigido) para auditoria. | "Não foi possível interpretar a sugestão da IA." |
+| HTTP 400 | Payload malformado (ex.: falta `model`) | **Não retentar**; logar e corrigir a montagem do JSON. | "Erro interno ao consultar a IA." |
+
+---
+
+## 📐 Seção V: Regras de produto (valem para toda a integração)
+
+```text
+1. A IA local SUGERE; o humano CONFIRMA.
+2. Sugestão da IA vira NO MÁXIMO um rascunho (revisável: confirmar/descartar/reabrir).
+3. Nenhuma sugestão cria Task automaticamente.
+4. Nenhuma sugestão cria TimeEntry automaticamente.
+5. Nenhuma sugestão altera ConversationLink automaticamente.
+6. A integração deve ser ISOLADA em adaptador/serviço (a Triagem não acopla ao provedor de IA).
+7. Prompt e resposta devem ser AUDITÁVEIS (log redigido, sem vazar PII).
+8. Falha da IA NÃO bloqueia Triagem, criação/vínculo de tarefa nem apuração.
+9. UI e documentação em PT-BR.
+```
+
+Coerência com `docs/PB-020_TRIAGEM_CONVERSAS_REQUISITOS.md` (§2, §9 e bloco "IA LOCAL"):
+a IA entra como **camada de sugestão** sobre o fluxo existente; **cliente sugerido por IA**
+continua diferente de **cliente confirmado** (a confirmação humana prevalece).
+
+---
+
+***Este documento é o guia oficial de consumo do serviço de IA local (Ollama) pelo Omni. Registro documental — nenhuma implementação (adaptador/serviço/chamada) é feita por este doc.***
