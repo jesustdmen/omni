@@ -68,9 +68,14 @@
             <% end %>
           </div>
           <div class="triage-row__actions">
-            <%# Ações reaproveitam telas existentes; nenhuma decisão automática aqui. %>
+            <%# Ações reaproveitam telas existentes; nenhuma decisão automática aqui.
+                Criar tarefa leva o cliente CONFIRMADO (nunca o só sugerido). %>
             <% unless t.linked? %>
-              <%= link_to "Criar tarefa", new_conversation_task_path(c, return_to: triage_path(state: @state)), class: "btn btn--primary btn--sm" %>
+              <%= link_to "Criar tarefa",
+                    new_conversation_task_path(c,
+                      client_id: t.client_confirmed? ? t.client&.id : nil,
+                      return_to: triage_path(state: @state)),
+                    class: "btn btn--primary btn--sm" %>
             <% end %>
             <%= link_to "Abrir / triar", conversation_path(c, mode: "triage", return_to: triage_path(state: @state)), class: "btn btn--outline btn--sm" %>
           </div>

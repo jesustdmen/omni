@@ -132,19 +132,49 @@
       <% end %>
     </div>
 
-    <%# CTAs reaproveitam o fluxo existente (sem criar tarefa evoluída aqui). %>
-    <div class="triage-detail__cta">
-      <% unless @has_primary %>
-        <%= link_to "Criar tarefa desta conversa", new_conversation_task_path(@conversation, return_to: request.fullpath),
-              class: "btn btn--primary" %>
+    <%# Ações conforme o estado real do vínculo (fonte: ConversationLink). %>
+    <div class="card">
+      <div class="subhead"><h2>Tarefa</h2></div>
+      <% primary_link = @links.find { |l| l.link_type == "primary" } %>
+      <% if primary_link %>
+        <%# Já vinculada: mostra a tarefa e oferece abrir — não sugere criar do zero. %>
+        <p>
+          Vinculada a <%= link_to task_code_label(primary_link.task), primary_link.task %>
+          <span class="muted">(<%= primary_link.task.client.name %>)</span>.
+        </p>
+        <div class="triage-detail__cta">
+          <%= link_to "Abrir tarefa", primary_link.task, class: "btn btn--primary btn--sm" %>
+        </div>
+      <% else %>
+        <%# Não vinculada: criar tarefa (com cliente/projeto CONFIRMADO, se houver) ou vincular a existente. %>
+        <p class="muted">
+          Esta conversa ainda não tem tarefa primária.
+          <% if @triage.client_confirmed? %>
+            A tarefa nascerá com o cliente confirmado <strong><%= @triage.client.name %></strong><% if @triage.confirmed_project %> e o projeto <strong><%= @triage.confirmed_project.name %></strong><% end %>.
+          <% elsif @triage.client %>
+            Há um cliente <em>sugerido</em> (<%= @triage.client.name %>) — confirme acima para usá-lo na tarefa.
+          <% end %>
+        </p>
+        <div class="triage-detail__cta">
+          <%= link_to "Criar tarefa desta conversa",
+                new_conversation_task_path(@conversation,
+                  client_id: @triage.client_confirmed? ? @triage.client&.id : nil,
+                  project_id: @triage.confirmed_project&.id,
+                  return_to: request.fullpath),
+                class: "btn btn--primary" %>
+          <%= link_to "Vincular a tarefa existente", "#vincular-tarefa", class: "btn btn--outline btn--sm" %>
+        </div>
       <% end %>
+    </div>
+
+    <div class="triage-detail__cta">
       <%= link_to "Voltar", (@return_to.presence || triage_path), class: "btn btn--outline btn--sm" %>
     </div>
   </aside>
 </div>
 
-<%# Vínculos da conversa (reaproveita a mesma seção do show normal). %>
-<div class="subhead"><h2>Vínculos</h2></div>
+<%# Vínculos da conversa (fonte: ConversationLink — mesma seção do show normal). %>
+<div class="subhead" id="vincular-tarefa"><h2>Vínculos</h2></div>
 <% if @links.any? %>
   <table>
     <thead>

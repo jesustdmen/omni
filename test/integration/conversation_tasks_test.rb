@@ -92,4 +92,32 @@ class ConversationTasksTest < ActionDispatch::IntegrationTest
     post conversation_tasks_path(@conv), params: { task: { client_id: @client.id, title: "X", type: "support" } }
     assert_redirected_to new_user_session_path
   end
+
+  # ── Contexto da Triagem: pré-preenchimento de cliente/projeto confirmado ──
+
+  test "new pré-preenche o cliente confirmado vindo por parâmetro" do
+    get new_conversation_task_path(@conv, client_id: @client.id)
+    assert_response :success
+    assert_select "select[name=?] option[selected][value=?]", "task[client_id]", @client.id.to_s
+  end
+
+  test "new pré-preenche cliente e projeto confirmados" do
+    proj = @client.projects.create!(name: "ERP", status: "planning")
+    get new_conversation_task_path(@conv, client_id: @client.id, project_id: proj.id)
+    assert_select "select[name=?] option[selected][value=?]", "task[client_id]", @client.id.to_s
+    assert_select "select[name=?] option[selected][value=?]", "task[project_id]", proj.id.to_s
+  end
+
+  test "new ignora client_id inexistente (não confia cegamente no parâmetro)" do
+    get new_conversation_task_path(@conv, client_id: SecureRandom.uuid)
+    assert_response :success
+    assert_select "select[name=?] option[selected]", "task[client_id]", count: 0
+  end
+
+  test "criar tarefa a partir da conversa NÃO cria TimeEntry" do
+    assert_no_difference -> { TimeEntry.count } do
+      post conversation_tasks_path(@conv),
+           params: { task: { client_id: @client.id, title: "T", type: "support", status: "todo" } }
+    end
+  end
 end

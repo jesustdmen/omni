@@ -8,7 +8,9 @@ class ConversationTasksController < ApplicationController
     authorize @conversation, :show?
     return redirect_with_primary_alert if conversation_has_primary?
 
-    @task = Task.new(title: suggested_title)
+    # Contexto da Triagem: pré-preenche cliente/projeto CONFIRMADO (decisão humana),
+    # nunca o apenas sugerido. Valores chegam por param e só são aceitos se existirem.
+    @task = Task.new(title: suggested_title, client_id: prefill_client_id, project_id: prefill_project_id)
   end
 
   def create
@@ -67,6 +69,18 @@ class ConversationTasksController < ApplicationController
 
   def suggested_title
     @conversation.title.presence || "Conversa #{@conversation.thread_id.to_s.first(8)}"
+  end
+
+  # Pré-preenchimento do form a partir do contexto da Triagem. Aceita só id existente
+  # (ignora valor inválido — sem confiar cegamente no param).
+  def prefill_client_id
+    id = params[:client_id].presence
+    id if id && Client.exists?(id: id)
+  end
+
+  def prefill_project_id
+    id = params[:project_id].presence
+    id if id && Project.exists?(id: id)
   end
 
   def task_params

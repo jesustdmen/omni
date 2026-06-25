@@ -124,4 +124,43 @@ class ConversationTriageDetailTest < ActionDispatch::IntegrationTest
     # form de vínculo existente
     assert_select "form[action=?]", conversation_links_path(c)
   end
+
+  # ── Ações por estado real do vínculo ──
+
+  test "conversa NÃO vinculada mostra criar tarefa e vincular a existente" do
+    c = conversation(title: "Sem tarefa")
+    get conversation_path(c, mode: "triage")
+    assert_select "a", text: "Criar tarefa desta conversa"
+    assert_select "a", text: "Vincular a tarefa existente"
+    assert_match(/ainda não tem tarefa primária/, response.body)
+  end
+
+  test "conversa VINCULADA mostra a tarefa e ação de abrir, sem oferecer criar do zero" do
+    c = conversation(title: "Vinculada")
+    task = Client.create!(name: "ACME").tasks.create!(title: "Tarefa T", type: "support")
+    ConversationLink.create!(conversation: c, task: task, link_type: "primary", origin: "manual")
+    get conversation_path(c, mode: "triage")
+    assert_match(/Vinculada a/, response.body)
+    assert_select "a[href=?]", task_path(task), text: "Abrir tarefa"
+    assert_select "a", text: "Criar tarefa desta conversa", count: 0
+  end
+
+  test "cliente confirmado é levado ao criar tarefa (param client_id)" do
+    c = conversation(title: "Com confirmado")
+    client = Client.create!(name: "Confirmado ACME")
+    ConversationTriageDecision.create!(conversation: c, status: "open", confirmed_client: client)
+    get conversation_path(c, mode: "triage")
+    assert_select "a[href=?]", new_conversation_task_path(c, client_id: client.id, return_to: conversation_path(c, mode: "triage"))
+    assert_match(/cliente confirmado/, response.body)
+  end
+
+  test "cliente apenas sugerido NÃO vai como confirmado no criar tarefa" do
+    c = conversation(workspace_hash: "wh-sug", title: "Só sugerido")
+    WorkspaceMap.create!(workspace_hash: "wh-sug", folder: "/erp/sara")
+    Client.create!(name: "Sugerida SA", workspace_paths: [ "/erp/sara" ])
+    get conversation_path(c, mode: "triage")
+    # o link de criar tarefa NÃO carrega client_id (sugestão não é confirmação)
+    assert_select "a[href=?]", new_conversation_task_path(c, return_to: conversation_path(c, mode: "triage"))
+    assert_match(/confirme acima para usá-lo/, response.body)
+  end
 end
