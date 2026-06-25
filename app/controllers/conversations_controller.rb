@@ -55,6 +55,8 @@ class ConversationsController < ApplicationController
     @triage = ConversationTriage.derive(@conversation)        # estado efetivo (derivado + persistido)
     @timeline = ConversationTimeline.call(conversation: @conversation) # gaps (do índice ts)
     @clients = Client.ordered # opções p/ confirmar cliente (decisão humana)
+    @activity_drafts = @conversation.activity_drafts.ordered # atividades de 2º nível (rascunhos)
+    @new_activity_draft = @conversation.activity_drafts.new # form de nova atividade
   end
 
   # F5.1 — leitura lazy read-only dos turnos (ADR-021/ADR-012).

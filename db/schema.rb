@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_25_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -90,6 +90,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_120000) do
     t.check_constraint "end_date IS NULL OR end_date >= start_date", name: "contracts_period_check"
     t.check_constraint "modality::text = 'hourly'::text", name: "contracts_modality_check"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'active'::character varying, 'suspended'::character varying, 'ended'::character varying]::text[])", name: "contracts_status_check"
+  end
+
+  create_table "conversation_activity_drafts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.text "source", default: "manual", null: false
+    t.text "status", default: "draft", null: false
+    t.text "title", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_id"
+    t.index ["conversation_id", "position"], name: "idx_activity_drafts_conversation_position"
+    t.index ["conversation_id"], name: "index_conversation_activity_drafts_on_conversation_id"
+    t.index ["created_by_id"], name: "index_conversation_activity_drafts_on_created_by_id"
+    t.index ["updated_by_id"], name: "index_conversation_activity_drafts_on_updated_by_id"
+    t.check_constraint "source = 'manual'::text", name: "conversation_activity_drafts_source_check"
+    t.check_constraint "status = ANY (ARRAY['draft'::text, 'confirmed'::text, 'discarded'::text])", name: "conversation_activity_drafts_status_check"
   end
 
   create_table "conversation_links", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -489,6 +508,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_120000) do
   add_foreign_key "contracts", "clients", on_delete: :restrict
   add_foreign_key "contracts", "projects", on_delete: :nullify
   add_foreign_key "contracts", "provider_companies", on_delete: :restrict
+  add_foreign_key "conversation_activity_drafts", "conversations", on_delete: :cascade
+  add_foreign_key "conversation_activity_drafts", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "conversation_activity_drafts", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "conversation_links", "conversations", on_delete: :cascade
   add_foreign_key "conversation_links", "tasks", on_delete: :cascade
   add_foreign_key "conversation_links", "users", column: "created_by_id", on_delete: :nullify

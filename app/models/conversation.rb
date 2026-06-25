@@ -7,6 +7,9 @@ class Conversation < ApplicationRecord
   # PB-020 (Triagem persistida mínima) — decisão humana 1:1 (status/cliente/projeto confirmado).
   # FK ON DELETE CASCADE no banco; dependent: :destroy mantém o ORM coerente.
   has_one :triage, class_name: "ConversationTriageDecision", dependent: :destroy
+  # PB-020 (Triagem) — atividades de 2º nível (rascunhos manuais). FK CASCADE no banco;
+  # delete_all: itens sem callbacks, removidos junto com a conversa.
+  has_many :activity_drafts, class_name: "ConversationActivityDraft", dependent: :delete_all
 
   validates :thread_id, presence: true, uniqueness: true
   validates :message_count, :user_turns, :assistant_turns, :tool_calls,

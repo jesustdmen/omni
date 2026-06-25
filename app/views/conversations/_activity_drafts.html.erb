@@ -1,0 +1,78 @@
+<%# PB-020 (Triagem) — atividades de 2º nível (rascunhos manuais). Sem JS: edição
+    inline via <details>; status por button_to. Tudo PT-BR. Não cria tarefa/TimeEntry. %>
+<div class="card activity-drafts" id="atividades">
+  <div class="subhead">
+    <h2>Atividades da conversa</h2>
+    <span class="muted">2º nível · rascunhos revisáveis</span>
+  </div>
+
+  <p class="muted activity-drafts__note">
+    <% if primary_link %>
+      Estas atividades são <strong>rascunhos da conversa</strong> — não viram subtarefa/checklist
+      da tarefa <%= link_to task_code_label(primary_link.task), primary_link.task %> automaticamente.
+    <% else %>
+      Esta conversa ainda não tem tarefa; as atividades ficam como <strong>preparação da Triagem</strong>.
+    <% end %>
+  </p>
+
+  <% if drafts.any? %>
+    <ul class="activity-drafts__list">
+      <% drafts.each do |draft| %>
+        <li class="activity-draft activity-draft--<%= draft.status %>">
+          <div class="activity-draft__head">
+            <span class="activity-draft__title"><%= draft.title %></span>
+            <span class="badge badge--<%= draft.confirmed? ? "success" : (draft.discarded? ? "neutral" : "info") %>"><%= draft.status_label %></span>
+          </div>
+          <% if draft.description.present? %>
+            <p class="activity-draft__desc muted"><%= draft.description %></p>
+          <% end %>
+
+          <div class="activity-draft__actions">
+            <% unless draft.confirmed? %>
+              <%= button_to "Confirmar", conversation_activity_draft_path(conversation, draft),
+                    method: :patch, params: { activity_draft: { status: "confirmed" } },
+                    form_class: "inline", class: "btn btn--primary btn--sm" %>
+            <% end %>
+            <% unless draft.discarded? %>
+              <%= button_to "Descartar", conversation_activity_draft_path(conversation, draft),
+                    method: :patch, params: { activity_draft: { status: "discarded" } },
+                    form_class: "inline", class: "btn btn--ghost btn--sm" %>
+            <% end %>
+            <% unless draft.draft? %>
+              <%= button_to "Reabrir", conversation_activity_draft_path(conversation, draft),
+                    method: :patch, params: { activity_draft: { status: "draft" } },
+                    form_class: "inline", class: "btn btn--outline btn--sm" %>
+            <% end %>
+
+            <%# Edição inline (sem JS): <details> alterna exibição ↔ formulário. %>
+            <details class="activity-draft__edit">
+              <summary class="btn btn--outline btn--sm">Editar</summary>
+              <%= form_with url: conversation_activity_draft_path(conversation, draft), method: :patch do |f| %>
+                <div><%= label_tag "edit_title_#{draft.id}", "Título" %><br>
+                  <%= text_field_tag "activity_draft[title]", draft.title, id: "edit_title_#{draft.id}" %></div>
+                <div><%= label_tag "edit_desc_#{draft.id}", "Descrição" %><br>
+                  <%= text_area_tag "activity_draft[description]", draft.description, id: "edit_desc_#{draft.id}", rows: 2 %></div>
+                <%= submit_tag "Salvar", class: "btn btn--primary btn--sm" %>
+              <% end %>
+            </details>
+
+            <%= button_to "Remover", conversation_activity_draft_path(conversation, draft),
+                  method: :delete, form_class: "inline", class: "btn btn--ghost btn--sm",
+                  data: { turbo_confirm: "Remover esta atividade?" } %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">Nenhuma atividade registrada ainda.</p>
+  <% end %>
+
+  <%# Criar atividade manual. %>
+  <%= form_with url: conversation_activity_drafts_path(conversation), method: :post, class: "activity-draft__new" do |f| %>
+    <div><%= label_tag :new_activity_title, "Nova atividade" %><br>
+      <%= text_field_tag "activity_draft[title]", nil, id: :new_activity_title, placeholder: "Ex.: Validar 142 notas de entrada" %></div>
+    <div><%= label_tag :new_activity_desc, "Descrição (opcional)" %><br>
+      <%= text_area_tag "activity_draft[description]", nil, id: :new_activity_desc, rows: 2 %></div>
+    <%= submit_tag "Adicionar atividade", class: "btn btn--primary btn--sm" %>
+  <% end %>
+</div>

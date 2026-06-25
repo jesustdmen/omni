@@ -44,6 +44,8 @@ Rails.application.routes.draw do
     resources :tasks, controller: "conversation_tasks", only: %i[new create]
     # PB-020 (Triagem persistida mínima) — decisão humana 1:1 (status + cliente/projeto confirmado).
     resource :triage, controller: "conversation_triages", only: %i[update]
+    # PB-020 (Triagem) — atividades de 2º nível (rascunhos manuais da conversa).
+    resources :activity_drafts, controller: "conversation_activity_drafts", only: %i[create update destroy]
   end
   # PB-013 — busca global (read-only) sobre os dados funcionais.
   get "search", to: "search#index"
