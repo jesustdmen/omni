@@ -492,3 +492,40 @@ Onde os termos internos podem ficar em ingles (sem vazar):
 - rota tecnica aninhada `conversation_triage` (PATCH);
 - campos de simbolo do Struct Result (state/persisted_status/...), expostos via rotulo PT-BR.
 ```
+
+---
+
+## IA LOCAL (Gemma4 via Ollama) — PREMISSA FUTURA — 2026-06-25
+
+> Detalha a regra geral do §2 ("IA local pode ajudar, mas nao decidir sozinha") com o
+> ambiente real informado pelo PO. **Registro documental apenas — NAO faz parte de
+> nenhuma fase atual; nada de Ollama/adapter/prompt/parsing foi implementado.**
+
+Premissa informada pelo PO:
+
+```text
+1. O PO informou que ha Gemma4 configurado localmente via Ollama.
+2. Em fase FUTURA, essa IA local podera sugerir:
+   - objetivo principal da conversa;
+   - atividades de 2o nivel;
+   - possivel resumo da tarefa;
+   - possiveis descricoes de apontamento.
+3. A IA local NAO decide nada automaticamente.
+4. Toda sugestao precisa de CONFIRMACAO HUMANA.
+5. A integracao com Ollama/Gemma4 NAO faz parte da fase atual.
+```
+
+Quando for implementada, a integracao tera **diagnostico proprio** cobrindo, no minimo:
+
+```text
+- confirmar o nome/tag REAL do modelo no ambiente local (ex.: `ollama list`) antes de codar;
+- adaptador/servico ISOLADO (porta/cliente dedicado), sem acoplar Triagem ao provedor de IA;
+- timeout, tratamento de erro e fallback explicitos;
+- falha da IA NAO bloqueia Triagem, criacao/vinculo de tarefa nem apuracao
+  (degradacao graciosa: sem sugestao, fluxo manual segue normal);
+- nenhuma sugestao vira `TimeEntry` sem validacao humana (reforca §9.6 do contrato futuro).
+```
+
+Coerencia com os requisitos primordiais: a IA entra como **camada de sugestao** sobre o
+fluxo ja existente (criar/vincular tarefa, decisao de triagem); **cliente sugerido por IA
+continua diferente de cliente confirmado** (confirmacao humana prevalece — ver D0/§9).
