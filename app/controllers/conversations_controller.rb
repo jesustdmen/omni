@@ -39,9 +39,22 @@ class ConversationsController < ApplicationController
     @tasks = Task.includes(:client).order(:title)
     @return_to = return_to_param # PB-013b — origem (lista/busca) p/ "Voltar".
     load_turns
+    load_triage if triage_mode?
   end
 
   private
+
+  # PB-020 (Triagem) — modo triagem da conversa via ?mode=triage (vindo da Inbox).
+  # Read-only: estado derivado, cliente sugerido e gaps visuais; sem persistência.
+  def triage_mode?
+    params[:mode] == "triage"
+  end
+  helper_method :triage_mode?
+
+  def load_triage
+    @triage = ConversationTriage.derive(@conversation)        # estado + cliente sugerido
+    @timeline = ConversationTimeline.call(conversation: @conversation) # gaps (do índice ts)
+  end
 
   # F5.1 — leitura lazy read-only dos turnos (ADR-021/ADR-012).
   # b1: conversa pessoal (ADR-013) não chama o loader — conteúdo oculto nesta fatia.

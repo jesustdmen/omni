@@ -49,7 +49,7 @@
         <li class="triage-row">
           <div class="triage-row__main">
             <%= status_badge(c.source) %>
-            <%= link_to (c.title.presence || "— sem título —"), conversation_path(c, return_to: triage_path(state: @state)),
+            <%= link_to (c.title.presence || "— sem título —"), conversation_path(c, mode: "triage", return_to: triage_path(state: @state)),
                   class: "triage-row__title" %>
             <span class="badge badge--neutral"><%= t.label %></span>
           </div>
@@ -66,7 +66,7 @@
             <% unless t.linked? %>
               <%= link_to "Criar tarefa", new_conversation_task_path(c, return_to: triage_path(state: @state)), class: "btn btn--primary btn--sm" %>
             <% end %>
-            <%= link_to "Abrir / triar", conversation_path(c, return_to: triage_path(state: @state)), class: "btn btn--outline btn--sm" %>
+            <%= link_to "Abrir / triar", conversation_path(c, mode: "triage", return_to: triage_path(state: @state)), class: "btn btn--outline btn--sm" %>
           </div>
         </li>
       <% end %>
@@ -90,7 +90,7 @@
       <% @no_client.first(10).each do |c| %>
         <li class="triage-row triage-row--compact">
           <%= status_badge(c.source) %>
-          <%= link_to (c.title.presence || "— sem título —"), conversation_path(c, return_to: triage_path),
+          <%= link_to (c.title.presence || "— sem título —"), conversation_path(c, mode: "triage", return_to: triage_path),
                 class: "triage-row__title" %>
           <span class="muted mono"><%= local_date(c.last_ts) %></span>
         </li>

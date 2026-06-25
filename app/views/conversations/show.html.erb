@@ -1,5 +1,11 @@
 <% content_for :title, (@conversation.title.presence || "Conversa") %>
 
+<%# PB-020 (Triagem) — modo triagem (?mode=triage) usa um layout split próprio,
+    reaproveitando os mesmos dados/turnos. Fora do modo triagem, o show normal segue
+    idêntico. %>
+<% if triage_mode? %>
+  <%= render "triage" %>
+<% else %>
 <%# PB-013b — breadcrumb acessível; preserva a origem (lista/busca). %>
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <%= link_to "Conversas", (@return_to.presence || conversations_path) %>
@@ -105,3 +111,4 @@
 </div>
 
 <%= link_to "Voltar", (@return_to.presence || conversations_path), class: "back-link" %>
+<% end %>

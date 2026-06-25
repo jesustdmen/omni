@@ -1,0 +1,144 @@
+<%# PB-020 (Triagem) — modo triagem da conversa (read-only). Split: turnos à
+    esquerda (reusa TurnListComponent), análise/evidências à direita. Sugestões só
+    exibem (confirmar via tarefa); gaps são apenas visuais; sem TimeEntry. %>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <%= link_to "Triagem", triage_path %>
+  <span class="sep">/</span>
+  <span><%= @conversation.title.presence || "— sem título —" %></span>
+</nav>
+
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1><%= @conversation.title.presence || "— sem título —" %></h1>
+    <div class="badge-row">
+      <%= status_badge(@conversation.source) %>
+      <span class="badge badge--neutral"><%= @triage.label %></span>
+      <span class="muted mono">
+        📁 <%= @folder.presence || (@conversation.workspace_hash.present? ? "#{@conversation.workspace_hash.truncate(12)} (órfão)" : "—") %>
+        · <%= local_datetime(@conversation.first_ts) %> → <%= local_datetime(@conversation.last_ts) %>
+        · <%= @conversation.message_count %> msgs · <%= @conversation.tool_calls %> tool calls
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="triage-detail">
+  <%# ── ESQUERDA · timeline/turnos ── %>
+  <section class="triage-detail__timeline">
+    <div class="subhead">
+      <h2 id="conversa">Timeline da conversa</h2>
+      <span class="muted">evidência · não relógio absoluto</span>
+    </div>
+    <% if @turns_hidden_personal %>
+      <p class="muted">Esta conversa é <strong>pessoal</strong>. O conteúdo dos turnos está oculto nesta fase (read-only).</p>
+    <% else %>
+      <%= render Conversations::TurnListComponent.new(
+            result: @turns, conversation: @conversation, page: @turn_page, total_pages: @turn_total_pages,
+            per_page: @turn_per_page, per_page_options: ConversationsController::TURNS_PER_PAGE_OPTIONS) %>
+    <% end %>
+  </section>
+
+  <%# ── DIREITA · análise extraída (read-only) ── %>
+  <aside class="triage-detail__panel">
+    <%# Cliente/projeto sugerido (só exibição; confirmação prática via tarefa). %>
+    <div class="card suggest-block">
+      <div class="suggest-block__head">
+        <h2>Cliente provável</h2>
+        <span class="badge badge--neutral">sugestão</span>
+      </div>
+      <% if @triage.suggested_client %>
+        <p><strong><%= @triage.suggested_client.name %></strong> <span class="muted">(confirmar)</span></p>
+        <p class="muted">via workspace → <span class="mono"><%= @triage.folder %></span> → clients.workspace_paths</p>
+      <% else %>
+        <p class="muted">Sem cliente sugerível pelo workspace. Defina ao criar/vincular a tarefa.</p>
+      <% end %>
+    </div>
+
+    <%# Evidências reais da conversa. %>
+    <div class="card">
+      <div class="subhead"><h2>Evidências</h2></div>
+      <dl class="suggest-kv">
+        <dt>Workspace</dt><dd class="mono"><%= @folder.presence || "—" %></dd>
+        <dt>Hash</dt><dd class="mono"><%= @conversation.workspace_hash.presence || "—" %></dd>
+        <dt>Período</dt><dd><%= local_datetime(@conversation.first_ts) %> → <%= local_datetime(@conversation.last_ts) %></dd>
+        <dt>Turnos (user / assistant)</dt><dd><%= @conversation.user_turns %> / <%= @conversation.assistant_turns %></dd>
+        <dt>Tool calls</dt><dd><%= @conversation.tool_calls %></dd>
+        <dt>Arquivos alterados</dt><dd><%= Array(@conversation.files_changed).join(", ").presence || "—" %></dd>
+      </dl>
+    </div>
+
+    <%# Gaps detectados (apenas visuais; sem classificação nesta fatia). %>
+    <div class="card">
+      <div class="subhead">
+        <h2>Gaps detectados</h2>
+        <span class="muted">&gt; 15 min entre turnos</span>
+      </div>
+      <% if @timeline.any_gaps? %>
+        <ul class="triage-gaps">
+          <% @timeline.gaps.each do |gap| %>
+            <li class="triage-gaps__item">
+              <span class="triage-gaps__dur mono">⊟ <%= duration_label(gap.seconds) %></span>
+              <span class="muted">após turno <%= gap.after_line_no %> · <%= local_time(gap.from_ts) %> → <%= local_time(gap.to_ts) %></span>
+            </li>
+          <% end %>
+        </ul>
+        <p class="muted triage-gaps__note">Gaps são evidência, não pausa automática. Classificação e apuração de tempo entram em fatia futura.</p>
+      <% else %>
+        <p class="muted">Nenhum gap relevante (&gt; 15 min) entre os turnos com horário registrado.</p>
+      <% end %>
+    </div>
+
+    <%# CTAs reaproveitam o fluxo existente (sem criar tarefa evoluída aqui). %>
+    <div class="triage-detail__cta">
+      <% unless @has_primary %>
+        <%= link_to "Criar tarefa desta conversa", new_conversation_task_path(@conversation, return_to: request.fullpath),
+              class: "btn btn--primary" %>
+      <% end %>
+      <%= link_to "Voltar", (@return_to.presence || triage_path), class: "btn btn--outline btn--sm" %>
+    </div>
+  </aside>
+</div>
+
+<%# Vínculos da conversa (reaproveita a mesma seção do show normal). %>
+<div class="subhead"><h2>Vínculos</h2></div>
+<% if @links.any? %>
+  <table>
+    <thead>
+      <tr><th>Tarefa</th><th>Tipo</th><th>Origem</th><th>Por</th><th>Quando</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @links.each do |link| %>
+        <tr>
+          <td><%= link_to task_code_label(link.task), link.task %> <span class="muted">(<%= link.task.client.name %>)</span></td>
+          <td><%= tag.span(link.link_type, class: "badge badge--#{link.link_type == 'primary' ? 'info' : 'neutral'}") %></td>
+          <td><%= link.origin %></td>
+          <td><%= link.created_by&.username || "—" %></td>
+          <td><%= link.created_at&.strftime("%d/%m/%Y %H:%M") %></td>
+          <td><%= button_to "Remover", conversation_link_path(@conversation, link), method: :delete,
+                    form_class: "inline", class: "btn btn--ghost btn--sm",
+                    data: { turbo_confirm: "Remover este vínculo?" } %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="muted">Nenhuma tarefa vinculada a esta conversa ainda.</p>
+<% end %>
+
+<div class="card form-card">
+  <%= form_with url: conversation_links_path(@conversation), method: :post do |f| %>
+    <div>
+      <%= label_tag :task_id, "Tarefa" %><br>
+      <%= select_tag :task_id, options_for_select(@tasks.map { |t| task_select_option(t) }), prompt: "Selecione a tarefa" %>
+    </div>
+    <div>
+      <%= label_tag :link_type, "Tipo de vínculo" %><br>
+      <%= select_tag :link_type, options_for_select([ [ "Primário", "primary" ], [ "Menção", "mention" ] ], "primary") %>
+    </div>
+    <% if @has_primary %>
+      <p class="muted">Já existe um vínculo <strong>primário</strong> nesta conversa — use “Menção” ou remova o primário atual antes.</p>
+    <% end %>
+    <div><%= submit_tag "Vincular tarefa", class: "btn btn--primary" %></div>
+  <% end %>
+</div>

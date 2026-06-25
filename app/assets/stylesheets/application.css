@@ -440,6 +440,22 @@ p { margin: 0 0 12px; }
 .triage-noclient .triage-list { padding: 6px 16px 14px; margin: 0; }
 .triage-note { margin-top: 14px; font-size: 12px; }
 
+/* PB-020 (Triagem) — detalhe da conversa em modo triagem (split). */
+.triage-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 980px) { .triage-detail { grid-template-columns: 1fr; } }
+.triage-detail__timeline { min-width: 0; }
+.triage-detail__panel { display: flex; flex-direction: column; gap: 14px; }
+.suggest-block__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.suggest-block__head h2 { margin: 0; }
+.suggest-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 6px 0 0; }
+.suggest-kv dt { color: var(--tone-neutral-text); font-size: 12.5px; }
+.suggest-kv dd { margin: 0; text-align: right; font-size: 12.5px; }
+.triage-gaps { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.triage-gaps__item { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 6px 9px; border: 1.5px dashed var(--tone-warning-border); border-radius: var(--radius-md, 8px); background: var(--tone-warning-bg); }
+.triage-gaps__dur { font-weight: 700; color: var(--tone-warning-text); }
+.triage-gaps__note { margin-top: 8px; font-size: 11.5px; font-style: italic; }
+.triage-detail__cta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
 /* PB-020a — Apuração de horas (read-only). */
 .wtr-totals { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
 .wtr-row--no-hours { opacity: .7; }

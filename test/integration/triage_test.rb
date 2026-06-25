@@ -1,6 +1,6 @@
 require "test_helper"
 
-# PB-020 (Triagem) — Inbox/Central de Triagem (read-only).
+# PB-020 (Triagem) — Central de Triagem (read-only).
 class TriageTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(username: "u", email: "u@example.com", password: "secret12345")
@@ -46,7 +46,16 @@ class TriageTest < ActionDispatch::IntegrationTest
     WorkspaceMap.create!(workspace_hash: "h-pend", folder: "/sem/dono")
     get triage_path
     assert_select "a[href=?]", new_conversation_task_path(c, return_to: triage_path(state: nil))
-    assert_select "a[href=?]", conversation_path(c, return_to: triage_path(state: nil))
+    # "Abrir / triar" abre o detalhe em modo triagem, preservando o filtro de origem.
+    assert_select "a[href=?]", conversation_path(c, mode: "triage", return_to: triage_path(state: nil)), text: "Abrir / triar"
+  end
+
+  test "Abrir/triar leva ao modo triagem e preserva o return_to do filtro" do
+    c = conversation(workspace_hash: nil, title: "Sem cliente Y") # cai na fila sem filtro
+    get triage_path(state: "noclient")
+    # link de abrir/triar carrega mode=triage e o return_to do filtro de origem
+    expected = conversation_path(c, mode: "triage", return_to: triage_path(state: "noclient"))
+    assert_select "a[href=?]", expected, text: "Abrir / triar"
   end
 
   test "filtro por estado restringe a fila principal" do
