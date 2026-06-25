@@ -191,3 +191,225 @@ Antes de mandar implementacao ao executor, desenhar e aprovar o fluxo da **Triag
 - confirmacao de cliente/projeto;
 - criacao/vinculo de tarefa;
 - relacao entre conversa, atividade sugerida, apontamento sugerido e `TimeEntry`.
+
+---
+
+## CONTRATO FUTURO DA TRIAGEM (registrado em 2026-06-25)
+
+> Este bloco formaliza que o **mockup aprovado** representa a **visao futura** da Triagem. A **entrega atual e propositalmente read-only** (base). Nada aqui promete que ja existe. Serve para que o mockup nao se perca e para guiar as proximas fatias **sem misturar camadas**.
+>
+> Referencia visual aprovada: `_mockup/triage-dash-inbox.jsx`, `_mockup/triage-detail.jsx`, `_mockup/triage-shared.jsx`, `_mockup/spec-hifi.jsx`, `_mockup/Continuity Spec.html` (SOMENTE LEITURA — ADR-019; nao migrar codigo/assets).
+
+## 7. O que JA EXISTE (entregue e publicado)
+
+Publicado em `main` (`68e9e8c` Central read-only + `3ae1484` Detalhe split + `9746aff` matriz):
+
+```text
+- Central de Triagem read-only em /triage.
+- Cards por estado DERIVADO (sem tabela): pendente, sem cliente, cliente sugerido, pessoal, vinculada.
+- Fila principal (prioridade de triagem) e fila propria "sem cliente".
+- Abertura da conversa em modo triagem via /conversations/:id?mode=triage (sem rota nova).
+- Detalhe split read-only: timeline/turnos a esquerda; evidencias a direita.
+- Cliente provavel apenas como SUGESTAO (workspace -> folder -> clients.workspace_paths), com "(confirmar)".
+- Gaps apenas como EVIDENCIA VISUAL (> 15 min, derivados de conversation_turn_refs.ts; sem ler o arquivo).
+- Criacao de tarefa SIMPLES reaproveitando o fluxo existente (ConversationTasksController) e "Vincular" pelo form atual.
+- Navegacao Triagem -> Abrir/triar -> detalhe -> Voltar (return_to preservando o filtro).
+```
+
+Servicos read-only que sustentam o atual: `ConversationTriage` (estado derivado) e `ConversationTimeline` (gaps). Nenhum grava nada.
+
+## 8. O que FALTA do mockup (entregas FUTURAS — nao existe ainda)
+
+Registrado como visao futura, sem prometer implementacao:
+
+```text
+Decisao humana persistida:
+- confirmar cliente/projeto sugerido;
+- marcar conversa como pessoal;
+- ignorar / revisar conversa;
+- estados persistidos de triagem (pendente/cliente sugerido/sem cliente/vinculada/tarefa criada/ignorada/pessoal/revisada).
+
+Cards/filtros/ordenacao avancados:
+- card "Prontas para tarefa";
+- card "Gaps a validar";
+- filtros avancados: estado, workspace, origem, data, confianca;
+- ordenacao por confianca / idade / prioridade;
+- acoes em lote;
+- "Triar em sequencia";
+- exportar fila / resumo.
+
+Analise extraida:
+- objetivo principal sugerido;
+- atividades de 2o nivel sugeridas;
+- criar tarefa + atividades / checklist / subtarefas;
+- vincular conversa a tarefa existente (a partir do detalhe).
+
+Tempo:
+- classificacao de gaps: pausa, almoco, fora do VS Code, continuidade, duvida;
+- validacao de tempo;
+- rascunhos de apontamento;
+- promocao para TimeEntry oficial SOMENTE apos validacao humana.
+
+IA:
+- uso de IA local / Gemma APENAS como sugestao, nunca como decisao automatica.
+```
+
+## 9. Contratos de produto (regras que valem para toda a frente)
+
+```text
+1. Workspace SUGERE cliente/projeto, mas NAO confirma sozinho.
+2. Toda confirmacao relevante deve ser HUMANA e AUDITAVEL.
+3. Gaps NAO viram pausa automaticamente.
+4. Timestamps sao EVIDENCIA, nao relogio absoluto.
+5. Uma conversa pode gerar UMA ou VARIAS atividades/tarefas.
+6. Nada vira TimeEntry oficial sem validacao humana.
+7. A Triagem PRECEDE a Apuracao.
+8. A Apuracao continua INDEPENDENTE de contrato.
+9. Contrato entra apenas na Precificacao.
+```
+
+Estes contratos sao coerentes com o §2 deste documento, com a §5 (armadilhas) e com o ADR-025 (+ addendum 2026-06-24).
+
+## 10. Sequencia recomendada de entregas futuras
+
+```text
+1. Triagem persistida minima:
+   - confirmar cliente/projeto;
+   - marcar pessoal / ignorar / revisado;
+   - refletir estados nos cards/filtros (persistido quando existir; derivado quando ainda nao existir).
+
+2. Criar/vincular tarefa evoluido:
+   - criar tarefa a partir da conversa;
+   - vincular conversa a tarefa existente;
+   - preparar destino para atividades de 2o nivel.
+
+3. Atividades sugeridas:
+   - manual primeiro;
+   - IA / Gemma depois, como sugestao.
+
+4. Validacao de gaps / tempo:
+   - classificar gaps;
+   - gerar rascunhos de apontamento.
+
+5. Promocao para TimeEntry:
+   - somente depois de validacao humana.
+```
+
+---
+
+## DIAGNOSTICO TECNICO — PROXIMA FATIA: "Triagem persistida minima" (2026-06-25)
+
+> Diagnostico read-only (planejamento). **Nao implementado.** Esta secao responde as perguntas tecnicas da fatia 1 da sequencia §10. Escopo-alvo: persistir confirmacao de cliente/projeto, marcacao pessoal e ignorar/revisar; cards/filtros passam a usar estado persistido quando existir e derivado quando nao existir. **Sem** TimeEntry, **sem** apuracao, **sem** classificar gaps, **sem** IA, **sem** acoes em lote (salvo placeholder desabilitado e documentado).
+
+## D1. Qual modelo/tabela existente pode receber a decisao?
+
+```text
+- conversations: ja tem `personal` (boolean) e `user_id`; NAO tem campos de decisao de triagem
+  (sem triaged_at/triaged_by/ignored/reviewed; sem client_id/project_id direto).
+- conversation_links: liga conversa -> TASK (nao a cliente/projeto direto); confirmar cliente
+  na pratica ja acontece ao criar/vincular tarefa (a tarefa carrega client/project).
+- workspace_maps: hash -> folder (origem da SUGESTAO de cliente), nao guarda decisao humana.
+Conclusao: nao ha hoje um lugar adequado para a DECISAO HUMANA de triagem (alem de `personal`).
+```
+
+## D2. Se nao houver lugar adequado, proposta de tabela minima nova
+
+```text
+Proposta: tabela `conversation_triages` (1:1 com conversation; criada on-demand quando ha decisao).
+Racional: nao poluir `conversations` (linha grande, sync reescreve metadados); manter a decisao
+humana isolada e auditavel, sem competir com o estado DERIVADO (que continua valido quando nao ha linha).
+Alternativa mais barata (a avaliar com o PO): apenas colunas em `conversations`
+(ignored_at/reviewed_at/triaged_by_id), reusando `personal` ja existente. Tabela dedicada e a
+recomendacao por auditoria e evolucao (campos futuros de objetivo/atividades nao entram aqui).
+```
+
+## D3. Campos necessarios (tabela minima)
+
+```text
+conversation_triages:
+- id (uuid)
+- conversation_id (uuid, FK ON DELETE CASCADE, UNIQUE)         # 1:1
+- status (text)                                                # allowlist: pending/personal/ignored/reviewed/linked? (ver D4)
+- suggested_client_id confirmado? -> confirmed_client_id (uuid, FK clients, nullable)
+- confirmed_project_id (uuid, FK projects, nullable)           # projeto opcional, coerente com contratos
+- note (text, nullable)                                        # motivo de ignorar/observacao
+- triaged_by_id (bigint, FK users)                             # quem decidiu (auditoria)
+- created_at / updated_at
+Observacao: NAO inclui campos de tempo/atividade/gap/IA (fatias futuras).
+```
+
+## D4. Compatibilidade com o estado derivado atual
+
+```text
+- Regra de leitura: estado EFETIVO = decisao persistida quando existir; senao, ConversationTriage.derive.
+- ConversationTriage ganha um caminho que, dado um indice de decisoes (conversation_id => registro),
+  sobrepoe o derivado — mantendo index_for sem N+1 (1 query a mais para carregar as decisoes da janela).
+- `personal`: hoje boolean em conversations. Decisao: ou continuar usando o boolean como fonte de "pessoal"
+  (e a nova tabela cobre ignored/reviewed/cliente confirmado), ou migrar "pessoal" para o status persistido.
+  Recomendacao: manter `personal` como esta nesta fatia (menor risco) e a tabela cobre o resto.
+- `linked` continua DERIVADO de ConversationLink (nao duplicar verdade): a tabela nao guarda "linked".
+- Cards/filtros: contadores passam a considerar o estado efetivo; filtro por estado idem.
+```
+
+## D5. Como auditar a decisao humana
+
+```text
+- triaged_by_id (quem) + updated_at (quando) na propria linha.
+- status com allowlist (CHECK no banco) — nada de valor livre.
+- confirmacao de cliente/projeto via FK (clients/projects), nunca string solta.
+- opcional (futuro): tabela de eventos/historico se o PO exigir trilha completa; nesta fatia, a linha 1:1 basta.
+```
+
+## D6. Controllers/views/services tocados
+
+```text
+- NOVO model ConversationTriageDecision (ou nome a definir) + migration aditiva (tabela nova).
+- TriageController#index: carregar decisoes da janela e calcular estado efetivo (sem N+1).
+- conversations_controller / nova acao de update de triagem (ex.: PATCH /conversations/:id/triage)
+  OU um controller dedicado triage_decisions — sem duplicar o show.
+- ConversationTriage (service): aceitar override por decisao persistida.
+- Views: /triage (cards/filtros usam estado efetivo) e _triage.html.erb (botoes de confirmar cliente /
+  marcar pessoal / ignorar / revisar — acoes reais, com return_to).
+- Pundit: policy para a decisao (ADR-014: user.present?), skip onde for read-only.
+```
+
+## D7. Testes necessarios
+
+```text
+- model: validacoes (status allowlist, unicidade 1:1, FKs), defaults.
+- service: estado efetivo = persistido quando existe; derivado quando nao existe; index_for sem N+1.
+- integracao: confirmar cliente persiste e reflete no card/filtro; marcar pessoal; ignorar/revisar;
+  conversa pessoal segue com conteudo oculto; nada cria TimeEntry; auditoria (triaged_by) gravada.
+- regressao: estado derivado puro (sem linha) continua identico ao atual.
+```
+
+## D8. Riscos para ConversationLink, Task, Client, Project e TimeEntry
+
+```text
+- ConversationLink: NAO alterar; `linked` permanece derivado dele (evitar dupla verdade).
+- Task: confirmar cliente NAO deve, por si, criar tarefa; criar tarefa segue no fluxo existente.
+- Client/Project: confirmed_client_id/confirmed_project_id sao FKs nullable; excluir cliente/projeto
+  com decisoes apontando exige politica (nullify recomendado) — nao bloquear exclusao por triagem.
+- TimeEntry: INTOCADO nesta fatia (regra de produto: nada vira TimeEntry sem validacao humana).
+- Sync de conversas: a importacao reescreve metadados de `conversations`; a tabela separada de triagem
+  evita que o sync apague decisoes humanas (risco real se a decisao morasse em colunas reescritas).
+```
+
+## D9. Menor implementacao segura
+
+```text
+1. Migration aditiva: tabela conversation_triages (D3) com FK/CHECK/UNIQUE; sem tocar tabelas existentes.
+2. Model + Pundit policy.
+3. Uma acao de update (confirmar cliente / pessoal / ignorar / revisar) com auditoria (triaged_by) e return_to.
+4. ConversationTriage passa a sobrepor o derivado com a decisao persistida (sem N+1).
+5. /triage e _triage.html.erb exibem estado efetivo e as acoes reais; manter "linked" derivado.
+6. NAO incluir: classificacao de gap, atividades, rascunho de apontamento, TimeEntry, IA, lote.
+Resultado: primeira camada de PERSISTENCIA da triagem, isolada, auditavel, reversivel, sem mexer
+em TimeEntry/Apuracao/contrato.
+```
+
+> **Recomendacao do executor:** a fatia e viavel e de baixo risco SE aprovada uma **tabela nova aditiva**
+> (a entrega atual foi deliberadamente "sem tabela"; persistir exige sair desse contrato). Antes de
+> implementar, o PO precisa decidir: (a) tabela dedicada × colunas em `conversations`; (b) se "pessoal"
+> migra para o status persistido ou continua boolean; (c) o conjunto exato de status persistidos;
+> (d) se "confirmar cliente" sem criar tarefa e desejavel ou se a confirmacao deve continuar so via tarefa.
