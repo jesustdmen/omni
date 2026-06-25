@@ -29,10 +29,20 @@ class ConversationActivityDraftTest < ActiveSupport::TestCase
     assert d.errors[:status].any?
   end
 
+  test "aceita source manual e ia_local" do
+    assert draft(source: "manual").valid?
+    assert draft(source: "ia_local").valid?
+  end
+
   test "source fora da lista permitida é rejeitado" do
     d = draft(source: "gemma")
     assert_not d.valid?
     assert d.errors[:source].any?
+  end
+
+  test "rótulos PT-BR das fontes" do
+    assert_equal "Manual", draft(source: "manual").source_label
+    assert_equal "IA local", draft(source: "ia_local").source_label
   end
 
   test "rótulos PT-BR dos status" do

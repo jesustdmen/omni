@@ -3,52 +3,59 @@ require "json"
 module Ai
   # Serviço de SUGESTÃO de atividades de 2º nível a partir de uma conversa.
   #
-  # Monta um prompt em PT-BR com os dados JÁ disponíveis (objeto Conversation +
-  # workspace resolvido), pede ao Ollama uma resposta JSON e devolve uma PROPOSTA
-  # EM MEMÓRIA — nada é gravado.
+  # Usa o CONTEXTO TEXTUAL real e seguro da conversa (Ai::ConversationContextBuilder —
+  # LazyLoader + PiiRedactor) como fonte principal; metadados são só apoio. Pede ao
+  # Ollama uma resposta JSON e devolve uma PROPOSTA EM MEMÓRIA — nada é gravado.
   #
   # Regras de produto (ver docs/PB-020 e docs/ia_local_ollama_gemma4_api.md):
   #   - a IA SUGERE; o humano CONFIRMA;
-  #   - a sugestão vira, no máximo, proposta em memória nesta fatia;
+  #   - extrai atividades EXPLÍCITAS dos trechos; não inventa a partir de contadores;
   #   - NÃO cria/edita ConversationActivityDraft, Task, TimeEntry nem ConversationLink;
-  #   - NÃO lê sessions.jsonl nem qualquer arquivo bruto;
-  #   - falha da IA NÃO levanta exceção para o chamador: retorna resultado vazio com
-  #     `erro` preenchido (degradação graciosa — a Triagem manual segue normal).
+  #   - conversa pessoal / contexto insuficiente ⇒ não chama a IA (resultado sem contexto);
+  #   - falha da IA NÃO levanta exceção: retorna resultado vazio com `erro` preenchido.
   class SuggestConversationActivities
-    # Lista permitida de confiança; valor fora da lista é normalizado para o padrão.
     CONFIANCAS = %w[baixa media alta].freeze
     CONFIANCA_PADRAO = "media"
-    # Teto de atividades de 2º nível por conversa (também reforçado no prompt).
     MAX_ATIVIDADES = 5
 
-    # Uma atividade sugerida (proposta em memória; chave interna em inglês para Struct).
+    # Títulos meta (sobre a própria conversa) que nunca são atividades válidas.
+    PADROES_GENERICOS = [
+      /analis\w+ a conversa/i,
+      /audit\w+ a (comunica|conversa)/i,
+      /revis\w+ da conversa/i,
+      /resum\w+ a conversa/i
+    ].freeze
+
     Atividade = Struct.new(:titulo, :descricao, :evidencia, :confianca, keyword_init: true)
 
-    # Resultado da sugestão. `erro` nil = sucesso; preenchido = falha controlada.
-    Result = Struct.new(:objetivo_principal, :atividades, :resposta_bruta, :erro, keyword_init: true) do
-      def sucesso? = erro.nil?
-      def falhou? = !sucesso?
+    # `erro` preenchido = falha da IA; `sem_contexto` = não havia texto seguro p/ enviar.
+    Result = Struct.new(:objetivo_principal, :atividades, :resposta_bruta, :erro, :sem_contexto, keyword_init: true) do
+      def sucesso? = erro.nil? && !sem_contexto?
+      def falhou? = !erro.nil?
+      def sem_contexto? = sem_contexto == true
       def vazio? = atividades.empty? && objetivo_principal.to_s.strip.empty?
     end
 
-    def self.call(conversation:, client: Ai::OllamaClient.new)
-      new(conversation: conversation, client: client).call
+    def self.call(conversation:, client: Ai::OllamaClient.new, context_builder: Ai::ConversationContextBuilder)
+      new(conversation: conversation, client: client, context_builder: context_builder).call
     end
 
-    def initialize(conversation:, client: Ai::OllamaClient.new)
+    def initialize(conversation:, client: Ai::OllamaClient.new, context_builder: Ai::ConversationContextBuilder)
       @conversation = conversation
       @client = client
+      @context_builder = context_builder
     end
 
     def call
-      raw = @client.chat(messages: mensagens, format: "json")
+      contexto = @context_builder.call(conversation: @conversation)
+      return resultado_sem_contexto if contexto.vazio?
+
+      raw = @client.chat(messages: mensagens(contexto.text), format: "json")
       parsed = JSON.parse(raw.to_s)
       montar_resultado(parsed, raw)
     rescue Ai::OllamaClient::Error => e
-      # IA indisponível/erro de transporte → sem sugestão, sem explodir.
       resultado_vazio(erro: e.message)
     rescue JSON::ParserError => e
-      # Modelo respondeu algo que não é JSON → tratamos como "sem sugestão".
       resultado_vazio(erro: "Resposta da IA não é JSON válido: #{e.message}", resposta_bruta: raw)
     end
 
@@ -67,22 +74,29 @@ module Ai
       Result.new(objetivo_principal: objetivo.presence, atividades: atividades, resposta_bruta: raw, erro: nil)
     end
 
-    # Item sem título não é atividade útil → descartado. Confiança inválida → padrão.
+    # Descarta: item sem título, SEM evidência preenchida, ou título meta/genérico.
+    # Confiança inválida/ausente → padrão (media).
     def normalizar_atividade(item)
       return nil unless item.is_a?(Hash)
 
       titulo = item["titulo"].to_s.strip
-      return nil if titulo.empty?
+      return nil if titulo.empty? || generico?(titulo)
+
+      evidencia = item["evidencia"].to_s.strip
+      return nil if evidencia.empty? # exige evidência textual
 
       Atividade.new(
         titulo: titulo,
         descricao: item["descricao"].to_s.strip.presence,
-        evidencia: item["evidencia"].to_s.strip.presence,
+        evidencia: evidencia,
         confianca: normalizar_confianca(item["confianca"])
       )
     end
 
-    # Regra clara: confiança fora da lista permitida vira CONFIANCA_PADRAO (media).
+    def generico?(titulo)
+      PADROES_GENERICOS.any? { |re| titulo.match?(re) }
+    end
+
     def normalizar_confianca(value)
       v = value.to_s.strip.downcase
       CONFIANCAS.include?(v) ? v : CONFIANCA_PADRAO
@@ -92,32 +106,54 @@ module Ai
       Result.new(objetivo_principal: nil, atividades: [], resposta_bruta: resposta_bruta, erro: erro)
     end
 
-    def mensagens
+    def resultado_sem_contexto
+      Result.new(objetivo_principal: nil, atividades: [], resposta_bruta: nil, erro: nil, sem_contexto: true)
+    end
+
+    def mensagens(trechos)
       [
         { role: "system", content: prompt_sistema },
-        { role: "user", content: prompt_usuario }
+        { role: "user", content: prompt_usuario(trechos) }
       ]
     end
 
-    # Regras de conduta da IA (em PT-BR): sugerir, não decidir, não inventar.
+    # Conduta da IA (PT-BR): extrair atividades REAIS dos trechos; nunca de metadados.
     def prompt_sistema
       <<~TEXTO.strip
-        Você é um assistente que SUGERE atividades de trabalho a partir de uma conversa técnica.
-        Regras obrigatórias:
-        - você apenas SUGERE; a confirmação é sempre humana;
-        - NÃO invente dados que não estejam no contexto informado;
-        - responda APENAS com um JSON válido (sem texto fora do JSON);
-        - no máximo #{MAX_ATIVIDADES} atividades;
-        - as atividades devem ser de 2º nível: nem genéricas demais, nem detalhadas demais;
+        Você é o assistente de triagem operacional do Omni.
+        Sua tarefa é EXTRAIR atividades reais de 2º nível que aconteceram ou foram
+        explicitamente discutidas nos TRECHOS da conversa. Você apenas sugere; a
+        confirmação é SEMPRE humana.
+
+        Fonte:
+        - use os TRECHOS da conversa como fonte PRINCIPAL; os metadados são só apoio;
+        - NÃO use apenas metadados/contadores para criar atividade.
+
+        O que fazer:
+        - extraia no máximo #{MAX_ATIVIDADES} atividades de 2º nível, com granularidade
+          intermediária (nem genéricas demais, nem detalhadas demais);
+        - cada atividade deve CITAR uma evidência curta retirada dos trechos enviados;
+        - responda APENAS com um JSON válido (sem nenhum texto fora do JSON);
         - confiança deve ser um destes valores: #{CONFIANCAS.join(', ')}.
+
+        O que NÃO fazer:
+        - atividade NÃO é Task formal, subtarefa oficial nem checklist oficial;
+        - atividade NÃO é TimeEntry; NÃO estime duração, horas, prazo, data, valor ou cobrança;
+        - NÃO crie atividades sobre "analisar a conversa" ou "auditar a comunicação";
+        - NÃO crie atividades genéricas de documentação, revisão ou otimização sem evidência textual;
+        - NÃO invente: se a evidência textual não existir, NÃO crie a atividade.
+
+        Sem evidência textual suficiente: retorne a lista de atividades VAZIA.
       TEXTO
     end
 
-    # Contexto factual (só dados disponíveis) + contrato de saída esperado.
-    def prompt_usuario
+    def prompt_usuario(trechos)
       <<~TEXTO.strip
-        Dados da conversa (use apenas o que está aqui; não invente):
-        #{contexto.join("\n")}
+        Metadados (apoio — não use sozinhos):
+        #{contexto_metadados.join("\n")}
+
+        Trechos da conversa (fonte principal):
+        #{trechos}
 
         Responda APENAS com um JSON neste formato:
         {
@@ -126,10 +162,26 @@ module Ai
             { "titulo": "string", "descricao": "string", "evidencia": "string", "confianca": "baixa|media|alta" }
           ]
         }
+
+        Exemplo de resposta (ilustrativo):
+        {
+          "objetivo_principal": "Padronizar a documentação dos módulos fiscais",
+          "atividades": [
+            {
+              "titulo": "Revisar a documentação dos módulos fiscais",
+              "descricao": "Conferir e padronizar os documentos citados nos trechos.",
+              "evidencia": "Turno 13 — assistente: ajustes na documentação dos módulos fiscais.",
+              "confianca": "media"
+            }
+          ]
+        }
+
+        Se os trechos acima não evidenciarem atividades reais, responda com
+        "atividades": [] (lista vazia). Não invente atividades.
       TEXTO
     end
 
-    def contexto
+    def contexto_metadados
       arquivos = Array(@conversation.files_changed)
       [
         "Título da conversa: #{valor(@conversation.title)}",
@@ -143,7 +195,6 @@ module Ai
       ]
     end
 
-    # Folder resolvido pelo workspace (quando houver); senão o hash; senão "—".
     def workspace_label
       return nil if @conversation.workspace_hash.blank?
 

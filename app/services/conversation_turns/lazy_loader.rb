@@ -22,15 +22,18 @@ module ConversationTurns
       keyword_init: true
     )
 
-    def self.call(conversation_id:, limit: nil, offset: 0, path: nil)
-      new(conversation_id: conversation_id, limit: limit, offset: offset, path: path).call
+    def self.call(conversation_id:, limit: nil, offset: 0, path: nil, roles: nil)
+      new(conversation_id: conversation_id, limit: limit, offset: offset, path: path, roles: roles).call
     end
 
-    def initialize(conversation_id:, limit: nil, offset: 0, path: nil)
+    def initialize(conversation_id:, limit: nil, offset: 0, path: nil, roles: nil)
       @conversation_id = conversation_id
       @limit = limit
       @offset = offset.to_i
       @path = path
+      # Filtro OPCIONAL por papel (ex.: %w[user assistant]). Default nil = sem filtro
+      # (comportamento original da tela; total/offset passam a ser sobre o subconjunto).
+      @roles = roles.presence
     end
 
     def call
@@ -38,6 +41,7 @@ module ConversationTurns
       return result(:not_found) if conversation.nil?
 
       base = ConversationTurnRef.where(conversation_id: conversation.id)
+      base = base.where(role: @roles) if @roles
       total = base.count
       source = base.includes(:turn_source).order(:line_no).first&.turn_source
       return result(:empty, total: 0) if source.nil?

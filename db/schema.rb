@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_25_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -107,7 +107,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_130000) do
     t.index ["conversation_id"], name: "index_conversation_activity_drafts_on_conversation_id"
     t.index ["created_by_id"], name: "index_conversation_activity_drafts_on_created_by_id"
     t.index ["updated_by_id"], name: "index_conversation_activity_drafts_on_updated_by_id"
-    t.check_constraint "source = 'manual'::text", name: "conversation_activity_drafts_source_check"
+    t.check_constraint "source = ANY (ARRAY['manual'::text, 'ia_local'::text])", name: "conversation_activity_drafts_source_check"
     t.check_constraint "status = ANY (ARRAY['draft'::text, 'confirmed'::text, 'discarded'::text])", name: "conversation_activity_drafts_status_check"
   end
 

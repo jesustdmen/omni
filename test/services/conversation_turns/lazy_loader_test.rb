@@ -48,6 +48,17 @@ module ConversationTurns
       assert_equal %w[alfa beta], r.turns.map(&:text)
     end
 
+    test "filtro roles: retorna apenas os papéis pedidos (total e turnos sobre o subconjunto)" do
+      write([ line(role: "system", text: "sis"), line(role: "user", text: "u1"),
+              line(role: "assistant", text: "a1"), line(role: "system", text: "sis2") ])
+      Sync::BuildConversationTurnRefs.call(path: @path)
+
+      r = LazyLoader.call(conversation_id: @conv.id, path: @path, roles: %w[user assistant])
+      assert_equal :ok, r.status
+      assert_equal 2, r.total
+      assert_equal %w[u1 a1], r.turns.map(&:text)
+    end
+
     test "partial_hash do loader == partial_hash do builder (mesmo content_hash)" do
       big = "Q" * (Sync::BuildConversationTurnRefs::HASH_WINDOW * 2)
       write([ line(filler: big) ])

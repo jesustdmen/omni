@@ -5,6 +5,11 @@ class ConversationActivityDraftPolicy < ApplicationPolicy
     user.present?
   end
 
+  # Sugerir atividades com IA local é uma ação manual de criação de rascunhos.
+  def suggest?
+    user.present?
+  end
+
   def update?
     user.present?
   end

@@ -107,4 +107,150 @@ class ConversationActivityDraftsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h2", text: "Atividades da conversa", count: 0
   end
+
+  # ── Sugestão por IA local (ação manual) ──────────────────────────────────────
+  # Client FAKE injetado por stub de Ai::OllamaClient.new: a suíte exercita o
+  # serviço real (parse/normalização) + controller, SEM rede e SEM Ollama real.
+  class ClienteFake
+    attr_reader :chamado
+
+    def initialize(resposta: nil, erro: nil)
+      @resposta = resposta
+      @erro = erro
+      @chamado = false
+    end
+
+    def chat(messages:, model: nil, options: {}, format: nil)
+      @chamado = true # registra que a IA foi efetivamente acionada
+      raise Ai::OllamaClient::Error, @erro if @erro
+
+      @resposta
+    end
+  end
+
+  # Substitui Ai::OllamaClient.new pelo client fake durante o bloco (sem mocha/minitest-mock).
+  # Como OllamaClient não define `self.new`, remover o singleton restaura o comportamento padrão.
+  # O bloco recebe o fake para inspeção (ex.: confirmar que a IA NÃO foi chamada).
+  def com_ia(resposta: nil, erro: nil)
+    fake = ClienteFake.new(resposta: resposta, erro: erro)
+    Ai::OllamaClient.define_singleton_method(:new) { |*_args, **_kwargs| fake }
+    yield fake
+  ensure
+    Ai::OllamaClient.singleton_class.send(:remove_method, :new)
+  end
+
+  # Injeta um CONTEXTO textual durante o bloco (ConversationContextBuilder define
+  # `self.call`, então restauramos o método original ao fim).
+  def com_contexto(text = "Turno 7 — usuário: validei 142 notas fiscais")
+    original = Ai::ConversationContextBuilder.method(:call)
+    resultado = Ai::ConversationContextBuilder::Result.new(text: text, status: :ok, turns_used: 2)
+    Ai::ConversationContextBuilder.define_singleton_method(:call) { |**_kw| resultado }
+    yield
+  ensure
+    Ai::ConversationContextBuilder.define_singleton_method(:call, original)
+  end
+
+  def conteudo_ia(hash)
+    JSON.generate(hash)
+  end
+
+  test "botão de sugerir com IA aparece no modo triagem" do
+    get conversation_path(@conversation, mode: "triage")
+    assert_response :success
+    assert_select "button", text: "Sugerir atividades com IA"
+  end
+
+  test "conversa pessoal: botão de IA não aparece, mostra explicação" do
+    @conversation.update!(personal: true)
+    get conversation_path(@conversation, mode: "triage")
+    assert_select "button", text: "Sugerir atividades com IA", count: 0
+    assert_match(/Sugestão por IA desativada/i, response.body)
+  end
+
+  test "sugestão cria rascunhos com source ia_local e status Rascunho" do
+    resposta = conteudo_ia(
+      "objetivo_principal" => "Entregar balanço",
+      "atividades" => [
+        { "titulo" => "Validar notas", "descricao" => "142 NFs", "evidencia" => "Turno 7 — usuário", "confianca" => "alta" },
+        { "titulo" => "Ajustar XMLs", "evidencia" => "Turno 9 — assistente", "confianca" => "duvidosa" }
+      ]
+    )
+    com_contexto do
+      com_ia(resposta: resposta) do
+        assert_difference "ConversationActivityDraft.count", 2 do
+          post suggest_conversation_activity_drafts_path(@conversation)
+        end
+      end
+    end
+    criadas = @conversation.activity_drafts.where(source: "ia_local")
+    assert_equal 2, criadas.count
+    assert criadas.all?(&:draft?)
+    assert_equal @user.id, criadas.first.created_by_id
+    assert_redirected_to conversation_path(@conversation, mode: "triage", anchor: "atividades")
+  end
+
+  test "sugestão NÃO cria Task, TimeEntry nem ConversationLink" do
+    resposta = conteudo_ia("atividades" => [ { "titulo" => "Validar notas", "evidencia" => "Turno 7", "confianca" => "media" } ])
+    com_contexto do
+      com_ia(resposta: resposta) do
+        assert_no_difference [ "Task.count", "TimeEntry.count", "ConversationLink.count" ] do
+          post suggest_conversation_activity_drafts_path(@conversation)
+        end
+      end
+    end
+  end
+
+  test "IA retornando vazio não cria rascunhos e informa o usuário" do
+    com_contexto do
+      com_ia(resposta: conteudo_ia("atividades" => [])) do
+        assert_no_difference "ConversationActivityDraft.count" do
+          post suggest_conversation_activity_drafts_path(@conversation)
+        end
+      end
+    end
+    assert_redirected_to conversation_path(@conversation, mode: "triage", anchor: "atividades")
+    assert_match(/não sugeriu atividades/i, flash[:notice])
+  end
+
+  test "erro da IA não cria rascunhos e redireciona com alerta (sem 500)" do
+    com_contexto do
+      com_ia(erro: "Ollama indisponível") do
+        assert_no_difference "ConversationActivityDraft.count" do
+          post suggest_conversation_activity_drafts_path(@conversation)
+        end
+      end
+    end
+    assert_redirected_to conversation_path(@conversation, mode: "triage", anchor: "atividades")
+    assert_match(/não foi possível obter sugestões/i, flash[:alert])
+  end
+
+  test "sem contexto textual: não cria rascunhos e avisa (sem chamar a IA)" do
+    # Sem turnos indexados, o builder real retorna contexto vazio → sem_contexto.
+    com_ia(resposta: conteudo_ia("atividades" => [ { "titulo" => "X", "evidencia" => "y" } ])) do |fake|
+      assert_no_difference "ConversationActivityDraft.count" do
+        post suggest_conversation_activity_drafts_path(@conversation)
+      end
+      assert_not fake.chamado, "A IA não deve ser chamada sem contexto textual"
+    end
+    assert_redirected_to conversation_path(@conversation, mode: "triage", anchor: "atividades")
+    assert_match(/contexto textual suficiente/i, flash[:alert])
+  end
+
+  test "conversa pessoal: POST não envia à IA, não cria nada e avisa" do
+    @conversation.update!(personal: true)
+    com_ia(resposta: conteudo_ia("atividades" => [])) do |fake|
+      assert_no_difference "ConversationActivityDraft.count" do
+        post suggest_conversation_activity_drafts_path(@conversation)
+      end
+      assert_not fake.chamado, "A IA não deve ser acionada em conversa pessoal"
+    end
+    assert_redirected_to conversation_path(@conversation, mode: "triage", anchor: "atividades")
+    assert_match(/conversa pessoal/i, flash[:alert])
+  end
+
+  test "sugestão exige autenticação" do
+    sign_out @user
+    post suggest_conversation_activity_drafts_path(@conversation)
+    assert_redirected_to new_user_session_path
+  end
 end

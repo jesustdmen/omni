@@ -15,6 +15,25 @@
     <% end %>
   </p>
 
+  <%# Sugestão por IA local (ação MANUAL). A IA só gera RASCUNHOS; a confirmação é
+      sempre humana. Conversa pessoal não vai para a IA (privacidade — ADR-013). %>
+  <div class="activity-drafts__ai">
+    <% if conversation.personal %>
+      <p class="muted">
+        <strong>Sugestão por IA desativada</strong> nesta conversa pessoal — para proteger o conteúdo.
+        Registre as atividades manualmente abaixo.
+      </p>
+    <% else %>
+      <%= button_to "Sugerir atividades com IA",
+            suggest_conversation_activity_drafts_path(conversation),
+            method: :post, form_class: "inline", class: "btn btn--outline btn--sm" %>
+      <p class="muted activity-drafts__ai-note">
+        A <strong>IA local sugere rascunhos</strong> a partir desta conversa. Você precisa
+        <strong>revisar</strong> e <strong>confirmar ou descartar</strong> cada um — nada é confirmado automaticamente.
+      </p>
+    <% end %>
+  </div>
+
   <% if drafts.any? %>
     <ul class="activity-drafts__list">
       <% drafts.each do |draft| %>
@@ -22,6 +41,9 @@
           <div class="activity-draft__head">
             <span class="activity-draft__title"><%= draft.title %></span>
             <span class="badge badge--<%= draft.confirmed? ? "success" : (draft.discarded? ? "neutral" : "info") %>"><%= draft.status_label %></span>
+            <% if draft.ia_local? %>
+              <span class="badge badge--neutral" title="Sugerida pela IA local"><%= draft.source_label %></span>
+            <% end %>
           </div>
           <% if draft.description.present? %>
             <p class="activity-draft__desc muted"><%= draft.description %></p>
