@@ -9,6 +9,34 @@
 
 ## Entradas
 
+## 2026-06-28 — [Correção de registro · ADR-011 / PB-016] RepoB é referência NÃO produtiva (coleta atual = andaime de dev)
+> **Nota corretiva de direção (não é nova entrega).** Não reescreve a entrada histórica da PB-016; apenas corrige a leitura de escopo dela, conforme o mecanismo append-only (corrigir = adicionar nota).
+**Correção:** a **PB-016** (disparo do pipeline pelo Omni via agente no host) está concluída **somente em DEV/LOCAL**, **não pronta para produção**. O agente executa `run_pipeline.py` do **RepoB** (`_origem/_repob`), que é **referência read-only e NÃO existirá em produção** — logo é **andaime de desenvolvimento**, não a topologia produtiva. A coleta/normalização de produção exige uma **origem própria do Omni** (versionada/deployada pelo Omni ou oficialmente definida como dele), **ainda a definir** (rastreado em **F7.7**). O consumo de `output/normalized/` e o mount `/normalized:ro` seguem válidos como **contrato de consumo/dev**, sem resolver a origem produtiva (F7.5). Registrado em **ADR-011 (addendum 2026-06-28)**, `ARCHITECTURE_DECISIONS_INDEX`, `ROADMAP`, `FEATURE_MATRIX` (OP-02), `F7_CONTRACT_DECISIONS` (F7.5/F7.7) e `CONSTRAINTS`. **Sem alteração de código.**
+
+## 2026-06-25 — [Triagem · PB-020 frente Triagem] IA local (Ollama/Gemma4) para sugestão de atividades — ENTREGUE/PUBLICADA em `main`
+### Resumo
+Camada de **IA local isolada** que sugere **atividades de 2º nível** a partir do **conteúdo real** da conversa, gravando-as como **rascunho** (`ConversationActivityDraft`, `source=ia_local`, `status=draft`). A IA **sugere; o humano confirma**. **Não** cria Task/TimeEntry, **não** altera ConversationLink, **não** classifica gaps. Publicada em `main` (`18b80e2`, `de58b7e`, doc `5a020d0`). Validação **técnica** (checks verdes); **produção não exercida**.
+### Entregue (publicado)
+- **Núcleo isolado** (`18b80e2`): `Ai::OllamaClient` (Net::HTTP; endpoint nativo `POST /api/chat`; `OMNI_OLLAMA_URL`/`OMNI_OLLAMA_MODEL`; erro tipado; sem gem nova) + `Ai::SuggestConversationActivities` (prompt PT-BR, parse/normalização do JSON, resultado em memória). Testado com fake/stub — **sem rede/sem Ollama real**.
+- **Contexto real + integração na Triagem** (`de58b7e`): `Ai::ConversationContextBuilder` lê turnos pelo índice existente (`ConversationTurns::LazyLoader` — ADR-021) com **redação de PII** (`PiiRedactor`), truncagem por turno e teto total, só papéis user/assistant; conversa **pessoal** e índice `:stale` ⇒ contexto vazio (degrada com segurança). Botão manual "Sugerir atividades com IA" no detalhe da Triagem cria os rascunhos; migration aditiva **amplia o CHECK** de `source` para `manual|ia_local` (`20260625150000`). Doc da API nativa corrigido (`f96ace9`).
+### Evidência
+Commits `18b80e2`/`de58b7e`/`f96ace9`/`b53ab6d` + doc `5a020d0`. Suíte **889 runs / 3299 assertions / 0 falhas/erros/skips**; rubocop 0; brakeman 0; zeitwerk OK (via Docker). Teste real com Gemma4 no host produziu rascunhos ancorados em trechos reais (com índice de turnos atualizado).
+### Escopo negativo (cumprido)
+Sem Task/TimeEntry/ConversationLink; sem classificar gaps/validar tempo/promover a TimeEntry; sem precificação/fechamento/PDF; testes **não dependem do Ollama real**; conversa pessoal não vai para a IA; sem importar dados; `_origem/_repob` (referência) intocado.
+
+## 2026-06-25 — [Triagem · PB-020 frente Triagem] Decisão de triagem persistida mínima + criar/vincular tarefa + atividades manuais de 2º nível — ENTREGUE/PUBLICADA em `main`
+### Resumo
+Frente de **Triagem de Conversas** (parte de produto da PB-020) avança da base read-only para **decisão humana persistida** e **atividades de 2º nível manuais**. Publicada em `main`. Validação **técnica** (checks verdes); **produção não exercida**.
+### Entregue (publicado)
+- **Base read-only** (`68e9e8c` Central/inbox de Triagem + `3ae1484` modo triagem no detalhe `/conversations/:id?mode=triage`): timeline/turnos + evidências + cliente sugerido por workspace + gaps visuais (>15min).
+- **Decisão persistida mínima** (`99bf00f`): tabela `conversation_triages` (migration `20260625120000`; 1:1; `status` open/reviewed/ignored por lista permitida; `confirmed_client_id`/`confirmed_project_id`; `triaged_by_id`); `ConversationTriageDecision` + service `ConversationTriage` (estado **efetivo** = persistido sobrepõe derivado, sem N+1); confirmar cliente **sem** criar tarefa.
+- **Criar/vincular tarefa com contexto da triagem** (`0e957bf`): a tarefa nasce com cliente/projeto **confirmado** quando houver; `ConversationLink` segue como fonte do vínculo.
+- **Atividades manuais de 2º nível** (`e983a29`): tabela `conversation_activity_drafts` (migration `20260625130000`); criar/editar/confirmar/descartar/reabrir/remover como **rascunho**; **não** cria Task/TimeEntry, **não** toca ConversationLink.
+### Evidência
+Commits `68e9e8c`/`3ae1484`/`99bf00f`/`0e957bf`/`e983a29` (+ docs de contrato/vocabulário). Checks verdes na publicação (ver `PROJECT_STATUS.md`).
+### Escopo negativo (cumprido)
+Sem rascunho de apontamento; sem classificação de gaps/validação de tempo; sem promoção a TimeEntry; sem precificação/fechamento/PDF; `personal` continua fonte de privacidade (não vira status).
+
 ## 2026-06-24 — [Frente comercial · PB-020a] Apuração de horas trabalhadas (read-only) — IMPLEMENTADO E VALIDADO (aguardando aceite do PO)
 ### Resumo
 Primeira fatia operacional da PB-020 (após saneamento): **Apuração de horas** read-only por período/cliente/projeto/tarefa, a partir de **apontamentos** (`TimeEntry`) e **tarefas vinculadas a conversas** (evidência). **NÃO** aplica contrato, **NÃO** calcula valor, **NÃO** cria fechamento/snapshot/PDF, **NÃO** grava nada. Trilha: Apuração → Validação → Precificação → Fechamento → Relatório (ADR-025 addendum). Aceite manual do PO pendente.

@@ -218,9 +218,12 @@ Publicado em `main` (`68e9e8c` Central read-only + `3ae1484` Detalhe split + `97
 
 Servicos read-only que sustentam o atual: `ConversationTriage` (estado derivado) e `ConversationTimeline` (gaps). Nenhum grava nada.
 
-## 8. O que FALTA do mockup (entregas FUTURAS — nao existe ainda)
+## 8. O que FALTA do mockup (entregas FUTURAS)
 
-Registrado como visao futura, sem prometer implementacao:
+> **ATUALIZACAO DE ESTADO (2026-06-25) — parte desta secao foi SUPERADA (entregue/publicada em `main`).**
+> Ja NAO sao mais "futuro": **decisao humana persistida** (confirmar cliente/projeto, marcar revisada/ignorada/reabrir; tabela `conversation_triages`, `99bf00f`) — `personal` segue boolean de privacidade, nao virou status (D0.2); **vincular/criar tarefa a partir do detalhe com contexto** (`0e957bf`); **atividades de 2o nivel** como rascunhos manuais (`conversation_activity_drafts`, `e983a29`); **IA local (Ollama/Gemma4) como sugestao** — nucleo isolado + integracao que extrai do conteudo real e grava rascunhos `source=ia_local` (`18b80e2`/`de58b7e`; IA sugere, humano confirma). **CONTINUAM futuros/nao iniciados:** cards "Prontas p/ tarefa"/"Gaps a validar", filtros avancados/ordenacao/lote/"triar em sequencia"/exportar, **classificacao de gaps**, **validacao de tempo**, **rascunhos de apontamento**, **promocao para TimeEntry**. O bloco abaixo e mantido como registro do escopo original do mockup.
+
+Registrado como visao futura (escopo do mockup; ver ATUALIZACAO acima para o que ja foi entregue):
 
 ```text
 Decisao humana persistida:
@@ -299,7 +302,7 @@ Estes contratos sao coerentes com o §2 deste documento, com a §5 (armadilhas) 
 
 ## DIAGNOSTICO TECNICO — PROXIMA FATIA: "Triagem persistida minima" (2026-06-25)
 
-> Diagnostico read-only (planejamento). **Nao implementado.** Esta secao responde as perguntas tecnicas da fatia 1 da sequencia §10. Escopo-alvo: persistir status de revisao (open/reviewed/ignored) e confirmacao de cliente/projeto; cards/filtros passam a usar estado persistido quando existir e derivado quando nao existir. **Sem** TimeEntry, **sem** apuracao, **sem** classificar gaps, **sem** IA, **sem** acoes em lote (salvo placeholder desabilitado e documentado).
+> Diagnostico read-only (planejamento). **NOTA (2026-06-25): a fatia descrita abaixo foi IMPLEMENTADA e PUBLICADA em `main`** (`conversation_triages`, `99bf00f` — `ConversationTriageDecision` + service `ConversationTriage`; ver §8 ATUALIZACAO). O texto e mantido como o diagnostico que originou a fatia. Esta secao responde as perguntas tecnicas da fatia 1 da sequencia §10. Escopo-alvo: persistir status de revisao (open/reviewed/ignored) e confirmacao de cliente/projeto; cards/filtros passam a usar estado persistido quando existir e derivado quando nao existir. **Sem** TimeEntry, **sem** apuracao, **sem** classificar gaps, **sem** IA, **sem** acoes em lote (salvo placeholder desabilitado e documentado).
 
 ## D0. Decisoes oficiais do PO (2026-06-25) — vinculam a implementacao
 
@@ -495,7 +498,9 @@ Onde os termos internos podem ficar em ingles (sem vazar):
 
 ---
 
-## IA LOCAL (Gemma4 via Ollama) — PREMISSA FUTURA — 2026-06-25
+## IA LOCAL (Gemma4 via Ollama) — PREMISSA → IMPLEMENTADA (atualizado 2026-06-25)
+
+> **ATUALIZACAO (2026-06-25): a integracao foi IMPLEMENTADA e PUBLICADA em `main`** — nucleo isolado `Ai::OllamaClient` (endpoint nativo `POST /api/chat`; `OMNI_OLLAMA_URL`/`OMNI_OLLAMA_MODEL`) + `Ai::SuggestConversationActivities` (`18b80e2`) e `Ai::ConversationContextBuilder` que extrai do **conteudo real** via `LazyLoader`/ADR-021 + `PiiRedactor`, gravando rascunhos `source=ia_local` (`de58b7e`). Contrato da API nativa corrigido em `docs/ia_local_ollama_gemma4_api.md`. **IA sugere; humano confirma**; conversa pessoal/indice `:stale` ⇒ sem sugestao (degrada com seguranca); nao cria Task/TimeEntry, nao altera ConversationLink. Testes nao dependem do Ollama real. Pendencia operacional (indice de turnos `:stale` / runtime desktop) registrada na secao "PENDENCIA FUTURA — Desktop Runtime". O texto abaixo e mantido como o registro original da premissa.
 
 > Detalha a regra geral do §2 ("IA local pode ajudar, mas nao decidir sozinha") com o
 > ambiente real informado pelo PO. **Registro documental apenas — NAO faz parte de

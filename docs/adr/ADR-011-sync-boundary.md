@@ -1,7 +1,7 @@
 # ADR-011 — Estratégia de sync: agendador externo roda pipeline; Rails lê output/normalized/
 
 ## Status
-Aceito — 2026-06-16 (Fase 0). **Addenda:** 2026-06-21 (PB-015 + direção do agendador interno); **2026-06-22 (PB-016 concluída — disparo do pipeline pelo Omni via agente no host).** Ver ao fim.
+Aceito — 2026-06-16 (Fase 0). **Addenda:** 2026-06-21 (PB-015 + direção do agendador interno); 2026-06-22 (PB-016 concluída **em dev/local** — disparo do pipeline pelo Omni via agente no host); **2026-06-28 (RepoB é referência não produtiva; origem produtiva de coleta/normalização a definir).** Ver ao fim.
 
 ## Contexto
 O viewer já tem botão que roda o pipeline. Settings preveem "sincronizar agora" + agendamento ("a cada 30 min", "rodar ao abrir"). Executar processo externo do Rails é superfície de risco (injeção/credencial).
@@ -53,4 +53,14 @@ A direção do addendum anterior foi implementada e **aceita pelo PO**. O item 3
 
 - **Compatibilidade:** com o disparo interno **desligado** (default `OMNI_RUN_PIPELINE_INTERNALLY=false`), o comportamento é idêntico à PB-015 (só importa `/normalized`). O script PowerShell (PB-015) permanece como fallback, não como fluxo principal.
 
-A decisão original e seus invariantes permanecem válidos; este addendum apenas registra **como** o item 3 foi realizado (agente no host) e que a PB-016 está **integralmente concluída** (a+b).
+A decisão original e seus invariantes permanecem válidos; este addendum apenas registra **como** o item 3 foi realizado (agente no host) e que a PB-016 está **integralmente concluída em dev/local** (a+b). Ver o addendum de 2026-06-28 para a fronteira de produção.
+
+## Addendum (2026-06-28) — RepoB é referência não produtiva; coleta/normalização de produção a definir (correção de direção)
+
+> Correção de direção do PO, **sem revogar** a decisão nem o que foi entregue. Esclarece a fronteira **dev × produção** da coleta/normalização, que estava ambígua nos addenda anteriores.
+
+- **RepoB (`_origem/_repob`) é somente leitura / referência técnica** (contrato/normalização — ADR-007/008) e **não existirá em produção**. O Omni **não pode depender do RepoB como componente executável** no fluxo produtivo.
+- **O agente atual (`pipeline_agent.py` → `run_pipeline.py` do RepoB, `OMNI_PIPELINE_DIR=…/_repob/pipeline`) é ANDAIME DE DESENVOLVIMENTO.** Ele viabiliza o uso diário **local** (PB-016 a+b validada em dev/local), mas **não** é a topologia de produção.
+- **PB-016 está concluída em dev/local, não pronta para produção:** a coleta produtiva depende de uma **origem própria do Omni** para `output/normalized/` — componente **versionado/deployado pelo Omni** (ou oficialmente definido como do Omni), **ainda a definir** (rastreado em F7.7 — Topologia do pipeline; ver `F7_CONTRACT_DECISIONS.md`/`ROADMAP.md`).
+- **Consumo permanece válido:** o Rails consumir `output/normalized/` (ADR-008) e o mount `/normalized:ro` continuam corretos como **contrato de consumo/dev**; isso **não resolve por si só** a **origem produtiva** dessa saída (F7.5/F7.7 abertas).
+- **Em desenvolvimento**, RepoB pode seguir como referência read-only e o agente como andaime; **em produção**, nada no caminho de execução do Omni pode depender de RepoB.

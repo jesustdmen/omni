@@ -11,9 +11,9 @@
 - **F7.2 — Solid trifecta** (cache/cable schemas + `cache_store` + decidir cable Redis×solid_cable). *(gate de schema)*
 - **F7.3 — Worker/runtime de jobs** (`SOLID_QUEUE_IN_PUMA` × `bin/jobs`).
 - **F7.4 — Deploy (Kamal)** (`config/deploy.yml` + `.kamal/secrets`). *(sem executar deploy)*
-- **F7.5 — `/normalized` em produção + cadência de reindex** (volume `:ro`; runbook `sync:*`).
+- **F7.5 — `/normalized` em produção + cadência de reindex** (volume `:ro`; runbook `sync:*`). **Aberto:** o mount `/normalized:ro` é contrato de **consumo** válido (dev), mas **não define a ORIGEM produtiva** dessa saída — em produção não há RepoB para gerá-la (ver F7.7).
 - **F7.6 — Runbook operacional** (backup/restore/rollback + checklist de primeiro deploy).
-- **F7.7 — Topologia do pipeline Python.**
+- **F7.7 — Topologia do pipeline Python (origem produtiva de coleta/normalização).** **Premissa (ADR-011 addendum 2026-06-28):** **RepoB (`_origem/_repob`) é referência read-only e NÃO existe em produção**; o agente atual que roda `run_pipeline.py` do RepoB é **andaime de dev**. Produção exige um componente de coleta/normalização **próprio do Omni** (versionado/deployado pelo Omni ou oficialmente definido como dele), **ainda a definir** — onde roda, como entrega `output/normalized/` e a cadência de reindex (`sync:turn_refs`). **Sem isto, PB-016 segue concluída só em dev/local.**
 
 ## F7.1 — Endurecimento de produção + admin seed (ENTREGUE 2026-06-19)
 

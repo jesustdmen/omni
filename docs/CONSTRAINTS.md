@@ -48,6 +48,7 @@ Se em qualquer fase surgir a necessidade de **copiar código, assets, lógica ou
 ## Relação com os ADRs
 - **ADR-001** — implementação do produto em Rails/Hotwire/ViewComponent (não SPA, não cópia de JSX do mockup).
 - **ADR-007 / ADR-008** — pipeline Python permanece **externo**; o produto consome **somente `output/normalized/`**, sem reparsear bruto nem importar o código do RepoB.
+- **ADR-011 (addendum 2026-06-28) — RepoB não é dependência produtiva.** `_origem/_repob` é **referência read-only** e **não existe em produção**. O Omni **não pode depender do RepoB como componente executável** no fluxo produtivo. O agente atual que roda `run_pipeline.py` do RepoB (`OMNI_PIPELINE_DIR=…/_repob/pipeline`) é **andaime de desenvolvimento**; a coleta/normalização de **produção** exige uma origem **própria do Omni** (a definir — F7.7). Consumir `output/normalized/` e o mount `/normalized:ro` seguem válidos como **contrato de consumo/dev**, mas não definem a **origem produtiva**.
 - **ADR-016** — escopo MVP controlado: implementar só o que a fase aprova; referências não ampliam escopo por conta própria.
 
 > Ver índice de decisões em [ARCHITECTURE_DECISIONS_INDEX.md](ARCHITECTURE_DECISIONS_INDEX.md) e estado atual em [PROJECT_STATUS.md](PROJECT_STATUS.md).
