@@ -4,18 +4,21 @@ PB-016a — Agente de pipeline do Omni (roda no HOST, onde estão as conversas).
 
 Por que existe
 --------------
-O pipeline de coleta (RepoB) é Python Windows-nativo: lê %APPDATA%\\Code,
-~/.codex e ~/.claude do perfil do usuário e EXIGE a variável APPDATA. O Omni
-(Rails) roda em container Linux e não enxerga esses caminhos. Em vez de montar
-o perfil inteiro no container (frágil e proibido pela PB-016a), o Omni dispara
-ESTE agente via HTTP local; o agente executa o pipeline no ambiente nativo e
-devolve só exit code + um resumo seguro. O Omni então importa /normalized.
+O pipeline de coleta é Python Windows-nativo: lê %APPDATA%\\Code, ~/.codex e
+~/.claude do perfil do usuário e EXIGE a variável APPDATA. O Omni (Rails) roda
+em container Linux e não enxerga esses caminhos. Em vez de montar o perfil
+inteiro no container (frágil e proibido pela PB-016a), o Omni dispara ESTE
+agente via HTTP local; o agente executa o pipeline no ambiente nativo e devolve
+só exit code + um resumo seguro. O Omni então importa /normalized.
+
+F7.7 — o pipeline agora é NATIVO do Omni (app/pipeline/run_collect.py); NÃO depende
+mais do RepoB em runtime. RepoB permanece apenas como referência read-only.
 
 Segurança
 ---------
 - escuta em 127.0.0.1 (e, opcionalmente, no IP que o container alcança) e EXIGE
   um token compartilhado em todo request (header X-Agent-Token);
-- comando FIXO: [python, run_pipeline.py [args fixos]] — nunca recebe comando,
+- comando FIXO: [python, run_collect.py [args fixos]] — nunca recebe comando,
   path ou argumento do cliente;
 - uma execução por vez (lock); /run é síncrono e devolve o resultado;
 - timeout fixo configurável: mata o processo ao estourar;
@@ -31,7 +34,7 @@ Variáveis de ambiente (todas opcionais; defaults para a máquina de dev):
     OMNI_AGENT_HOST     bind (default 0.0.0.0 — para o container alcançar)
     OMNI_AGENT_PORT     porta (default 8765)
     OMNI_AGENT_TOKEN    token compartilhado (default "omni-dev-agent")
-    OMNI_PIPELINE_DIR   diretório do pipeline (default c:\\Sandbox\\_omni\\_origem\\_repob\\pipeline)
+    OMNI_PIPELINE_DIR   diretório do pipeline NATIVO (default c:\\Sandbox\\_omni\\app\\pipeline)
     OMNI_PIPELINE_PYTHON executável python do pipeline (default: .venv ou "python")
     OMNI_PIPELINE_TIMEOUT timeout em segundos (default 1800)
 """
@@ -50,7 +53,7 @@ from pathlib import Path
 HOST = os.environ.get("OMNI_AGENT_HOST", "0.0.0.0")
 PORT = int(os.environ.get("OMNI_AGENT_PORT", "8765"))
 TOKEN = os.environ.get("OMNI_AGENT_TOKEN", "omni-dev-agent")
-PIPELINE_DIR = Path(os.environ.get("OMNI_PIPELINE_DIR", r"c:\Sandbox\_omni\_origem\_repob\pipeline"))
+PIPELINE_DIR = Path(os.environ.get("OMNI_PIPELINE_DIR", r"c:\Sandbox\_omni\app\pipeline"))
 TIMEOUT = int(os.environ.get("OMNI_PIPELINE_TIMEOUT", "1800"))
 
 # Executável Python do pipeline: usa o .venv do RepoB se existir, senão "python".
@@ -62,7 +65,9 @@ def _resolve_python() -> str:
     return str(venv) if venv.exists() else "python"
 
 PYTHON = _resolve_python()
-RUNNER = PIPELINE_DIR / "run_pipeline.py"
+# F7.7 — entrypoint NATIVO do Omni (coleta + normalização, sem report). Antes apontava
+# para o run_pipeline.py do RepoB; agora o pipeline é interno (app/pipeline).
+RUNNER = PIPELINE_DIR / "run_collect.py"
 
 _lock = threading.Lock()
 _last = {"status": "idle", "exit_code": None, "summary": None, "finished_at": None}
@@ -86,7 +91,7 @@ def _run_pipeline(skip_ingest: bool) -> dict:
     """Executa o pipeline com COMANDO FIXO. Sem input do cliente além do flag fixo."""
     if not RUNNER.exists():
         return {"ok": False, "exit_code": None, "timed_out": False,
-                "summary": "Ambiente do pipeline inválido: run_pipeline.py ausente."}
+                "summary": "Ambiente do pipeline inválido: run_collect.py ausente."}
 
     cmd = [PYTHON, str(RUNNER)]
     if skip_ingest:
@@ -169,7 +174,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     if not RUNNER.exists():
-        print(f"[agent] AVISO: run_pipeline.py não encontrado em {RUNNER}", file=sys.stderr)
+        print(f"[agent] AVISO: run_collect.py não encontrado em {RUNNER}", file=sys.stderr)
     print(f"[agent] Omni pipeline-agent escutando em {HOST}:{PORT} (python={PYTHON})")
     print(f"[agent] pipeline_dir={PIPELINE_DIR} timeout={TIMEOUT}s")
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

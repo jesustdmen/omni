@@ -20,7 +20,7 @@ AGENT_PY="${HERE}/../script/pipeline_agent.py"
 export OMNI_AGENT_HOST="${OMNI_AGENT_HOST:-0.0.0.0}"
 export OMNI_AGENT_PORT="${OMNI_AGENT_PORT:-8765}"
 export OMNI_AGENT_TOKEN="${OMNI_AGENT_TOKEN:-omni-dev-agent}"
-export OMNI_PIPELINE_DIR="${OMNI_PIPELINE_DIR:-/c/Sandbox/_omni/_origem/_repob/pipeline}"
+export OMNI_PIPELINE_DIR="${OMNI_PIPELINE_DIR:-/c/Sandbox/_omni/app/pipeline}"
 export OMNI_PIPELINE_TIMEOUT="${OMNI_PIPELINE_TIMEOUT:-1800}"
 
 # Python do HOST p/ rodar o agente (não o do pipeline; o agente decide o do pipeline).

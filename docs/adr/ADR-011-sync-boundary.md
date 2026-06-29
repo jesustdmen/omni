@@ -1,7 +1,7 @@
 # ADR-011 — Estratégia de sync: agendador externo roda pipeline; Rails lê output/normalized/
 
 ## Status
-Aceito — 2026-06-16 (Fase 0). **Addenda:** 2026-06-21 (PB-015 + direção do agendador interno); 2026-06-22 (PB-016 concluída **em dev/local** — disparo do pipeline pelo Omni via agente no host); **2026-06-28 (RepoB é referência não produtiva; origem produtiva de coleta/normalização a definir).** Ver ao fim.
+Aceito — 2026-06-16 (Fase 0). **Addenda:** 2026-06-21 (PB-015 + direção do agendador interno); 2026-06-22 (PB-016 concluída **em dev/local** — disparo do pipeline pelo Omni via agente no host); 2026-06-28 (RepoB é referência não produtiva; origem produtiva de coleta/normalização a definir); **2026-06-29 (F7.7 — pipeline NATIVO internalizado em `app/pipeline`; RepoB deixa de ser runtime).** Ver ao fim.
 
 ## Contexto
 O viewer já tem botão que roda o pipeline. Settings preveem "sincronizar agora" + agendamento ("a cada 30 min", "rodar ao abrir"). Executar processo externo do Rails é superfície de risco (injeção/credencial).
@@ -64,3 +64,14 @@ A decisão original e seus invariantes permanecem válidos; este addendum apenas
 - **PB-016 está concluída em dev/local, não pronta para produção:** a coleta produtiva depende de uma **origem própria do Omni** para `output/normalized/` — componente **versionado/deployado pelo Omni** (ou oficialmente definido como do Omni), **ainda a definir** (rastreado em F7.7 — Topologia do pipeline; ver `F7_CONTRACT_DECISIONS.md`/`ROADMAP.md`).
 - **Consumo permanece válido:** o Rails consumir `output/normalized/` (ADR-008) e o mount `/normalized:ro` continuam corretos como **contrato de consumo/dev**; isso **não resolve por si só** a **origem produtiva** dessa saída (F7.5/F7.7 abertas).
 - **Em desenvolvimento**, RepoB pode seguir como referência read-only e o agente como andaime; **em produção**, nada no caminho de execução do Omni pode depender de RepoB.
+
+## Addendum (2026-06-29) — F7.7: pipeline NATIVO internalizado; RepoB deixa de ser runtime
+
+> Concretiza a direção do addendum de 2026-06-28. O pipeline produtivo de coleta/normalização **passou a ser do Omni**.
+
+- **Internalização:** o código produtivo (ingest → normalize + `lib`) foi copiado **verbatim** (sem refactor) para **`app/pipeline/`**, com um entrypoint nativo **`run_collect.py`** (ingest→normalize, **sem** report). `03_report`/`viewer` ficaram de fora (não fazem parte do contrato consumido pelo Omni). Pipeline é **stdlib-only**.
+- **Contrato produtivo (corrigido):** obrigatórios `summaries.jsonl`, `sessions.jsonl`, `shards/{messages,summaries}/*`. `session_titles.json`/`tags.json` são artefatos do **viewer** (fora desta frente; o Omni trata `session_titles.json` como opcional e não consome `tags.json`).
+- **Paridade A/B (Gate 3):** legado × nativo sobre o **mesmo snapshot** e estado fresh → `summaries.jsonl`/`sessions.jsonl` **SHA256 idênticos**, shards e contagens iguais. **Zero divergências.**
+- **Troca de runtime:** o agente (`script/pipeline_agent.py`) roda `app/pipeline/run_collect.py` (`OMNI_PIPELINE_DIR` default = `app/pipeline`); o mount `/normalized` passa a vir de `app/pipeline/output/normalized` (`.devstack`). **O Omni não depende mais de `_origem/_repob` em runtime.** A orquestração (SyncSchedule/ScheduledSyncJob/SyncConversationsJob/RunConversationsSync/ImportSummaries/BuildConversationTurnRefs) e a resiliência PB-016 (agente offline degrada; `OMNI_RUN_PIPELINE_INTERNALLY=false` = só importa) **permanecem inalteradas**.
+- **Validação Omni (Gate 5):** import + turn_refs a partir do output nativo (covered 1665/1665); conversations/tasks/conversation_links preservados; suíte verde.
+- **RepoB:** permanece como **referência read-only** (e fonte de A/B temporário). Não é dependência executável.

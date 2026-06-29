@@ -18,7 +18,7 @@ IMAGE="${OMNI_IMAGE:-omni-rails-dev}"
 NETWORK="${OMNI_NET:-omni_net}"
 PORT="${OMNI_PORT:-3000}"
 APP_DIR="${OMNI_APP_DIR:-/c/Sandbox/_omni/app}"
-NORMALIZED_DIR="${OMNI_NORMALIZED_DIR:-/c/Sandbox/_omni/_origem/_repob/pipeline/output/normalized}"
+NORMALIZED_DIR="${OMNI_NORMALIZED_DIR:-/c/Sandbox/_omni/app/pipeline/output/normalized}"
 
 # Rede (idempotente).
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK"

@@ -9,6 +9,21 @@
 
 ## Entradas
 
+## 2026-06-29 — [F7.7] Pipeline NATIVO de coleta/normalização do Omni (RepoB deixa de ser runtime) — IMPLEMENTADO E VALIDADO (aceite operacional pendente)
+### Resumo
+Internaliza o pipeline produtivo de coleta/normalização (antes em `_origem/_repob`) para **`app/pipeline/`**, SEM alterar comportamento (cópia verbatim dos estágios + entrypoint nativo `run_collect.py`, ingest→normalize). O Omni **deixa de depender do RepoB em runtime**: o agente roda `app/pipeline/run_collect.py` e o mount lê `app/pipeline/output/normalized/`. **Paridade A/B byte-a-byte provada.** RepoB permanece só como referência read-only.
+### Entregue (validado)
+- **Código nativo** em `app/pipeline/`: `__init__.py`, `01_ingest/`, `02_normalize/` (aggregator/normalize/parsers), `lib/` (config/db_reader/incremental_state/models/patch) + **entrypoint `run_collect.py`** (ingest→normalize, sem report). **Stdlib-only**; `03_report`/`viewer`/`output`/`__pycache__`/`.venv` **não** migrados.
+- **Contrato produtivo (corrigido na F7.7):** obrigatórios `summaries.jsonl`, `sessions.jsonl`, `shards/{messages,summaries}/*`. `session_titles.json`/`tags.json` são do **viewer** (fora desta frente; o Omni trata titles como opcional, não consome tags).
+- **Troca de runtime:** agente (`script/pipeline_agent.py`) roda `run_collect.py` e default `OMNI_PIPELINE_DIR=app/pipeline`; `.devstack/{agent,up,jobs}.sh` apontam dir/mount para `app/pipeline/output/normalized`; `application.rb` ignora `app/pipeline` no autoload (Python sob app/).
+- **`.gitignore`:** regras protetivas F7.7 (não versionar `pipeline/output/` ~250 MB, caches, SQLite). Edição mínima e **indispensável**; separada dos diffs de Graphify.
+### A/B (Gate 3) — zero divergências
+Mesmo snapshot `snapshot_20260629_100500`, estado fresh nos dois lados: `summaries.jsonl` e `sessions.jsonl` (254 MB) **SHA256 idênticos**; linhas 2430 / 141223 iguais; shards 2063 / 2063 iguais. (A divergência inicial era 100% do cache incremental do legado, não do código.)
+### Validação Omni (Gate 5)
+Import do output nativo: 2430 linhas, updated=1665, **error_lines=0**. turn_refs: 141202 refs, **covered 1665/1665**. Preservação: conv 1665, **tasks 10, links 5** (inalterados). Agente fresco com config nativa: `runner_present:true`. Suíte **918 runs / 3393 assertions / 0 falhas**; rubocop 0; brakeman 0; zeitwerk OK.
+### Escopo negativo (cumprido)
+Não reescreveu o pipeline em Ruby; não fez refactor; não alterou schema/`Task`/`TimeEntry`/`ConversationLink`/PB-020; não importou conteúdo bruto para o banco; não versionou output/cache/SQLite; RepoB intocado (só leitura no A/B).
+
 ## 2026-06-29 — [Triagem · PB-020d] Rascunhos de blocos de trabalho na Triagem — IMPLEMENTADO E VALIDADO (aceite operacional pendente)
 ### Resumo
 Nova unidade da Triagem: **bloco/turno de trabalho** (Manhã/Tarde/Noite de um dia) dentro de uma conversa, com janela de tempo **sugerida/editável** e tipo `execution`/`gap`, como **rascunho**. NÃO cria TimeEntry, NÃO altera Task/ConversationLink, NÃO promove. **Conversa PESSOAL não participa**: não gera/edita bloco (bloqueio no backend + UI). Microatividades = **snapshot textual** (sem FK). Validação **técnica** (checks verdes); produção não exercida.

@@ -15,18 +15,18 @@ bash .devstack/up.sh
 ```
 
 ## Por que o mount `/normalized:ro` é necessário
-O lazy-load de turnos (**ADR-021**) não importa o conteúdo das conversas para o banco — ele guarda apenas **ponteiros (offsets)** e lê as linhas sob demanda diretamente de `output/normalized/sessions.jsonl` (do RepoB). O `turn_source.source_file` aponta para **`/normalized/sessions.jsonl`**.
+O lazy-load de turnos (**ADR-021**) não importa o conteúdo das conversas para o banco — ele guarda apenas **ponteiros (offsets)** e lê as linhas sob demanda diretamente de `output/normalized/sessions.jsonl`. **F7.7:** essa saída agora é gerada pelo **pipeline NATIVO do Omni** (`app/pipeline/output/normalized/`), não mais pelo RepoB. O `turn_source.source_file` aponta para **`/normalized/sessions.jsonl`**.
 
 Se o `omni_web` for iniciado **sem** esse mount, `ConversationTurns::LazyLoader` não encontra o arquivo e retorna **`:stale`** (a tela de conversa mostra "índice desatualizado" e não renderiza turnos). O `up.sh` persiste esse mount, evitando a regressão.
 
 - O mount é **somente-leitura** (`:ro`) — consistente com o ADR-008 (consumir `output/normalized/`).
-- **Nada é copiado para dentro do app**; `sessions.jsonl` **não** é versionado (vive em `_origem/`, fora do repo).
+- **O CÓDIGO do pipeline vive no app** (`app/pipeline/`, F7.7); a **saída gerada** (`app/pipeline/output/`, incl. `sessions.jsonl` ~250 MB) **não** é versionada (`.gitignore`).
 - Caminhos são overridáveis por env (`OMNI_NORMALIZED_DIR`, `OMNI_APP_DIR`, `OMNI_PORT`, `OMNI_NET`, `OMNI_IMAGE`).
 
 ## Reindexar turnos (quando o `sessions.jsonl` mudar)
 ```bash
 MSYS_NO_PATHCONV=1 docker run --rm --network omni_net \
   -v "/c/Sandbox/_omni/app:/app" -v omni_bundle:/usr/local/bundle \
-  -v "/c/Sandbox/_omni/_origem/_repob/pipeline/output/normalized:/normalized:ro" \
+  -v "/c/Sandbox/_omni/app/pipeline/output/normalized:/normalized:ro" \
   -w /app omni-rails-dev bash -c "bin/rails 'sync:turn_refs[/normalized/sessions.jsonl]'"
 ```

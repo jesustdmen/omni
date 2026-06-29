@@ -16,6 +16,11 @@ module App
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
 
+    # F7.7 — pipeline NATIVO de coleta/normalização (Python em app/pipeline). NÃO é
+    # código Rails: o zeitwerk deve ignorá-lo (ex.: `01_ingest` nem forma constante
+    # válida). Roda no host via agente; o Rails só consome /normalized (ADR-011).
+    Rails.autoloaders.main.ignore(Rails.root.join("app/pipeline"))
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

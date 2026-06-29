@@ -47,3 +47,26 @@ postgres-volume-snapshot-*
 # PB-016a — bytecode do agente Python (host)
 script/__pycache__/
 *.pyc
+
+# F7.7 — pipeline NATIVO de coleta/normalização (app/pipeline). Versiona-se o CÓDIGO,
+# nunca os DADOS/saída gerados: snapshots raw, output normalizado (~250 MB sessions.jsonl),
+# state incremental, caches, bytecode e bancos SQLite (podem conter conteúdo de conversa).
+# Indispensável para a F7.7 (internalização do pipeline). Não confundir com diffs de Graphify.
+/pipeline/output/
+/app/pipeline/output/
+/pipeline/.venv/
+/app/pipeline/.venv/
+/pipeline/**/__pycache__/
+/app/pipeline/**/__pycache__/
+/pipeline/**/*.pyc
+/app/pipeline/**/*.pyc
+/pipeline/**/*.sqlite
+/pipeline/**/*.sqlite3
+/pipeline/**/*.db
+/pipeline/**/*.db-wal
+/pipeline/**/*.db-shm
+/app/pipeline/**/*.sqlite
+/app/pipeline/**/*.sqlite3
+/app/pipeline/**/*.db
+/app/pipeline/**/*.db-wal
+/app/pipeline/**/*.db-shm

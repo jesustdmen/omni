@@ -14,7 +14,7 @@ set -euo pipefail
 IMAGE="${OMNI_IMAGE:-omni-rails-dev}"
 NETWORK="${OMNI_NET:-omni_net}"
 APP_DIR="${OMNI_APP_DIR:-/c/Sandbox/_omni/app}"
-NORMALIZED_DIR="${OMNI_NORMALIZED_DIR:-/c/Sandbox/_omni/_origem/_repob/pipeline/output/normalized}"
+NORMALIZED_DIR="${OMNI_NORMALIZED_DIR:-/c/Sandbox/_omni/app/pipeline/output/normalized}"
 JOB_CONCURRENCY="${JOB_CONCURRENCY:-1}"
 
 # PB-016a — sincronização COMPLETA pelo Omni (pipeline + importação).
