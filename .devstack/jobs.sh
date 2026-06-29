@@ -30,6 +30,10 @@ RUN_PIPELINE="${OMNI_RUN_PIPELINE_INTERNALLY:-1}"
 AGENT_URL="${OMNI_PIPELINE_AGENT_URL:-http://host.docker.internal:8765}"
 AGENT_TOKEN="${OMNI_PIPELINE_AGENT_TOKEN:-omni-dev-agent}"
 PIPELINE_TIMEOUT="${OMNI_PIPELINE_TIMEOUT:-1800}"
+# IA local (Ollama) no host — mesmos defaults do web, p/ consistência (se a sugestão
+# vier a rodar em job). `localhost` no container é o container; o host é host.docker.internal.
+OLLAMA_URL="${OMNI_OLLAMA_URL:-http://host.docker.internal:11434}"
+OLLAMA_MODEL="${OMNI_OLLAMA_MODEL:-gemma4:latest}"
 
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK"
 
@@ -41,6 +45,8 @@ MSYS_NO_PATHCONV=1 docker run -d --name omni_jobs \
   -e OMNI_PIPELINE_AGENT_URL="${AGENT_URL}" \
   -e OMNI_PIPELINE_AGENT_TOKEN="${AGENT_TOKEN}" \
   -e OMNI_PIPELINE_TIMEOUT="${PIPELINE_TIMEOUT}" \
+  -e OMNI_OLLAMA_URL="${OLLAMA_URL}" \
+  -e OMNI_OLLAMA_MODEL="${OLLAMA_MODEL}" \
   -v "${APP_DIR}:/app" \
   -v omni_bundle:/usr/local/bundle \
   -v "${NORMALIZED_DIR}:/normalized:ro" \

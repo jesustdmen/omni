@@ -40,6 +40,13 @@ AGENT_URL="${OMNI_PIPELINE_AGENT_URL:-http://host.docker.internal:8765}"
 AGENT_TOKEN="${OMNI_PIPELINE_AGENT_TOKEN:-omni-dev-agent}"
 PIPELINE_TIMEOUT="${OMNI_PIPELINE_TIMEOUT:-1800}"
 
+# IA local (Ollama) — a sugestão de atividades da Triagem chama o Ollama do HOST. De dentro
+# do container `localhost` é o próprio container; o host é `host.docker.internal`. Por isso o
+# default LOCAL aponta para lá (o default GLOBAL de Ai::OllamaClient segue `localhost`, válido
+# fora do Docker). Override por OMNI_OLLAMA_URL / OMNI_OLLAMA_MODEL.
+OLLAMA_URL="${OMNI_OLLAMA_URL:-http://host.docker.internal:11434}"
+OLLAMA_MODEL="${OMNI_OLLAMA_MODEL:-gemma4:latest}"
+
 # Recria o container (idempotente).
 docker rm -f omni_web >/dev/null 2>&1 || true
 MSYS_NO_PATHCONV=1 docker run -d --name omni_web \
@@ -48,6 +55,8 @@ MSYS_NO_PATHCONV=1 docker run -d --name omni_web \
   -e OMNI_PIPELINE_AGENT_URL="${AGENT_URL}" \
   -e OMNI_PIPELINE_AGENT_TOKEN="${AGENT_TOKEN}" \
   -e OMNI_PIPELINE_TIMEOUT="${PIPELINE_TIMEOUT}" \
+  -e OMNI_OLLAMA_URL="${OLLAMA_URL}" \
+  -e OMNI_OLLAMA_MODEL="${OLLAMA_MODEL}" \
   -v "${APP_DIR}:/app" \
   -v omni_bundle:/usr/local/bundle \
   -v "${NORMALIZED_DIR}:/normalized:ro" \
@@ -61,6 +70,7 @@ if [ "$RUN_PIPELINE" = "1" ]; then
 else
   echo "  coleta pelo Omni DESLIGADA (só importa /normalized)"
 fi
+echo "  IA local (Ollama) em ${OLLAMA_URL} · modelo ${OLLAMA_MODEL}"
 
 # PB-015 — sobe também o worker de jobs isolado (a menos que OMNI_SKIP_JOBS=1).
 if [ "${OMNI_SKIP_JOBS:-0}" != "1" ]; then

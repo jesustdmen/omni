@@ -24,6 +24,19 @@ No ambiente de dev/local o devstack sobe **operacional**: `up.sh`/`jobs.sh` usam
 - **Default de runtime do Rails segue `false`** (`config/application.rb`): **produção e testes/CI NÃO coletam por acidente** — quem liga a coleta é este devstack. A suíte de testes injeta um runner falso e nunca executa o pipeline real.
 - **Produção** ainda depende da topologia F7.2–F7.6 (worker no deploy, Kamal, entrega do volume `/normalized`, onde o host roda a coleta).
 
+## IA local (Ollama) na Triagem
+A sugestão "Sugerir atividades com IA" (`/conversations/:id?mode=triage`) chama o **Ollama no host**. Atenção à rede do Docker:
+
+- **No host:** `http://localhost:11434`.
+- **Visto de dentro do container** (`omni_web`/`omni_jobs`): `http://host.docker.internal:11434` — dentro do container `localhost` é o **próprio container**, então `localhost:11434` **falha**.
+
+Por isso o `up.sh`/`jobs.sh` definem o **default LOCAL** apontando para o host e o repassam ao container:
+
+- `OMNI_OLLAMA_URL` default `http://host.docker.internal:11434` (override por env).
+- `OMNI_OLLAMA_MODEL` default `gemma4:latest` (override por env).
+
+O **default GLOBAL** de `Ai::OllamaClient` permanece `http://localhost:11434` (válido **fora** do Docker) — só o devstack injeta o endereço do host. Conferir dentro do container: `docker exec omni_web printenv OMNI_OLLAMA_URL OMNI_OLLAMA_MODEL` e `docker exec omni_web bash -lc "curl -s -o /dev/null -w '%{http_code}' http://host.docker.internal:11434/api/tags"` (espera `200`).
+
 ## Por que o mount `/normalized:ro` é necessário
 O lazy-load de turnos (**ADR-021**) não importa o conteúdo das conversas para o banco — ele guarda apenas **ponteiros (offsets)** e lê as linhas sob demanda diretamente de `output/normalized/sessions.jsonl`. **F7.7:** essa saída agora é gerada pelo **pipeline NATIVO do Omni** (`app/pipeline/output/normalized/`), não mais pelo RepoB. O `turn_source.source_file` aponta para **`/normalized/sessions.jsonl`**.
 
