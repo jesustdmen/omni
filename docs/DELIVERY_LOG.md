@@ -9,6 +9,22 @@
 
 ## Entradas
 
+## 2026-06-29 — [Triagem · PB-020d] Rascunhos de blocos de trabalho na Triagem — IMPLEMENTADO E VALIDADO (aceite operacional pendente)
+### Resumo
+Nova unidade da Triagem: **bloco/turno de trabalho** (Manhã/Tarde/Noite de um dia) dentro de uma conversa, com janela de tempo **sugerida/editável** e tipo `execution`/`gap`, como **rascunho**. NÃO cria TimeEntry, NÃO altera Task/ConversationLink, NÃO promove. **Conversa PESSOAL não participa**: não gera/edita bloco (bloqueio no backend + UI). Microatividades = **snapshot textual** (sem FK). Validação **técnica** (checks verdes); produção não exercida.
+### Entregue (validado)
+- **Tabela `conversation_work_blocks`** (migration `20260629120000`): `conversation_id` NOT NULL (cascade); client/project/**task opcionais** (nullify); `period_date`, `day_period` (manha|tarde|noite), `start_time`/`end_time` (nullable), `duration_seconds` (**editável**, ≥0), `kind` (execution|gap), `summary`/`notes`, `needs_external_evidence`+`external_evidence_note`, `status` (draft|confirmed|discarded), `source` (manual|ia_local), `position`, `created_by`/`updated_by`. **CHECKs** de day_period/kind/status/source/duration; índice `(conversation_id, period_date, position)`.
+- **Model `ConversationWorkBlock`** (allowlists, rótulos PT-BR, `duration_seconds` editável não-derivada, validação fim≥início só quando ambos informados, `ordered`).
+- **Policy** `ConversationWorkBlockPolicy` (ADR-014) + `Conversation has_many :work_blocks` (delete_all).
+- **Controller aninhado** `conversation_work_blocks` (create/update/destroy), escopado pela conversa da URL; status inválido descartado; volta à Triagem (âncora `blocos`).
+- **UI** card "Blocos de trabalho" só em `mode=triage` (agrupado por data + turno; janela/duração/tipo/status/origem; form novo/editar via `<details>`; confirmar/descartar/reabrir/remover; **sem botão de promoção**).
+### Arquivos
+Novos: migration `20260629120000`, `app/models/conversation_work_block.rb`, `app/policies/conversation_work_block_policy.rb`, `app/controllers/conversation_work_blocks_controller.rb`, `app/views/conversations/_work_blocks.html.erb`, `app/views/conversations/_work_block_form.html.erb`, `test/models/conversation_work_block_test.rb`, `test/integration/conversation_work_blocks_test.rb`. Modificados: `db/schema.rb`, `config/routes.rb`, `app/models/conversation.rb`, `app/controllers/conversations_controller.rb`, `app/views/conversations/_triage.html.erb`, `app/assets/stylesheets/application.css`.
+### Validação
+`bin/rails test` **918 runs / 3393 assertions / 0 falhas / 0 erros / 0 skips** (+29 PB-020d); rubocop **0**; brakeman **0**; zeitwerk OK; migration aplicada em dev/test. Cobertura: allowlists/defaults/FKs/duração≥0/fim≥início; criar/editar/confirmar/descartar/reabrir/remover; escopo por URL (404); **`assert_no_difference` TimeEntry/Task/ConversationLink**; aparece só em `mode=triage`; **conversa PESSOAL bloqueia criar/editar bloco** (backstop de model + guarda no controller; UI mostra a mensagem e não oferece o form).
+### Escopo negativo (cumprido)
+Sem promoção a TimeEntry; sem precificação/fechamento/PDF; **sem FK/junção** com `conversation_activity_drafts` (snapshot textual); sem classificação fina (situação/análise/decisão/teste/aceite); sem IA criando blocos; fluxo só na Triagem; `_origem/_repob` (referência) intocado.
+
 ## 2026-06-28 — [Correção de registro · ADR-011 / PB-016] RepoB é referência NÃO produtiva (coleta atual = andaime de dev)
 > **Nota corretiva de direção (não é nova entrega).** Não reescreve a entrada histórica da PB-016; apenas corrige a leitura de escopo dela, conforme o mecanismo append-only (corrigir = adicionar nota).
 **Correção:** a **PB-016** (disparo do pipeline pelo Omni via agente no host) está concluída **somente em DEV/LOCAL**, **não pronta para produção**. O agente executa `run_pipeline.py` do **RepoB** (`_origem/_repob`), que é **referência read-only e NÃO existirá em produção** — logo é **andaime de desenvolvimento**, não a topologia produtiva. A coleta/normalização de produção exige uma **origem própria do Omni** (versionada/deployada pelo Omni ou oficialmente definida como dele), **ainda a definir** (rastreado em **F7.7**). O consumo de `output/normalized/` e o mount `/normalized:ro` seguem válidos como **contrato de consumo/dev**, sem resolver a origem produtiva (F7.5). Registrado em **ADR-011 (addendum 2026-06-28)**, `ARCHITECTURE_DECISIONS_INDEX`, `ROADMAP`, `FEATURE_MATRIX` (OP-02), `F7_CONTRACT_DECISIONS` (F7.5/F7.7) e `CONSTRAINTS`. **Sem alteração de código.**

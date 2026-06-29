@@ -1,0 +1,86 @@
+<%# PB-020d (Triagem) — rascunhos de blocos de trabalho (turno/dia). Sem JS pesado:
+    edição/novo via <details>; status por button_to. Tudo PT-BR. NÃO promove a TimeEntry. %>
+<div class="card work-blocks" id="blocos">
+  <div class="subhead">
+    <h2>Blocos de trabalho</h2>
+    <span class="muted">turno/dia · rascunhos validáveis (sem registro de horas)</span>
+  </div>
+
+  <% if conversation.personal %>
+    <%# PB-020d — conversa pessoal não participa da avaliação de trabalho. %>
+    <p class="muted">Conversa marcada como pessoal. Blocos de trabalho não são gerados para conversas pessoais.</p>
+  <% else %>
+  <p class="muted work-blocks__note">
+    Blocos são <strong>rascunhos por turno (Manhã/Tarde/Noite)</strong> de um dia. O tempo é
+    <strong>sugestão/evidência</strong>, editável — <strong>não vira registro oficial de horas automaticamente</strong>.
+    A conversa é a evidência padrão; indique evidência externa só quando houver trabalho fora do chat.
+  </p>
+
+  <% if blocks.any? %>
+    <% blocks.group_by(&:period_date).each do |dia, do_dia| %>
+      <div class="work-blocks__day">
+        <h3 class="work-blocks__date"><%= local_date(dia) %></h3>
+        <ul class="work-blocks__list">
+          <% do_dia.each do |block| %>
+            <li class="work-block work-block--<%= block.status %>">
+              <div class="work-block__head">
+                <span class="badge badge--neutral"><%= block.day_period_label %></span>
+                <span class="work-block__window mono">
+                  <%= block.start_time ? local_time(block.start_time) : "—" %> → <%= block.end_time ? local_time(block.end_time) : "—" %>
+                </span>
+                <span class="muted">· <%= duration_label(block.duration_seconds) %></span>
+                <span class="badge badge--<%= block.gap? ? "warning" : "info" %>"><%= block.kind_label %></span>
+                <span class="badge badge--<%= block.confirmed? ? "success" : (block.discarded? ? "neutral" : "info") %>"><%= block.status_label %></span>
+                <% if block.ia_local? %><span class="badge badge--neutral"><%= block.source_label %></span><% end %>
+              </div>
+
+              <% if block.summary.present? %><p class="work-block__summary"><%= block.summary %></p><% end %>
+              <% if block.notes.present? %><p class="work-block__notes muted"><%= block.notes %></p><% end %>
+              <% if block.needs_external_evidence %>
+                <p class="muted work-block__ev-note">⚑ Evidência externa: <%= block.external_evidence_note.presence || "indicada" %></p>
+              <% end %>
+
+              <div class="work-block__actions">
+                <% unless block.confirmed? %>
+                  <%= button_to "Confirmar", conversation_work_block_path(conversation, block),
+                        method: :patch, params: { work_block: { status: "confirmed" } },
+                        form_class: "inline", class: "btn btn--primary btn--sm" %>
+                <% end %>
+                <% unless block.discarded? %>
+                  <%= button_to "Descartar", conversation_work_block_path(conversation, block),
+                        method: :patch, params: { work_block: { status: "discarded" } },
+                        form_class: "inline", class: "btn btn--ghost btn--sm" %>
+                <% end %>
+                <% unless block.draft? %>
+                  <%= button_to "Reabrir", conversation_work_block_path(conversation, block),
+                        method: :patch, params: { work_block: { status: "draft" } },
+                        form_class: "inline", class: "btn btn--outline btn--sm" %>
+                <% end %>
+
+                <details class="work-block__edit">
+                  <summary class="btn btn--outline btn--sm">Editar</summary>
+                  <%= render "conversations/work_block_form", conversation: conversation, block: block,
+                        url: conversation_work_block_path(conversation, block), method: :patch, submit: "Salvar" %>
+                </details>
+
+                <%= button_to "Remover", conversation_work_block_path(conversation, block),
+                      method: :delete, form_class: "inline", class: "btn btn--ghost btn--sm",
+                      data: { turbo_confirm: "Remover este bloco?" } %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  <% else %>
+    <p class="muted">Nenhum bloco de trabalho registrado ainda.</p>
+  <% end %>
+
+  <%# Criar bloco de trabalho. %>
+  <details class="work-block__new">
+    <summary class="btn btn--primary btn--sm">Adicionar bloco de trabalho</summary>
+    <%= render "conversations/work_block_form", conversation: conversation, block: new_block,
+          url: conversation_work_blocks_path(conversation), method: :post, submit: "Adicionar bloco" %>
+  </details>
+  <% end %>
+</div>

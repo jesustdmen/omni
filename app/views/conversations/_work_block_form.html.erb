@@ -1,0 +1,50 @@
+<%# PB-020d — form compartilhado (novo/editar) de bloco de trabalho. Tempo é
+    evidência/sugestão (editável); duração editável; sem promover a TimeEntry. %>
+<% rid = block.id || "new" %>
+<%= form_with url: url, method: method, class: "work-block__form" do %>
+  <div>
+    <%= label_tag "wb_date_#{rid}", "Data" %><br>
+    <%= date_field_tag "work_block[period_date]", block.period_date, id: "wb_date_#{rid}" %>
+  </div>
+  <div>
+    <%= label_tag "wb_period_#{rid}", "Turno" %><br>
+    <%= select_tag "work_block[day_period]",
+          options_for_select(ConversationWorkBlock::DAY_PERIOD_LABELS.map { |k, v| [ v, k ] }, block.day_period),
+          id: "wb_period_#{rid}" %>
+  </div>
+  <div>
+    <%= label_tag "wb_kind_#{rid}", "Tipo" %><br>
+    <%= select_tag "work_block[kind]",
+          options_for_select(ConversationWorkBlock::KIND_LABELS.map { |k, v| [ v, k ] }, block.kind),
+          id: "wb_kind_#{rid}" %>
+  </div>
+  <div>
+    <%= label_tag "wb_start_#{rid}", "Início (evidência/sugestão)" %><br>
+    <%= datetime_field_tag "work_block[start_time]", block.start_time&.in_time_zone&.strftime("%Y-%m-%dT%H:%M"), id: "wb_start_#{rid}" %>
+  </div>
+  <div>
+    <%= label_tag "wb_end_#{rid}", "Fim (evidência/sugestão)" %><br>
+    <%= datetime_field_tag "work_block[end_time]", block.end_time&.in_time_zone&.strftime("%Y-%m-%dT%H:%M"), id: "wb_end_#{rid}" %>
+  </div>
+  <div>
+    <%= label_tag "wb_dur_#{rid}", "Duração (segundos) — editável" %><br>
+    <%= number_field_tag "work_block[duration_seconds]", block.duration_seconds, id: "wb_dur_#{rid}", min: 0 %>
+  </div>
+  <div>
+    <%= label_tag "wb_summary_#{rid}", "Resumo (microatividades)" %><br>
+    <%= text_area_tag "work_block[summary]", block.summary, id: "wb_summary_#{rid}", rows: 2,
+          placeholder: "Ex.: revisar ata, testar ERP, consultar banco, validar hipótese" %>
+  </div>
+  <div>
+    <%= label_tag "wb_notes_#{rid}", "Notas (opcional)" %><br>
+    <%= text_area_tag "work_block[notes]", block.notes, id: "wb_notes_#{rid}", rows: 2 %>
+  </div>
+  <div class="work-block__ev">
+    <%# hidden ANTES do checkbox: desmarcado envia "0"; marcado, "1" prevalece. %>
+    <%= hidden_field_tag "work_block[needs_external_evidence]", "0" %>
+    <%= check_box_tag "work_block[needs_external_evidence]", "1", block.needs_external_evidence, id: "wb_ev_#{rid}" %>
+    <%= label_tag "wb_ev_#{rid}", "Precisa de evidência externa (banco/ERP/espera longa/validação)" %><br>
+    <%= text_field_tag "work_block[external_evidence_note]", block.external_evidence_note, id: "wb_evnote_#{rid}", placeholder: "Qual evidência externa?" %>
+  </div>
+  <%= submit_tag submit, class: "btn btn--primary btn--sm" %>
+<% end %>

@@ -452,6 +452,18 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Fora de escopo | Fechamento/snapshot (PB-021); relatório/PDF (PB-022); `rounding_rule` comercial definitiva; gravar valor em qualquer registro. |
 | Dependências | PB-020a; PB-019b (Contratos); **ADR-025**. |
 
+#### PB-020d — Rascunhos de blocos de trabalho na Triagem (frente de produto da PB-020)
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **IMPLEMENTADO E VALIDADO (2026-06-29) — aceite operacional do PO pendente.** `conversation_work_blocks` + UI na Triagem; **conversa pessoal não participa** (bloqueio backend + UI); suíte 918/3393/0; rubocop/brakeman 0. Contrato técnico em `PB-020_TRIAGEM_CONVERSAS_REQUISITOS.md` (§ "CONTRATO PB-020d"). |
+| Problema que resolve | A unidade do fluxo de tempo não é a conversa inteira nem a microatividade isolada, e sim um **bloco/turno de trabalho** (Manhã/Tarde/Noite de um dia) dentro de uma conversa, com janela de tempo **sugerida** e tipo `execution`/`gap`. Cria/edita **rascunhos** desses blocos na Triagem. |
+| Critério de aceite | Tela de Triagem cria/edita/confirma/descarta/reabre/remove **blocos** como rascunho, agrupados por data + turno; `kind ∈ {execution, gap}`, `status ∈ {draft, confirmed, discarded}`, `day_period ∈ {manha, tarde, noite}` (CHECK no banco); `duration_seconds` editável (≥0); tempo sugerido segue o método PB-020 (evidência, não verdade absoluta). **Não** cria `TimeEntry`, **não** altera `Task`/`ConversationLink`. |
+| Decisões | • Tabela própria `conversation_work_blocks` (não evolui `conversation_activity_drafts`). • Microatividades = **snapshot textual** (sem FK/junção agora). • `task_id` **opcional** (rascunho não exige task). • `source manual\|ia_local` (prepara IA futura). • **Conversa `personal=true` NÃO participa:** não gera/edita bloco (não vira Task/TimeEntry, não entra em cálculo) — bloqueio no backend (validação de model + guarda no controller) e na UI. |
+| Fora de escopo | Promoção a `TimeEntry` (fatia posterior, após validação humana); precificação/fechamento/PDF; FK/junção com `conversation_activity_drafts`; classificação fina (situação/análise/decisão/teste/aceite); IA criando blocos; fluxo fora da Triagem. |
+| Dependências | PB-020 (Triagem persistida + atividades), `ConversationTimeline` (gaps), ADR-023 (dia operacional Brasília). |
+
 ### PB-021 — Fechamentos (snapshot)
 
 | Campo | Valor |

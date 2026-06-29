@@ -10,6 +10,9 @@ class Conversation < ApplicationRecord
   # PB-020 (Triagem) — atividades de 2º nível (rascunhos manuais). FK CASCADE no banco;
   # delete_all: itens sem callbacks, removidos junto com a conversa.
   has_many :activity_drafts, class_name: "ConversationActivityDraft", dependent: :delete_all
+  # PB-020d (Triagem) — blocos de trabalho (rascunhos por turno/dia). FK CASCADE no banco;
+  # delete_all: itens sem callbacks, removidos junto com a conversa.
+  has_many :work_blocks, class_name: "ConversationWorkBlock", dependent: :delete_all
 
   validates :thread_id, presence: true, uniqueness: true
   validates :message_count, :user_turns, :assistant_turns, :tool_calls,

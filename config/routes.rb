@@ -49,6 +49,8 @@ Rails.application.routes.draw do
     resources :activity_drafts, controller: "conversation_activity_drafts", only: %i[create update destroy] do
       post :suggest, on: :collection
     end
+    # PB-020d (Triagem) — blocos de trabalho (rascunhos por turno/dia da conversa).
+    resources :work_blocks, controller: "conversation_work_blocks", only: %i[create update destroy]
   end
   # PB-013 — busca global (read-only) sobre os dados funcionais.
   get "search", to: "search#index"

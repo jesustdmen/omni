@@ -137,6 +137,10 @@
           conversation: @conversation, drafts: @activity_drafts, new_draft: @new_activity_draft,
           has_primary: @has_primary, primary_link: @links.find { |l| l.link_type == "primary" } %>
 
+    <%# Blocos de trabalho (rascunhos por turno/dia). PB-020d — sem promover a TimeEntry. %>
+    <%= render "conversations/work_blocks",
+          conversation: @conversation, blocks: @work_blocks, new_block: @new_work_block %>
+
     <%# Ações conforme o estado real do vínculo (fonte: ConversationLink). %>
     <div class="card">
       <div class="subhead"><h2>Tarefa</h2></div>

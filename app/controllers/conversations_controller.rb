@@ -57,6 +57,8 @@ class ConversationsController < ApplicationController
     @clients = Client.ordered # opções p/ confirmar cliente (decisão humana)
     @activity_drafts = @conversation.activity_drafts.ordered # atividades de 2º nível (rascunhos)
     @new_activity_draft = @conversation.activity_drafts.new # form de nova atividade
+    @work_blocks = @conversation.work_blocks.ordered # PB-020d — blocos de trabalho (rascunhos)
+    @new_work_block = @conversation.work_blocks.new(period_date: Time.zone.today, day_period: "manha", kind: "execution")
   end
 
   # F5.1 — leitura lazy read-only dos turnos (ADR-021/ADR-012).

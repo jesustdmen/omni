@@ -470,6 +470,23 @@ p { margin: 0 0 12px; }
 .activity-draft__edit[open] { display: block; width: 100%; margin-top: 6px; }
 .activity-draft__new { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 
+/* PB-020d — Blocos de trabalho (rascunhos por turno/dia). */
+.work-blocks__note { font-size: 12px; margin-top: 4px; }
+.work-blocks__day { margin-top: 10px; }
+.work-blocks__date { font-size: 13px; margin: 6px 0; }
+.work-blocks__list { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-direction: column; gap: 8px; }
+.work-block { border: 1px solid var(--tone-neutral-border); border-radius: var(--radius-md, 8px); padding: 10px 12px; }
+.work-block--discarded { opacity: 0.6; }
+.work-block__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.work-block__window { font-size: 12.5px; }
+.work-block__summary { margin: 4px 0 0; font-size: 12.5px; }
+.work-block__notes, .work-block__ev-note { margin: 4px 0 0; font-size: 12px; }
+.work-block__actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.work-block__edit, .work-block__new { display: inline-block; }
+.work-block__edit > summary, .work-block__new > summary { cursor: pointer; list-style: none; }
+.work-block__edit[open], .work-block__new[open] { display: block; width: 100%; margin-top: 6px; }
+.work-block__form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+
 /* PB-020a — Apuração de horas (read-only). */
 .wtr-totals { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
 .wtr-row--no-hours { opacity: .7; }

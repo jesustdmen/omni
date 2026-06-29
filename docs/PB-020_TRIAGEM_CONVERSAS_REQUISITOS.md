@@ -174,6 +174,59 @@ Regra: `TimeEntry` oficial so nasce apos validacao humana ou regra explicitament
    - PB-021: fechamento/snapshot.
    - PB-022: relatorio/PDF.
 
+## CONTRATO PB-020d — Rascunhos de blocos de trabalho na Triagem (registrado em 2026-06-29)
+
+> **Status (2026-06-29): IMPLEMENTADO E VALIDADO** (tabela `conversation_work_blocks` + UI na Triagem; suite 918/0; rubocop/brakeman 0). **Aceite operacional do PO pendente.** Inclui a regra: **conversa pessoal nao participa** (nao gera/edita bloco — bloqueio backend + UI). Detalhe da entrega no `DELIVERY_LOG`; status granular no `FEATURE_MATRIX` (UI-05) e no `PRODUCT_BACKLOG` (PB-020d). O contrato abaixo permanece como especificacao.
+
+Decisao de produto: a unidade da proxima fatia nao e a conversa inteira nem cada microatividade isolada. A unidade e um **bloco/turno de trabalho dentro de uma conversa**, associado a um cliente e contendo varias microatividades/execucoes.
+
+Modelo conceitual:
+
+```text
+Conversa
+-> Cliente
+-> Atividade macro
+-> Blocos de trabalho por turno/dia
+-> Microatividades/execucoes dentro do bloco
+-> Rascunho validavel futuramente para TimeEntry
+```
+
+Exemplos de bloco:
+
+```text
+29/06/2026 - Manha - 08:00 as 11:00
+Cliente X
+Atividade macro: Analise de inconsistencia fiscal
+Microatividades: revisar ata, testar ERP, consultar banco, validar hipotese
+
+29/06/2026 - Tarde - 12:00 as 18:00
+Cliente X
+Atividade macro: Correcao e validacao
+Microatividades: ajustar regra, testar cenario, revisar evidencias
+```
+
+Decisoes da fatia:
+
+- O fluxo nasce e continua na **Triagem**.
+- A primeira fatia cria/edita apenas **rascunhos de blocos de trabalho**.
+- A primeira fatia **NAO promove para `TimeEntry`**.
+- A promocao para `TimeEntry` fica para fatia posterior, apos validacao humana.
+- Tipos permitidos nesta fase: `execution` e `gap`.
+- Termos como situacao, analise, decisao, teste e aceite sao contexto narrativo, nao taxonomia automatica nesta fase.
+- A conversa e a evidencia padrao do bloco.
+- **Conversa pessoal (`personal=true`) NAO participa da avaliacao de trabalho:** nao gera nem edita bloco; nao vira Task/TimeEntry; nao entra em calculo de tempo. Bloqueio no **backend** (validacao de model + guarda no controller) e na **UI** (card desabilitado com a mensagem "Conversa marcada como pessoal. Blocos de trabalho nao sao gerados para conversas pessoais.").
+- Evidencia extra so deve ser indicada quando houver trabalho fora do chat, como consulta em banco, teste em ERP, espera longa ou validacao externa.
+- O tempo sugerido deve seguir o metodo de extracao ja documentado nesta PB.
+- Timestamps e gaps sao evidencias, nao verdade absoluta.
+
+Fora de escopo desta fatia:
+
+- Criar `TimeEntry` oficial.
+- Precificacao, fechamento ou PDF.
+- Classificacao automatica fina de situacao/analise/decisao/teste/aceite.
+- Criar fluxo separado fora da Triagem para revisar rascunhos.
+- Tratar gap automaticamente como pausa ou ausencia.
+
 ## 5. Armadilhas a evitar
 
 - Criar `TimeEntry` definitivo diretamente a partir de timestamps.

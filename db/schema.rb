@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -163,6 +163,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_150000) do
     t.index ["turn_source_id"], name: "index_conversation_turn_refs_on_turn_source_id"
     t.check_constraint "byte_offset >= 0", name: "conversation_turn_refs_byte_offset_check"
     t.check_constraint "line_no > 0", name: "conversation_turn_refs_line_no_check"
+  end
+
+  create_table "conversation_work_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "client_id"
+    t.uuid "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "day_period", null: false
+    t.integer "duration_seconds", default: 0, null: false
+    t.timestamptz "end_time"
+    t.text "external_evidence_note"
+    t.text "kind", default: "execution", null: false
+    t.boolean "needs_external_evidence", default: false, null: false
+    t.text "notes"
+    t.date "period_date", null: false
+    t.integer "position", default: 0, null: false
+    t.uuid "project_id"
+    t.text "source", default: "manual", null: false
+    t.timestamptz "start_time"
+    t.text "status", default: "draft", null: false
+    t.text "summary"
+    t.uuid "task_id"
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_id"
+    t.index ["client_id"], name: "index_conversation_work_blocks_on_client_id"
+    t.index ["conversation_id", "period_date", "position"], name: "idx_work_blocks_conversation_date_position"
+    t.index ["conversation_id"], name: "index_conversation_work_blocks_on_conversation_id"
+    t.index ["created_by_id"], name: "index_conversation_work_blocks_on_created_by_id"
+    t.index ["project_id"], name: "index_conversation_work_blocks_on_project_id"
+    t.index ["task_id"], name: "index_conversation_work_blocks_on_task_id"
+    t.index ["updated_by_id"], name: "index_conversation_work_blocks_on_updated_by_id"
+    t.check_constraint "day_period = ANY (ARRAY['manha'::text, 'tarde'::text, 'noite'::text])", name: "conversation_work_blocks_day_period_check"
+    t.check_constraint "duration_seconds >= 0", name: "conversation_work_blocks_duration_check"
+    t.check_constraint "kind = ANY (ARRAY['execution'::text, 'gap'::text])", name: "conversation_work_blocks_kind_check"
+    t.check_constraint "source = ANY (ARRAY['manual'::text, 'ia_local'::text])", name: "conversation_work_blocks_source_check"
+    t.check_constraint "status = ANY (ARRAY['draft'::text, 'confirmed'::text, 'discarded'::text])", name: "conversation_work_blocks_status_check"
   end
 
   create_table "conversations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -520,6 +556,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_150000) do
   add_foreign_key "conversation_triages", "users", column: "triaged_by_id", on_delete: :nullify
   add_foreign_key "conversation_turn_refs", "conversations", on_delete: :cascade
   add_foreign_key "conversation_turn_refs", "turn_sources", on_delete: :cascade
+  add_foreign_key "conversation_work_blocks", "clients", on_delete: :nullify
+  add_foreign_key "conversation_work_blocks", "conversations", on_delete: :cascade
+  add_foreign_key "conversation_work_blocks", "projects", on_delete: :nullify
+  add_foreign_key "conversation_work_blocks", "tasks", on_delete: :nullify
+  add_foreign_key "conversation_work_blocks", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "conversation_work_blocks", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "conversations", "users", on_delete: :nullify
   add_foreign_key "demands", "clients", on_delete: :nullify
   add_foreign_key "projects", "clients", on_delete: :cascade
