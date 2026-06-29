@@ -17,16 +17,19 @@ APP_DIR="${OMNI_APP_DIR:-/c/Sandbox/_omni/app}"
 NORMALIZED_DIR="${OMNI_NORMALIZED_DIR:-/c/Sandbox/_omni/app/pipeline/output/normalized}"
 JOB_CONCURRENCY="${JOB_CONCURRENCY:-1}"
 
-# PB-016a — sincronização COMPLETA pelo Omni (pipeline + importação).
-# O pipeline (RepoB) é Windows-nativo e roda NO HOST, via AGENTE (script/pipeline_agent.py);
-# o worker NÃO executa Python nem monta o pipeline — só dispara o agente por HTTP e
-# importa /normalized. Por isso aqui só passamos a flag + URL/token do agente.
-#   OMNI_RUN_PIPELINE_INTERNALLY  liga a coleta pelo Omni (default 0; o agente faz a coleta)
+# PB-016a/F7.7 — sincronização COMPLETA pelo Omni (pipeline NATIVO + importação).
+# O pipeline (app/pipeline, F7.7) é Windows-nativo e roda NO HOST, via AGENTE
+# (script/pipeline_agent.py → run_collect.py); o worker NÃO executa Python nem monta o
+# pipeline — só dispara o agente por HTTP e importa /normalized. Por isso aqui só passamos
+# a flag + URL/token/timeout do agente.
+#   OMNI_RUN_PIPELINE_INTERNALLY  liga a coleta pelo Omni (default 1 NO DEVSTACK; 0 p/ desligar)
 #   OMNI_PIPELINE_AGENT_URL       URL do agente no host (default host.docker.internal:8765)
 #   OMNI_PIPELINE_AGENT_TOKEN     token compartilhado com o agente
-RUN_PIPELINE="${OMNI_RUN_PIPELINE_INTERNALLY:-0}"
+#   OMNI_PIPELINE_TIMEOUT         timeout da coleta em segundos (default 1800)
+RUN_PIPELINE="${OMNI_RUN_PIPELINE_INTERNALLY:-1}"
 AGENT_URL="${OMNI_PIPELINE_AGENT_URL:-http://host.docker.internal:8765}"
 AGENT_TOKEN="${OMNI_PIPELINE_AGENT_TOKEN:-omni-dev-agent}"
+PIPELINE_TIMEOUT="${OMNI_PIPELINE_TIMEOUT:-1800}"
 
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK"
 
@@ -37,6 +40,7 @@ MSYS_NO_PATHCONV=1 docker run -d --name omni_jobs \
   -e OMNI_RUN_PIPELINE_INTERNALLY="${RUN_PIPELINE}" \
   -e OMNI_PIPELINE_AGENT_URL="${AGENT_URL}" \
   -e OMNI_PIPELINE_AGENT_TOKEN="${AGENT_TOKEN}" \
+  -e OMNI_PIPELINE_TIMEOUT="${PIPELINE_TIMEOUT}" \
   -v "${APP_DIR}:/app" \
   -v omni_bundle:/usr/local/bundle \
   -v "${NORMALIZED_DIR}:/normalized:ro" \

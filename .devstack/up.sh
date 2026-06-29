@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # F5.1.2 — sobe o container de dev `omni_web` (Fundação Rails) de forma reprodutível.
 #
-# Persiste o mount READ-ONLY de `output/normalized/` (do RepoB) em /normalized, exigido
-# pelo lazy-load de turnos (ADR-021): sem ele, ConversationTurns::LazyLoader retorna :stale.
+# Persiste o mount READ-ONLY de `output/normalized/` (pipeline NATIVO do Omni,
+# app/pipeline/output/normalized — F7.7) em /normalized, exigido pelo lazy-load de turnos
+# (ADR-021): sem ele, ConversationTurns::LazyLoader retorna :stale.
 # NÃO copia nem versiona sessions.jsonl — apenas monta a fonte em modo somente-leitura (ADR-008).
+#
+# F7.7 — no ambiente LOCAL os serviços sobem OPERACIONAIS por padrão: coleta pelo Omni LIGADA
+# (OMNI_RUN_PIPELINE_INTERNALLY=1), agente no host + worker de jobs online. O default de runtime
+# do Rails segue `false` (config/application.rb) — produção/CI NÃO coletam por acidente; quem liga
+# a coleta é este devstack. Para subir sem coleta no local: `OMNI_RUN_PIPELINE_INTERNALLY=0 bash .devstack/up.sh`.
 #
 # Uso (Git Bash / WSL):  bash .devstack/up.sh
 # Variáveis overridáveis por ambiente (defaults para a máquina de dev atual):
@@ -26,11 +32,13 @@ docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NET
 # Remove server.pid órfão (o app é bind-mount; o pid sobrevive ao container).
 rm -f "$APP_DIR/tmp/pids/server.pid" 2>/dev/null || true
 
-# PB-016a — flag da coleta + URL/token do agente (a UI reflete o estado; o web não
-# roda Python). Mesmos defaults do worker/agente.
-RUN_PIPELINE="${OMNI_RUN_PIPELINE_INTERNALLY:-0}"
+# PB-016a/F7.7 — flag da coleta + URL/token/timeout do agente (a UI reflete o estado; o web
+# não roda Python). LOCAL liga a coleta por padrão (default 1); override p/ desligar com
+# OMNI_RUN_PIPELINE_INTERNALLY=0. Mesmos defaults do worker/agente.
+RUN_PIPELINE="${OMNI_RUN_PIPELINE_INTERNALLY:-1}"
 AGENT_URL="${OMNI_PIPELINE_AGENT_URL:-http://host.docker.internal:8765}"
 AGENT_TOKEN="${OMNI_PIPELINE_AGENT_TOKEN:-omni-dev-agent}"
+PIPELINE_TIMEOUT="${OMNI_PIPELINE_TIMEOUT:-1800}"
 
 # Recria o container (idempotente).
 docker rm -f omni_web >/dev/null 2>&1 || true
@@ -39,6 +47,7 @@ MSYS_NO_PATHCONV=1 docker run -d --name omni_web \
   -e OMNI_RUN_PIPELINE_INTERNALLY="${RUN_PIPELINE}" \
   -e OMNI_PIPELINE_AGENT_URL="${AGENT_URL}" \
   -e OMNI_PIPELINE_AGENT_TOKEN="${AGENT_TOKEN}" \
+  -e OMNI_PIPELINE_TIMEOUT="${PIPELINE_TIMEOUT}" \
   -v "${APP_DIR}:/app" \
   -v omni_bundle:/usr/local/bundle \
   -v "${NORMALIZED_DIR}:/normalized:ro" \
@@ -47,6 +56,11 @@ MSYS_NO_PATHCONV=1 docker run -d --name omni_web \
 echo "omni_web no ar em http://localhost:${PORT}"
 echo "  /normalized montado :ro de ${NORMALIZED_DIR}"
 echo "  (turnos lazy-load — ADR-021 — dependem deste mount; ele é read-only)"
+if [ "$RUN_PIPELINE" = "1" ]; then
+  echo "  coleta pelo Omni LIGADA (OMNI_RUN_PIPELINE_INTERNALLY=1) — agente em ${AGENT_URL}"
+else
+  echo "  coleta pelo Omni DESLIGADA (só importa /normalized)"
+fi
 
 # PB-015 — sobe também o worker de jobs isolado (a menos que OMNI_SKIP_JOBS=1).
 if [ "${OMNI_SKIP_JOBS:-0}" != "1" ]; then

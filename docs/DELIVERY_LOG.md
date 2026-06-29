@@ -9,6 +9,22 @@
 
 ## Entradas
 
+## 2026-06-29 — [F7.7 · devstack] Coleta nativa LIGADA por padrão no ambiente local
+### Resumo
+Ajuste **operacional/devstack** (sem mudar a arquitetura F7.7 nem o default de runtime do Rails): no ambiente local, `up.sh`/`jobs.sh` passam a subir com **`OMNI_RUN_PIPELINE_INTERNALLY=1` por padrão**, e `up.sh` inicia **agente no host + worker**. Com isso `/sync_runs` deixa de exibir "pipeline interno desligado": "Sincronizar agora" representa **coleta + importação**, mostra o **agente de coleta** (online se saudável) e mantém "Importar arquivos disponíveis".
+### Diagnóstico da causa
+A view/controller de `/sync_runs` são 100% dirigidas por `config.x.run_pipeline_internally` (← `OMNI_RUN_PIPELINE_INTERNALLY`). O devstack subia o web/worker com **default `0`** → a tela mostrava coleta desligada. Não havia bug de código; era default operacional.
+### Alterado
+- `.devstack/up.sh` e `.devstack/jobs.sh`: `RUN_PIPELINE` default **0 → 1**; passam também **`OMNI_PIPELINE_TIMEOUT`** ao web/jobs; comentários/echos atualizados (pipeline nativo; como desligar).
+- `.devstack/README.md`: seção "Coleta nativa LIGADA por padrão no local"; componentes `jobs.sh`/`agent.sh`; nota de testes/CI e produção.
+- `docs/adr/ADR-011`: bullet esclarecendo **default de dev (devstack) ON × default de runtime do Rails `false`**.
+### Decisão sobre `config/application.rb`
+**Mantido `false`** (default de runtime): produção e testes/CI **não coletam por acidente**. Quem liga a coleta é o devstack. Testes rodam em container próprio (`RAILS_ENV=test`, sem a ENV) e injetam `FakeRunner` — nunca executam o pipeline real.
+### Validado
+ENV efetiva em `omni_web` e `omni_jobs` (`OMNI_RUN_PIPELINE_INTERNALLY=1` + URL/token/timeout); agente `/health` `ok:true`/`runner_present:true` apontando para `app/pipeline/run_collect.py`; `/sync_runs` (HTTP 200) renderizando "coleta + importação" + agente **online** + botão "Importar arquivos disponíveis". Checks: testes de sync afetados verdes; rubocop 0; brakeman 0; `git diff --check` limpo.
+### Fora de escopo (inalterado)
+Arquitetura F7.7, agenda (`SyncSchedule`/`ScheduledSyncJob`), fluxo manual/agendado, schema, Graphify/tooling.
+
 ## 2026-06-29 — [F7.7] Pipeline NATIVO de coleta/normalização do Omni (RepoB deixa de ser runtime) — IMPLEMENTADO E VALIDADO (aceite operacional pendente)
 ### Resumo
 Internaliza o pipeline produtivo de coleta/normalização (antes em `_origem/_repob`) para **`app/pipeline/`**, SEM alterar comportamento (cópia verbatim dos estágios + entrypoint nativo `run_collect.py`, ingest→normalize). O Omni **deixa de depender do RepoB em runtime**: o agente roda `app/pipeline/run_collect.py` e o mount lê `app/pipeline/output/normalized/`. **Paridade A/B byte-a-byte provada.** RepoB permanece só como referência read-only.
