@@ -23,13 +23,22 @@
         <strong>Sugestão por IA desativada</strong> nesta conversa pessoal — para proteger o conteúdo.
         Registre as atividades manualmente abaixo.
       </p>
-    <% else %>
+    <% elsif ai_suggest_available %>
       <%= button_to "Sugerir atividades com IA",
             suggest_conversation_activity_drafts_path(conversation),
             method: :post, form_class: "inline", class: "btn btn--outline btn--sm" %>
       <p class="muted activity-drafts__ai-note">
         A <strong>IA local sugere rascunhos</strong> a partir desta conversa. Você precisa
         <strong>revisar</strong> e <strong>confirmar ou descartar</strong> cada um — nada é confirmado automaticamente.
+      </p>
+    <% else %>
+      <%# Índice de turnos :stale/indisponível (durante/logo após coleta/reindex): a IA
+          dependeria de contexto textual que ainda não está pronto. Não oferecemos a ação
+          (evita o falso "sem contexto" que parece erro da IA) e explicamos o porquê. %>
+      <p class="muted activity-drafts__ai-note">
+        <strong>Sugestão por IA indisponível.</strong>
+        Índice de turnos em atualização ou desatualizado. Aguarde a sincronização concluir e recarregue a conversa.
+        <%= link_to "Ver sincronização", sync_runs_path %>
       </p>
     <% end %>
   </div>

@@ -135,7 +135,8 @@
     <%# Atividades de 2º nível (rascunhos manuais da conversa). PB-020. %>
     <%= render "conversations/activity_drafts",
           conversation: @conversation, drafts: @activity_drafts, new_draft: @new_activity_draft,
-          has_primary: @has_primary, primary_link: @links.find { |l| l.link_type == "primary" } %>
+          has_primary: @has_primary, primary_link: @links.find { |l| l.link_type == "primary" },
+          ai_suggest_available: @ai_suggest_available %>
 
     <%# Blocos de trabalho (rascunhos por turno/dia). PB-020d — sem promover a TimeEntry. %>
     <%= render "conversations/work_blocks",

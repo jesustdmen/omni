@@ -150,14 +150,59 @@ class ConversationActivityDraftsTest < ActionDispatch::IntegrationTest
     Ai::ConversationContextBuilder.define_singleton_method(:call, original)
   end
 
+  # Força o STATUS do contexto (sem texto): :indisponivel (índice :stale/não construído)
+  # ou :sem_texto (índice ok porém sem texto útil). A UI/controller dão mensagens distintas.
+  def com_contexto_status(status)
+    original = Ai::ConversationContextBuilder.method(:call)
+    resultado = Ai::ConversationContextBuilder::Result.new(text: "", status: status, turns_used: 0)
+    Ai::ConversationContextBuilder.define_singleton_method(:call) { |**_kw| resultado }
+    yield
+  ensure
+    Ai::ConversationContextBuilder.define_singleton_method(:call, original)
+  end
+
+  # Força o STATUS do LazyLoader usado pelo `show` (gating do botão de IA): :ok (índice
+  # íntegro), :stale (reindex em curso/obsoleto), :empty (índice ainda não construído).
+  def com_loader_status(status, total: 0, turns: [])
+    original = ConversationTurns::LazyLoader.method(:call)
+    resultado = ConversationTurns::LazyLoader::Result.new(
+      status: status, turns: turns, total: total, limit: nil, offset: 0, mismatched: 0, turn_source: nil
+    )
+    ConversationTurns::LazyLoader.define_singleton_method(:call) { |**_kw| resultado }
+    yield
+  ensure
+    ConversationTurns::LazyLoader.define_singleton_method(:call, original)
+  end
+
   def conteudo_ia(hash)
     JSON.generate(hash)
   end
 
-  test "botão de sugerir com IA aparece no modo triagem" do
-    get conversation_path(@conversation, mode: "triage")
-    assert_response :success
-    assert_select "button", text: "Sugerir atividades com IA"
+  test "botão de sugerir com IA aparece no modo triagem (índice íntegro :ok)" do
+    com_loader_status(:ok, total: 3) do
+      get conversation_path(@conversation, mode: "triage")
+      assert_response :success
+      assert_select "button", text: "Sugerir atividades com IA"
+    end
+  end
+
+  test "índice :stale: não oferece IA, mostra aviso de índice + link p/ sincronização" do
+    com_loader_status(:stale) do
+      get conversation_path(@conversation, mode: "triage")
+      assert_response :success
+      assert_select "button", text: "Sugerir atividades com IA", count: 0
+      assert_match(/Índice de turnos em atualização ou desatualizado/i, response.body)
+      assert_select "a[href=?]", sync_runs_path
+    end
+  end
+
+  test "índice :empty (ainda não construído): não oferece IA, mostra aviso de índice" do
+    com_loader_status(:empty) do
+      get conversation_path(@conversation, mode: "triage")
+      assert_response :success
+      assert_select "button", text: "Sugerir atividades com IA", count: 0
+      assert_match(/Índice de turnos em atualização ou desatualizado/i, response.body)
+    end
   end
 
   test "conversa pessoal: botão de IA não aparece, mostra explicação" do
@@ -224,13 +269,27 @@ class ConversationActivityDraftsTest < ActionDispatch::IntegrationTest
     assert_match(/não foi possível obter sugestões/i, flash[:alert])
   end
 
-  test "sem contexto textual: não cria rascunhos e avisa (sem chamar a IA)" do
-    # Sem turnos indexados, o builder real retorna contexto vazio → sem_contexto.
+  test "índice indisponível (sem índice construído): POST não chama a IA e avisa sobre o índice" do
+    # Sem turnos indexados, o builder real retorna status :indisponivel → server-side
+    # barra a IA e a mensagem fala de ÍNDICE (não de erro da IA).
     com_ia(resposta: conteudo_ia("atividades" => [ { "titulo" => "X", "evidencia" => "y" } ])) do |fake|
       assert_no_difference "ConversationActivityDraft.count" do
         post suggest_conversation_activity_drafts_path(@conversation)
       end
-      assert_not fake.chamado, "A IA não deve ser chamada sem contexto textual"
+      assert_not fake.chamado, "A IA não deve ser chamada com índice indisponível"
+    end
+    assert_redirected_to conversation_path(@conversation, mode: "triage", anchor: "atividades")
+    assert_match(/Índice de turnos em atualização ou desatualizado/i, flash[:alert])
+  end
+
+  test "índice ok porém sem texto útil (:sem_texto): avisa contexto insuficiente (sem chamar a IA)" do
+    com_contexto_status(:sem_texto) do
+      com_ia(resposta: conteudo_ia("atividades" => [ { "titulo" => "X", "evidencia" => "y" } ])) do |fake|
+        assert_no_difference "ConversationActivityDraft.count" do
+          post suggest_conversation_activity_drafts_path(@conversation)
+        end
+        assert_not fake.chamado, "A IA não deve ser chamada sem texto útil"
+      end
     end
     assert_redirected_to conversation_path(@conversation, mode: "triage", anchor: "atividades")
     assert_match(/contexto textual suficiente/i, flash[:alert])

@@ -57,6 +57,10 @@ class ConversationsController < ApplicationController
     @clients = Client.ordered # opções p/ confirmar cliente (decisão humana)
     @activity_drafts = @conversation.activity_drafts.ordered # atividades de 2º nível (rascunhos)
     @new_activity_draft = @conversation.activity_drafts.new # form de nova atividade
+    # PB-020 — a sugestão por IA exige índice textual ÍNTEGRO (ADR-021). Com o índice
+    # :stale/indisponível (durante/logo após coleta/reindex) NÃO oferecemos a ação de IA:
+    # evita o falso "sem contexto" (que parece erro da IA). Pessoal já é tratada à parte.
+    @ai_suggest_available = !@conversation.personal && @turns&.status == :ok
     @work_blocks = @conversation.work_blocks.ordered # PB-020d — blocos de trabalho (rascunhos)
     @new_work_block = @conversation.work_blocks.new(period_date: Time.zone.today, day_period: "manha", kind: "execution")
   end

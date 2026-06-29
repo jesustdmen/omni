@@ -152,6 +152,20 @@ class Ai::SuggestConversationActivitiesTest < ActiveSupport::TestCase
     assert result.sem_contexto?
     assert_not result.sucesso?
     assert_empty result.atividades
+    assert_not result.contexto_indisponivel?, "texto vazio do builder é :sem_texto, não :indisponivel"
+  end
+
+  test "índice indisponível: NÃO chama a IA e sinaliza contexto_indisponivel (p/ a UI)" do
+    indisponivel = Class.new do
+      def call(conversation:)
+        Ai::ConversationContextBuilder::Result.new(text: "", status: :indisponivel, turns_used: 0)
+      end
+    end.new
+    result = Ai::SuggestConversationActivities.call(
+      conversation: @conversation, client: ClienteProibido.new, context_builder: indisponivel
+    )
+    assert result.sem_contexto?
+    assert result.contexto_indisponivel?
   end
 
   test "não grava nada: sem ConversationActivityDraft, Task, TimeEntry nem ConversationLink" do

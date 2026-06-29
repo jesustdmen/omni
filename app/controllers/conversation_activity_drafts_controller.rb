@@ -7,6 +7,13 @@ class ConversationActivityDraftsController < ApplicationController
   before_action :set_conversation
   before_action :set_draft, only: %i[update destroy]
 
+  # Índice de turnos :stale/indisponível (durante/logo após coleta/reindex): a sugestão
+  # por IA dependeria de contexto textual ainda não pronto. Mensagem explica que é índice,
+  # não erro da IA (ADR-021). A UI já oculta o botão; isto é a guarda server-side.
+  INDICE_INDISPONIVEL_MSG =
+    "Índice de turnos em atualização ou desatualizado. " \
+    "Aguarde a sincronização concluir e recarregue a conversa.".freeze
+
   def create
     @draft = @conversation.activity_drafts.new(create_params)
     @draft.created_by = current_user
@@ -51,8 +58,10 @@ class ConversationActivityDraftsController < ApplicationController
     result = Ai::SuggestConversationActivities.call(conversation: @conversation)
 
     if result.sem_contexto?
+      # Índice indisponível/stale → mensagem de índice; senão (índice ok, sem texto útil)
+      # → mensagem genérica de contexto. Em ambos a IA NÃO é chamada (serviço já barra).
       redirect_to triage_target,
-                  alert: "Não há contexto textual suficiente para sugerir atividades com segurança."
+                  alert: result.contexto_indisponivel? ? INDICE_INDISPONIVEL_MSG : "Não há contexto textual suficiente para sugerir atividades com segurança."
     elsif result.falhou?
       redirect_to triage_target,
                   alert: "Não foi possível obter sugestões da IA local agora. A Triagem manual continua disponível."

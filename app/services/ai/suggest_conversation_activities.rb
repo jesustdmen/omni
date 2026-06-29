@@ -29,10 +29,14 @@ module Ai
     Atividade = Struct.new(:titulo, :descricao, :evidencia, :confianca, keyword_init: true)
 
     # `erro` preenchido = falha da IA; `sem_contexto` = não havia texto seguro p/ enviar.
-    Result = Struct.new(:objetivo_principal, :atividades, :resposta_bruta, :erro, :sem_contexto, keyword_init: true) do
+    # `contexto_status` espelha o status do ConversationContextBuilder p/ a UI escolher a
+    # mensagem certa (:indisponivel = índice :stale/não construído; :sem_texto = índice ok
+    # porém sem texto útil; :personal = privacidade).
+    Result = Struct.new(:objetivo_principal, :atividades, :resposta_bruta, :erro, :sem_contexto, :contexto_status, keyword_init: true) do
       def sucesso? = erro.nil? && !sem_contexto?
       def falhou? = !erro.nil?
       def sem_contexto? = sem_contexto == true
+      def contexto_indisponivel? = contexto_status == :indisponivel
       def vazio? = atividades.empty? && objetivo_principal.to_s.strip.empty?
     end
 
@@ -48,7 +52,7 @@ module Ai
 
     def call
       contexto = @context_builder.call(conversation: @conversation)
-      return resultado_sem_contexto if contexto.vazio?
+      return resultado_sem_contexto(contexto.status) if contexto.vazio?
 
       raw = @client.chat(messages: mensagens(contexto.text), format: "json")
       parsed = JSON.parse(raw.to_s)
@@ -106,8 +110,8 @@ module Ai
       Result.new(objetivo_principal: nil, atividades: [], resposta_bruta: resposta_bruta, erro: erro)
     end
 
-    def resultado_sem_contexto
-      Result.new(objetivo_principal: nil, atividades: [], resposta_bruta: nil, erro: nil, sem_contexto: true)
+    def resultado_sem_contexto(status = nil)
+      Result.new(objetivo_principal: nil, atividades: [], resposta_bruta: nil, erro: nil, sem_contexto: true, contexto_status: status)
     end
 
     def mensagens(trechos)

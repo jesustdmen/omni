@@ -13,7 +13,7 @@ Pré-requisitos (uma vez): rede `omni_net`, container `omni_db` (Postgres 16) e 
 
 ```bash
 bash .devstack/up.sh
-# http://localhost:3000
+# http://localhost:3030  (porta do host; override com OMNI_PORT, ex.: OMNI_PORT=3000)
 ```
 
 ## Coleta nativa LIGADA por padrão no local (F7.7)

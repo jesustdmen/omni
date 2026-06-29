@@ -15,14 +15,14 @@
 # Variáveis overridáveis por ambiente (defaults para a máquina de dev atual):
 #   OMNI_IMAGE           imagem dev (default: omni-rails-dev)
 #   OMNI_NET             rede docker (default: omni_net)
-#   OMNI_PORT            porta no host (default: 3000)
+#   OMNI_PORT            porta no host (default: 3030)
 #   OMNI_APP_DIR         caminho do app no host (default: /c/Sandbox/_omni/app)
 #   OMNI_NORMALIZED_DIR  caminho de output/normalized no host (montado :ro)
 set -euo pipefail
 
 IMAGE="${OMNI_IMAGE:-omni-rails-dev}"
 NETWORK="${OMNI_NET:-omni_net}"
-PORT="${OMNI_PORT:-3000}"
+PORT="${OMNI_PORT:-3030}"
 APP_DIR="${OMNI_APP_DIR:-/c/Sandbox/_omni/app}"
 NORMALIZED_DIR="${OMNI_NORMALIZED_DIR:-/c/Sandbox/_omni/app/pipeline/output/normalized}"
 
