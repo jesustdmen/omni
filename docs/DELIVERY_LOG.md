@@ -9,6 +9,15 @@
 
 ## Entradas
 
+## 2026-06-29 — [Triagem · infra] IA protegida contra índice stale, porta local 3030 e Ollama local (publicado)
+### Resumo
+Três correções operacionais já **publicadas em `origin/main`** que deixam a Triagem/IA usável por padrão no ambiente local. Sem mudança de schema/pipeline.
+### Entregas
+- **`7b3f8c1` — IA da Triagem protegida contra índice `:stale` + porta local 3030.** A sugestão "Sugerir atividades com IA" **não é oferecida** quando o índice de turnos está `:stale`/indisponível (durante/após coleta/reindex): a UI oculta o botão e mostra "Índice de turnos em atualização ou desatualizado. Aguarde a sincronização concluir e recarregue a conversa." (+ link p/ `/sync_runs`); guarda **server-side** no controller (não chama Ollama sem contexto íntegro). No mesmo commit, o devstack passa a publicar o app local em **`http://localhost:3030`** (`OMNI_PORT` default 3030; container segue em 3000). Testes afetados de IA/Triagem verdes; rubocop/brakeman 0.
+- **`d14b13e` — Ollama local configurado no devstack para a IA da Triagem.** `up.sh`/`jobs.sh` definem o default LOCAL `OMNI_OLLAMA_URL=http://host.docker.internal:11434` (dentro do container `localhost` é o próprio container) e `OMNI_OLLAMA_MODEL=gemma4:latest`, repassando ambos ao `omni_web`/`omni_jobs`. O **default GLOBAL** de `Ai::OllamaClient` permanece `localhost` (válido fora do Docker — não alterado). Validado ponta a ponta: `/api/tags` → 200 de dentro do container, `Ai::OllamaClient#chat` → resposta, e a Triagem gerou 5 sugestões reais numa conversa de índice `:ok`.
+### Fora de escopo (inalterado)
+Schema/migrations, pipeline/importação/reindex, promoção a TimeEntry, e Graphify/tooling (`.gitignore`/`AGENTS.md`/`.claude/`/`.codex/`/`CLAUDE.md` seguem fora do produto). Antes desta leva: coleta nativa ligada no devstack (`ad6e2bf`, abaixo) e F7.7 (pipeline nativo, `deef69e`).
+
 ## 2026-06-29 — [F7.7 · devstack] Coleta nativa LIGADA por padrão no ambiente local
 ### Resumo
 Ajuste **operacional/devstack** (sem mudar a arquitetura F7.7 nem o default de runtime do Rails): no ambiente local, `up.sh`/`jobs.sh` passam a subir com **`OMNI_RUN_PIPELINE_INTERNALLY=1` por padrão**, e `up.sh` inicia **agente no host + worker**. Com isso `/sync_runs` deixa de exibir "pipeline interno desligado": "Sincronizar agora" representa **coleta + importação**, mostra o **agente de coleta** (online se saudável) e mantém "Importar arquivos disponíveis".
