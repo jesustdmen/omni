@@ -23,6 +23,8 @@ Omni unifica o domínio de trabalho (clientes/projetos/tarefas/demandas/apontame
 | [UI_COMPLIANCE_AUDIT.md](UI_COMPLIANCE_AUDIT.md) | Régua de conformidade visual | Padrões de UI/hi-fi |
 | [PRODUCT_GAP_REVIEW.md](PRODUCT_GAP_REVIEW.md) | Diagnóstico de lacunas de produto | Revisão de paridade operacional TaskManager/Viewer/Mockup/Omni; não autoriza execução por si só |
 | [PRODUCT_BACKLOG.md](PRODUCT_BACKLOG.md) | Backlog oficial de produto | Priorização P0/P1/P2/P3, **status/autorização** dos itens (PB-NNN) e fila autorizável |
+| [DATABASE_SCHEMA_SPEC.md](DATABASE_SCHEMA_SPEC.md) | Especificação técnica do banco | Estrutura persistida: tabelas, campos, chaves, constraints e regras de integridade para operações de dados |
+| [DATABASE_DOMAINS.md](DATABASE_DOMAINS.md) | Mapa funcional do banco por domínio | Ownership dos dados, domínios reconstruíveis vs. registros humanos reais e política de reconstrução pós-incidente |
 | Auditorias/contratos de produto: [PB-001_PARITY_AUDIT.md](PB-001_PARITY_AUDIT.md) · [PB-003_TIME_CONTRACT.md](PB-003_TIME_CONTRACT.md) | Auditoria/contrato técnico de itens PB | **Detalhe técnico/contrato** do item PB respectivo |
 | [PB-020_TRIAGEM_CONVERSAS_REQUISITOS.md](PB-020_TRIAGEM_CONVERSAS_REQUISITOS.md) | Especificação/contrato da Triagem de Conversas (frente de produto da PB-020) | **Requisitos/estado** da Triagem (base read-only, decisão persistida, atividades de 2º nível, IA local) |
 | [ia_local_ollama_gemma4_api.md](ia_local_ollama_gemma4_api.md) | Especificação técnica da integração de IA local (Ollama/Gemma4) | **Contrato da API nativa** do Ollama (`/api/chat`) consumida pela sugestão de atividades |
@@ -33,6 +35,7 @@ Omni unifica o domínio de trabalho (clientes/projetos/tarefas/demandas/apontame
 - **Status granular (feature):** `FEATURE_MATRIX.md`.
 - **Status/autorização de item de produto (PB):** `PRODUCT_BACKLOG.md`.
 - **Contrato técnico de uma fase / item PB:** `F{n}_CONTRACT_DECISIONS.md` / `PB-NNN_*.md`.
+- **Estrutura do banco:** `DATABASE_SCHEMA_SPEC.md` (campos/chaves/constraints) + `DATABASE_DOMAINS.md` (ownership e regras por domínio).
 - **Estado atual / semáforos / readiness / métricas correntes:** `PROJECT_STATUS.md` (**fonte única das métricas**; demais docs referenciam, não duplicam).
 - **Histórico de entregas:** `DELIVERY_LOG.md` (append-only; não reescrever).
 - **Fronteiras/restrições:** `CONSTRAINTS.md` (prevalece em conflito de implementação).

@@ -9,6 +9,16 @@
 
 ## Entradas
 
+## 2026-07-04 — [Docs · banco] Especificação do banco e domínios antes da reconstrução
+### Resumo
+Criada documentação oficial do banco para proteger registros reais antes da reconstrução pós-incidente de telemetria. A premissa operacional foi registrada de forma explícita: mesmo sem produção formal, já existem lançamentos reais; portanto **demandas, tarefas, apontamentos, cadastros e decisões humanas não são descartáveis**. A reconstrução pode reparar/remover somente dados derivados de sync sem vínculo humano confirmado.
+### Entregue
+- **`DATABASE_SCHEMA_SPEC.md`**: especificação técnica baseada em `db/schema.rb` versão `2026_07_03_120000`, com tabelas, campos, chaves, constraints, cascades perigosos e regras de reconstrução.
+- **`DATABASE_DOMAINS.md`**: visão por domínios (identidade, cadastros, trabalho, conversas, evidência lazy, triagem, sync e fila), separando dados humanos/operacionais de dados derivados.
+- **`INDEX.md`** atualizado para registrar os dois documentos como fontes oficiais de estrutura e ownership do banco.
+### Escopo negativo
+Sem alteração de código, schema, migrations, pipeline, banco de dados ou execução de limpeza. Graphify/tooling e `docs/metodo/` permanecem fora do escopo.
+
 ## 2026-07-03 — [INCIDENTE · sync] Telemetria não é conversa — correção de integridade (implementada; limpeza do banco pendente)
 ### Incidente
 Conversas **misturadas entre workspaces**: o Rails importava/indexava todas as fontes do normalized por `thread_id` puro, mas `chat_editing_state` (telemetria de edição), `agent_sessions` (cache de estado) e `chat_session_index` (índice de títulos) **reutilizam o uuid da conversa** e aparecem em N workspaces. Medição: 74 thread_ids multi-workspace e 508 multi-source no summaries; **81% das `conversations` (1364/1693) eram fantasmas de telemetria**; **76% dos turn_refs (110k/145k) eram telemetria `role=system`**. Excluída a telemetria, **0 colisões** — `thread_id` é seguro como chave **restrita a fontes conversacionais**. O grão do pipeline (`source+session_id+thread_id`) sempre esteve correto; **pipeline intocado**.
