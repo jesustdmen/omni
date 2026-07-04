@@ -11,6 +11,14 @@ class ConversationWorkBlockTest < ActiveSupport::TestCase
     @conversation.work_blocks.new({ period_date: Date.new(2026, 6, 29), day_period: "manha" }.merge(attrs))
   end
 
+  # PB-020e — atributos mínimos para CONFIRMAR uma execução (validar tempo):
+  # duração > 0 + cliente + tarefa. Criados sob demanda.
+  def confirmable_attrs(**over)
+    @client ||= Client.create!(name: "ACME")
+    @task ||= Task.create!(title: "T", type: "support", status: "in_progress", client: @client)
+    { status: "confirmed", duration_seconds: 3600, client: @client, task: @task }.merge(over)
+  end
+
   test "defaults: kind execution, status draft, source manual, duration 0" do
     b = block
     assert b.valid?
@@ -35,7 +43,8 @@ class ConversationWorkBlockTest < ActiveSupport::TestCase
   end
 
   test "status exige lista permitida" do
-    assert block(status: "confirmed").valid?
+    assert block(**confirmable_attrs).valid? # confirmar exige regras PB-020e (duração/cliente/task)
+    assert block(status: "discarded").valid?
     assert_not block(status: "done").valid?
   end
 
@@ -92,5 +101,80 @@ class ConversationWorkBlockTest < ActiveSupport::TestCase
   test "ao destruir a conversa, os blocos somem" do
     @conversation.work_blocks.create!(period_date: Date.new(2026, 6, 29), day_period: "manha")
     assert_difference("ConversationWorkBlock.count", -1) { @conversation.destroy }
+  end
+
+  # ── PB-020e — validação de tempo e gaps ─────────────────────────────────────
+
+  test "gap confirmado exige gap_kind" do
+    b = block(**confirmable_attrs(kind: "gap", client: nil, task: nil))
+    assert_not b.valid?
+    assert b.errors[:gap_kind].any?
+
+    b.gap_kind = "almoco"
+    assert b.valid?
+  end
+
+  test "gap_kind exige lista permitida (fora_vscode NÃO é gap)" do
+    assert_not block(kind: "gap", gap_kind: "fora_vscode").valid?
+    assert_not block(kind: "gap", gap_kind: "ferias").valid?
+    assert block(kind: "gap", gap_kind: "pernoite").valid?
+  end
+
+  test "execution não aceita gap_kind (mesmo em rascunho)" do
+    b = block(kind: "execution", gap_kind: "pausa")
+    assert_not b.valid?
+    assert b.errors[:gap_kind].any?
+  end
+
+  test "gap_kind vazio normaliza para nil (form compartilhado envia string vazia)" do
+    b = block(kind: "execution", gap_kind: "  ")
+    assert b.valid?
+    assert_nil b.gap_kind
+  end
+
+  test "bloco confirmado exige duração > 0" do
+    b = block(**confirmable_attrs(duration_seconds: 0))
+    assert_not b.valid?
+    assert b.errors[:duration_seconds].any?
+  end
+
+  test "execution confirmado exige cliente e tarefa (validar tempo)" do
+    sem_cliente = block(**confirmable_attrs(client: nil))
+    assert_not sem_cliente.valid?
+    assert sem_cliente.errors[:client_id].any?
+
+    sem_task = block(**confirmable_attrs(task: nil))
+    assert_not sem_task.valid?
+    assert sem_task.errors[:task_id].any?
+
+    assert block(**confirmable_attrs).valid?
+  end
+
+  test "gap confirmado NÃO exige cliente/tarefa (não valida tempo), só classificação" do
+    b = block(**confirmable_attrs(kind: "gap", gap_kind: "aguardando_cliente", client: nil, task: nil))
+    assert b.valid?
+  end
+
+  test "draft e discarded seguem livres (regras PB-020d preservadas)" do
+    assert block(status: "draft", duration_seconds: 0).valid?
+    assert block(status: "discarded", duration_seconds: 0).valid?
+  end
+
+  test "counts_for_subtotal? só para execução confirmada" do
+    assert block(**confirmable_attrs).counts_for_subtotal?
+    assert_not block(**confirmable_attrs(kind: "gap", gap_kind: "pausa")).counts_for_subtotal?
+    assert_not block(status: "draft").counts_for_subtotal?
+  end
+
+  test "validation_blockers explica pendências antes de confirmar" do
+    b = block(duration_seconds: 0)
+    assert_includes b.validation_blockers.join(", "), "duração"
+    assert_includes b.validation_blockers.join(", "), "cliente"
+    assert_includes b.validation_blockers.join(", "), "tarefa"
+
+    g = block(kind: "gap", duration_seconds: 900)
+    assert_includes g.validation_blockers.join(", "), "gap"
+
+    assert_empty block(**confirmable_attrs(status: "draft")).validation_blockers
   end
 end

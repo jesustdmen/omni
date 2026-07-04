@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_03_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -174,6 +174,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
     t.integer "duration_seconds", default: 0, null: false
     t.timestamptz "end_time"
     t.text "external_evidence_note"
+    t.text "gap_kind"
     t.text "kind", default: "execution", null: false
     t.boolean "needs_external_evidence", default: false, null: false
     t.text "notes"
@@ -196,6 +197,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
     t.index ["updated_by_id"], name: "index_conversation_work_blocks_on_updated_by_id"
     t.check_constraint "day_period = ANY (ARRAY['manha'::text, 'tarde'::text, 'noite'::text])", name: "conversation_work_blocks_day_period_check"
     t.check_constraint "duration_seconds >= 0", name: "conversation_work_blocks_duration_check"
+    t.check_constraint "gap_kind IS NULL OR (gap_kind = ANY (ARRAY['pernoite'::text, 'almoco'::text, 'lanche'::text, 'outra_tarefa_cliente'::text, 'aguardando_cliente'::text, 'pausa'::text, 'indeterminado'::text]))", name: "conversation_work_blocks_gap_kind_check"
     t.check_constraint "kind = ANY (ARRAY['execution'::text, 'gap'::text])", name: "conversation_work_blocks_kind_check"
     t.check_constraint "source = ANY (ARRAY['manual'::text, 'ia_local'::text])", name: "conversation_work_blocks_source_check"
     t.check_constraint "status = ANY (ARRAY['draft'::text, 'confirmed'::text, 'discarded'::text])", name: "conversation_work_blocks_status_check"

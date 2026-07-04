@@ -13,6 +13,13 @@ class ConversationWorkBlocksTest < ActionDispatch::IntegrationTest
     @conversation.work_blocks.create!({ period_date: Date.new(2026, 6, 29), day_period: "manha" }.merge(attrs))
   end
 
+  # PB-020e — confirmar (validar tempo) exige duração > 0 + cliente + tarefa.
+  def confirmable_attrs(**over)
+    @client ||= Client.create!(name: "ACME")
+    @task ||= Task.create!(title: "T", type: "support", status: "in_progress", client: @client)
+    { duration_seconds: 3600, client: @client, task: @task }.merge(over)
+  end
+
   def valid_params(**over)
     { work_block: { period_date: "2026-06-29", day_period: "manha", kind: "execution",
                     duration_seconds: 3600, summary: "validar 142 notas" }.merge(over) }
@@ -62,7 +69,7 @@ class ConversationWorkBlocksTest < ActionDispatch::IntegrationTest
   end
 
   test "confirmar, descartar e reabrir" do
-    b = create_block
+    b = create_block(**confirmable_attrs) # PB-020e: confirmar exige duração/cliente/task
     patch conversation_work_block_path(@conversation, b), params: { work_block: { status: "confirmed" } }
     assert_equal "confirmed", b.reload.status
     patch conversation_work_block_path(@conversation, b), params: { work_block: { status: "discarded" } }
@@ -71,8 +78,15 @@ class ConversationWorkBlocksTest < ActionDispatch::IntegrationTest
     assert_equal "draft", b.reload.status
   end
 
+  test "confirmar sem duração/cliente/task é bloqueado (PB-020e)" do
+    b = create_block # rascunho livre: duração 0, sem cliente/task
+    patch conversation_work_block_path(@conversation, b), params: { work_block: { status: "confirmed" } }
+    assert_equal "draft", b.reload.status
+    assert_match(/dura|cliente|tarefa/i, flash[:alert])
+  end
+
   test "status inválido é ignorado (mantém o atual)" do
-    b = create_block(status: "confirmed")
+    b = create_block(**confirmable_attrs(status: "confirmed"))
     patch conversation_work_block_path(@conversation, b), params: { work_block: { status: "lixo" } }
     assert_equal "confirmed", b.reload.status
   end

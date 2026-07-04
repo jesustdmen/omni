@@ -9,6 +9,20 @@
 
 ## Entradas
 
+## 2026-07-03 — [PB-020e] Validação de tempo e gaps na Triagem — IMPLEMENTADA E VALIDADA (aceite operacional pendente)
+### Resumo
+Transforma os blocos de trabalho (PB-020d) em **subtotal validado** dentro da Triagem: subpágina **`/conversations/:id/time_validation`** (link "Validar tempo" no card de blocos) revisa blocos por data/turno, confirma execuções, classifica gaps e exibe o total em **`HH:MM:SS`** — deixando explícito que **"Este subtotal ainda não criou apontamento oficial."** NÃO cria `TimeEntry`, NÃO cria `Task`, NÃO altera `ConversationLink`, NÃO toca PB-020a/b/c.
+### Entregue (validado)
+- **`gap_kind`** em `conversation_work_blocks` (migration aditiva `20260703120000` + CHECK): `pernoite|almoco|lanche|outra_tarefa_cliente|aguardando_cliente|pausa|indeterminado` (**`fora_vscode` NÃO é gap** — pode ser execução/evidência). IA **não** classifica gaps nesta fatia.
+- **Regras de confirmação no model** (`confirmed` = validado p/ subtotal): duração **> 0**; **execution confirmado exige cliente+task** (validar tempo); **gap confirmado exige `gap_kind`** e **nunca** entra no subtotal (não cobrável); execution não aceita `gap_kind`; `draft` = pendente; `discarded` = fora; **conversa pessoal segue fora de tudo**. `validation_blockers` espelha as regras p/ a UI explicar antes do submit.
+- **Service `ConversationTimeValidation`** (somente leitura): grupos por (data, turno Manhã→Tarde→Noite), subtotal só de execution+confirmed, gaps confirmados à parte, progresso "X de Y confirmado(s)", pendentes/descartados contados, **alerta simples de overlap** entre execuções confirmadas com janela no mesmo dia (a soma NÃO é ajustada silenciosamente).
+- **UI:** visão compacta por turno com subtotal e total em destaque (`duration_hms`); pendências explicadas ("Antes de confirmar: …"); atribuir cliente/tarefa e classificar gap inline; Confirmar/Descartar/Reabrir com **`return_to` sanitizado** (PB-013b — controller de blocos volta para a validação); form de bloco da Triagem ganhou cliente/tarefa/tipo-de-gap; **sem edição de duração na validação** (duração é rascunho — PB-020d).
+- **Mescla/consolidação (bloco A1/A2/A3) NÃO implementada:** exigiria desenho/schema próprio — entregue o mínimo seguro do contrato (alerta de overlap; sem soma duplicada silenciosa); fica para novo contrato.
+### Validação técnica
+Suíte completa **947 runs / 3515 assertions / 0 falhas** (+29 testes: model gap_kind/confirmação/subtotal + integração da subpágina, bloqueios sem cliente/task, overlap, pessoal, sem TimeEntry/Task/Link, return_to anti-open-redirect); rubocop 253/0; brakeman 0; zeitwerk OK; `git diff --check` limpo. Teste da base read-only (2026-06-25) que assertava a AUSÊNCIA de "Validar tempo" foi atualizado — o CTA agora é contratado; promover/apontar segue proibido.
+### Fora de escopo (inalterado)
+`TimeEntry`/`Task`/`ConversationLink`, PB-020a/b/c, precificação/fechamento/PDF, IA/Ollama, pipeline/coleta, anexos formais, consolidação entre conversas, Graphify/tooling.
+
 ## 2026-06-29 — [Triagem · infra] IA protegida contra índice stale, porta local 3030 e Ollama local (publicado)
 ### Resumo
 Três correções operacionais já **publicadas em `origin/main`** que deixam a Triagem/IA usável por padrão no ambiente local. Sem mudança de schema/pipeline.

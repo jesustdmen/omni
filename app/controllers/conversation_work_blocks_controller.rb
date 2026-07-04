@@ -71,8 +71,9 @@ class ConversationWorkBlocksController < ApplicationController
   end
 
   # NÃO inclui `source` (manual por default; IA é fatia futura) nem auditoria.
+  # `gap_kind` (PB-020e): classificação manual de gap — lista permitida no model/banco.
   def editable_attrs
-    %i[period_date day_period start_time end_time duration_seconds kind
+    %i[period_date day_period start_time end_time duration_seconds kind gap_kind
        summary notes needs_external_evidence external_evidence_note
        client_id project_id task_id]
   end
@@ -81,8 +82,10 @@ class ConversationWorkBlocksController < ApplicationController
     (@conversation.work_blocks.maximum(:position) || -1) + 1
   end
 
+  # PB-020e — as ações também são disparadas da tela de validação de tempo; um
+  # `return_to` interno sanitizado (PB-013b) devolve o operador para onde estava.
   def triage_target
-    conversation_path(@conversation, mode: "triage", anchor: "blocos")
+    safe_return_to(fallback: conversation_path(@conversation, mode: "triage", anchor: "blocos"))
   end
 
   def error_message(block, fallback)

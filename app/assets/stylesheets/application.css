@@ -487,6 +487,9 @@ p { margin: 0 0 12px; }
 .work-block__edit[open], .work-block__new[open] { display: block; width: 100%; margin-top: 6px; }
 .work-block__form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 
+/* PB-020e — Validação de tempo (subtotal validado em destaque). */
+.time-validation__total { font-size: 1.6rem; margin: 4px 0; }
+
 /* PB-020a — Apuração de horas (read-only). */
 .wtr-totals { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
 .wtr-row--no-hours { opacity: .7; }

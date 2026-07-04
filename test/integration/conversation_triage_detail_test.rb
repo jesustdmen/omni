@@ -114,7 +114,9 @@ class ConversationTriageDetailTest < ActionDispatch::IntegrationTest
     assert_no_difference([ "TimeEntry.count", "ConversationLink.count", "Task.count", "ConversationTurnRef.count" ]) do
       get conversation_path(c, mode: "triage")
     end
-    assert_no_match(/TimeEntry|Validar tempo|apontamento|promover/i, css_select("main.app-main").to_s)
+    # PB-020e: "Validar tempo" passou a ser CTA legítimo (subpágina de validação da
+    # Triagem); promover/apontar oficialmente segue proibido nesta frente.
+    assert_no_match(/TimeEntry|apontamento oficial|promover/i, css_select("main.app-main").to_s)
   end
 
   test "CTAs reaproveitam fluxo existente: criar tarefa e vincular" do

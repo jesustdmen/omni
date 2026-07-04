@@ -51,6 +51,8 @@ Rails.application.routes.draw do
     end
     # PB-020d (Triagem) — blocos de trabalho (rascunhos por turno/dia da conversa).
     resources :work_blocks, controller: "conversation_work_blocks", only: %i[create update destroy]
+    # PB-020e (Triagem) — validação de tempo e gaps (subtotal validado; somente leitura).
+    resource :time_validation, controller: "conversation_time_validations", only: %i[show]
   end
   # PB-013 — busca global (read-only) sobre os dados funcionais.
   get "search", to: "search#index"

@@ -1,0 +1,150 @@
+<% content_for :title, "Validação de tempo" %>
+
+<%# PB-020e — validação de tempo e gaps da conversa (Triagem). Subtotal validado =
+    execução confirmada; gap confirmado é NÃO COBRÁVEL; draft = pendente; discarded
+    fica fora. NÃO cria TimeEntry/Task; NÃO altera ConversationLink. %>
+<div class="page-head">
+  <div class="page-head__titles">
+    <h1>Validação de tempo</h1>
+    <p class="page-head__sub">
+      Conversa: <strong><%= @conversation.title.presence || @conversation.thread_id %></strong>
+    </p>
+  </div>
+  <%= link_to "← Voltar à Triagem", conversation_path(@conversation, mode: "triage", anchor: "blocos"),
+        class: "btn btn--ghost btn--sm" %>
+</div>
+
+<% if @conversation.personal %>
+  <div class="card">
+    <p class="muted">Conversa marcada como pessoal. Blocos de trabalho não são gerados para conversas pessoais — não há tempo a validar.</p>
+  </div>
+<% else %>
+  <% v = @validation %>
+  <% return_here = conversation_time_validation_path(@conversation) %>
+
+  <div class="card">
+    <div class="subhead">
+      <h2>Subtotal validado</h2>
+      <span class="badge badge--info"><%= v.progress_label %></span>
+      <% if v.pending_count.positive? %>
+        <span class="badge badge--neutral"><%= v.pending_count %> pendente(s)</span>
+      <% end %>
+      <% if v.discarded_count.positive? %>
+        <span class="muted"><%= v.discarded_count %> descartado(s) fora da validação</span>
+      <% end %>
+    </div>
+    <p class="mono time-validation__total"><strong><%= duration_hms(v.total_validated_seconds) %></strong></p>
+    <p class="muted"><strong>Este subtotal ainda não criou apontamento oficial.</strong> A promoção para apontamento (TimeEntry) é uma fatia futura, após esta validação.</p>
+    <% v.overlap_warnings.each do |aviso| %>
+      <p class="sync-status__error">⚠ <%= aviso %></p>
+    <% end %>
+  </div>
+
+  <% if v.empty? %>
+    <div class="empty"><p>Nenhum bloco de trabalho a validar. Crie blocos na Triagem (seção "Blocos de trabalho").</p></div>
+  <% end %>
+
+  <% v.groups.each do |group| %>
+    <div class="card work-blocks">
+      <div class="subhead">
+        <h3><%= local_date(group.period_date) %> · <%= group.day_period_label %></h3>
+        <span class="mono">Subtotal validado: <strong><%= duration_hms(group.subtotal_seconds) %></strong></span>
+      </div>
+
+      <% group.executions_confirmed.each do |block| %>
+        <div class="work-block work-block--confirmed">
+          <div class="work-block__head">
+            <span class="badge badge--success">Validado</span>
+            <span class="mono"><%= duration_hms(block.duration_seconds) %></span>
+            <% if block.client %><span class="muted"><%= block.client.name %></span><% end %>
+            <% if block.task %><span class="muted">· <%= task_code_label(block.task) %></span><% end %>
+          </div>
+          <% if block.summary.present? %><p class="work-block__summary"><%= block.summary %></p><% end %>
+          <div class="work-block__actions">
+            <%= button_to "Reabrir", conversation_work_block_path(@conversation, block),
+                  method: :patch, params: { work_block: { status: "draft" }, return_to: return_here },
+                  form_class: "inline", class: "btn btn--outline btn--sm" %>
+          </div>
+        </div>
+      <% end %>
+
+      <% group.gaps_confirmed.each do |block| %>
+        <div class="work-block work-block--confirmed">
+          <div class="work-block__head">
+            <span class="badge badge--warning">Gap · não cobrável</span>
+            <span class="badge badge--neutral"><%= block.gap_kind_label %></span>
+            <span class="mono"><%= duration_hms(block.duration_seconds) %></span>
+            <span class="muted">não entra no subtotal</span>
+          </div>
+          <% if block.summary.present? %><p class="work-block__summary muted"><%= block.summary %></p><% end %>
+          <div class="work-block__actions">
+            <%= button_to "Reabrir", conversation_work_block_path(@conversation, block),
+                  method: :patch, params: { work_block: { status: "draft" }, return_to: return_here },
+                  form_class: "inline", class: "btn btn--outline btn--sm" %>
+          </div>
+        </div>
+      <% end %>
+
+      <% group.pending.each do |block| %>
+        <div class="work-block work-block--draft">
+          <div class="work-block__head">
+            <span class="badge badge--info">Pendente</span>
+            <span class="badge badge--<%= block.gap? ? "warning" : "info" %>"><%= block.kind_label %></span>
+            <span class="mono"><%= duration_hms(block.duration_seconds) %></span>
+            <% if block.client %><span class="muted"><%= block.client.name %></span><% end %>
+            <% if block.task %><span class="muted">· <%= task_code_label(block.task) %></span><% end %>
+          </div>
+          <% if block.summary.present? %><p class="work-block__summary"><%= block.summary %></p><% end %>
+
+          <% blockers = block.validation_blockers %>
+          <% if blockers.any? %>
+            <p class="muted work-block__ev-note">⚑ Antes de confirmar: <%= blockers.to_sentence %>.</p>
+          <% end %>
+
+          <div class="work-block__actions">
+            <% if blockers.empty? %>
+              <%= button_to "Confirmar", conversation_work_block_path(@conversation, block),
+                    method: :patch, params: { work_block: { status: "confirmed" }, return_to: return_here },
+                    form_class: "inline", class: "btn btn--primary btn--sm" %>
+            <% end %>
+
+            <%# Preparar a validação: atribuir cliente/tarefa (execução) ou classificar o
+                gap. NÃO expõe edição de duração aqui — duração é rascunho (PB-020d). %>
+            <details class="work-block__edit">
+              <summary class="btn btn--outline btn--sm"><%= block.gap? ? "Classificar gap" : "Atribuir cliente/tarefa" %></summary>
+              <%= form_with url: conversation_work_block_path(@conversation, block), method: :patch, class: "work-block__form" do %>
+                <%= hidden_field_tag :return_to, return_here %>
+                <% if block.gap? %>
+                  <div>
+                    <%= label_tag "val_gapkind_#{block.id}", "Tipo de gap" %><br>
+                    <%= select_tag "work_block[gap_kind]",
+                          options_for_select(ConversationWorkBlock::GAP_KIND_LABELS.map { |k, l| [ l, k ] }, block.gap_kind),
+                          include_blank: "— selecione —", id: "val_gapkind_#{block.id}" %>
+                  </div>
+                <% else %>
+                  <div>
+                    <%= label_tag "val_client_#{block.id}", "Cliente" %><br>
+                    <%= select_tag "work_block[client_id]",
+                          options_from_collection_for_select(@clients, :id, :name, block.client_id),
+                          include_blank: "— selecione —", id: "val_client_#{block.id}" %>
+                  </div>
+                  <div>
+                    <%= label_tag "val_task_#{block.id}", "Tarefa" %><br>
+                    <%= select_tag "work_block[task_id]",
+                          options_from_collection_for_select(@tasks, :id, :title, block.task_id),
+                          include_blank: "— selecione —", id: "val_task_#{block.id}" %>
+                  </div>
+                <% end %>
+                <%= submit_tag "Salvar", class: "btn btn--primary btn--sm" %>
+              <% end %>
+            </details>
+
+            <%= button_to "Descartar", conversation_work_block_path(@conversation, block),
+                  method: :patch, params: { work_block: { status: "discarded" }, return_to: return_here },
+                  form_class: "inline", class: "btn btn--ghost btn--sm" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

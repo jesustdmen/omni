@@ -19,6 +19,26 @@
           id: "wb_kind_#{rid}" %>
   </div>
   <div>
+    <%# PB-020e — classificação manual do gap (obrigatória para CONFIRMAR um gap). %>
+    <%= label_tag "wb_gapkind_#{rid}", "Tipo de gap (só para gap; obrigatório ao confirmar)" %><br>
+    <%= select_tag "work_block[gap_kind]",
+          options_for_select(ConversationWorkBlock::GAP_KIND_LABELS.map { |k, v| [ v, k ] }, block.gap_kind),
+          include_blank: "—", id: "wb_gapkind_#{rid}" %>
+  </div>
+  <div>
+    <%# PB-020e — cliente/tarefa são obrigatórios para VALIDAR tempo (confirmar execução). %>
+    <%= label_tag "wb_client_#{rid}", "Cliente (obrigatório para validar tempo)" %><br>
+    <%= select_tag "work_block[client_id]",
+          options_from_collection_for_select(@clients.to_a, :id, :name, block.client_id),
+          include_blank: "—", id: "wb_client_#{rid}" %>
+  </div>
+  <div>
+    <%= label_tag "wb_task_#{rid}", "Tarefa (obrigatória para validar tempo)" %><br>
+    <%= select_tag "work_block[task_id]",
+          options_from_collection_for_select(@tasks.to_a, :id, :title, block.task_id),
+          include_blank: "—", id: "wb_task_#{rid}" %>
+  </div>
+  <div>
     <%= label_tag "wb_start_#{rid}", "Início (evidência/sugestão)" %><br>
     <%= datetime_field_tag "work_block[start_time]", block.start_time&.in_time_zone&.strftime("%Y-%m-%dT%H:%M"), id: "wb_start_#{rid}" %>
   </div>

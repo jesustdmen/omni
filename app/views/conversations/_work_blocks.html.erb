@@ -4,6 +4,10 @@
   <div class="subhead">
     <h2>Blocos de trabalho</h2>
     <span class="muted">turno/dia · rascunhos validáveis (sem registro de horas)</span>
+    <%# PB-020e — a validação (confirmar/classificar/subtotal) mora em subpágina própria. %>
+    <% unless conversation.personal %>
+      <%= link_to "Validar tempo →", conversation_time_validation_path(conversation), class: "btn btn--ghost btn--sm" %>
+    <% end %>
   </div>
 
   <% if conversation.personal %>
@@ -30,6 +34,9 @@
                 </span>
                 <span class="muted">· <%= duration_label(block.duration_seconds) %></span>
                 <span class="badge badge--<%= block.gap? ? "warning" : "info" %>"><%= block.kind_label %></span>
+                <% if block.gap? && block.gap_kind.present? %>
+                  <span class="badge badge--neutral"><%= block.gap_kind_label %></span>
+                <% end %>
                 <span class="badge badge--<%= block.confirmed? ? "success" : (block.discarded? ? "neutral" : "info") %>"><%= block.status_label %></span>
                 <% if block.ia_local? %><span class="badge badge--neutral"><%= block.source_label %></span><% end %>
               </div>

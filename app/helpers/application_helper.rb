@@ -177,6 +177,16 @@ module ApplicationHelper
     parts.join(" ").presence || "0 min"
   end
 
+  # PB-020e — duração SEMPRE em HH:MM:SS (validação de tempo; sem arredondamento
+  # comercial). Horas não são limitadas a 24 (subtotais podem exceder um dia).
+  def duration_hms(value)
+    seconds = value.to_i
+    seconds = 0 if seconds.negative?
+    hours, rem = seconds.divmod(3600)
+    minutes, secs = rem.divmod(60)
+    format("%02d:%02d:%02d", hours, minutes, secs)
+  end
+
   # Exibição de data/hora no timezone OPERACIONAL (Brasília — config.time_zone),
   # independente de o instante estar armazenado em UTC (ADR-023). Use estes helpers
   # em vez de `strftime` direto em horários relevantes (TimeEntry etc.).
