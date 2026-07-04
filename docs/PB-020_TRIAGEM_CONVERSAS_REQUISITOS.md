@@ -227,6 +227,96 @@ Fora de escopo desta fatia:
 - Criar fluxo separado fora da Triagem para revisar rascunhos.
 - Tratar gap automaticamente como pausa ou ausencia.
 
+## CONTRATO PB-020e — Validacao de tempo e gaps na Triagem (registrado em 2026-07-03)
+
+> **Status (2026-07-03): CONTRATO APROVADO; NAO IMPLEMENTADO.** Esta fatia continua dentro da Triagem e usa os blocos da PB-020d como insumo. Ela **NAO cria `TimeEntry`**, **NAO cria `Task`**, **NAO promove apontamento oficial** e **NAO altera o fluxo comercial PB-020a/b/c**. O objetivo e transformar os blocos em uma visao confiavel de tempo validado para posterior promocao controlada.
+
+Objetivo da fatia:
+
+- Revisar blocos de trabalho de uma conversa ja sincronizada e visivel na Triagem.
+- Confirmar execucoes reais.
+- Classificar gaps.
+- Exibir subtotal validado por conversa, data e turno.
+- Deixar claro que o subtotal validado ainda **nao e apontamento oficial**.
+
+Decisoes de produto:
+
+- `confirmed` significa **validado para entrar no subtotal de tempo**.
+- `draft` significa pendente de revisao e **nao entra** no subtotal validado.
+- `discarded` significa descartado e **nao entra** no subtotal.
+- `kind=execution` + `status=confirmed` entra no subtotal validado.
+- `kind=gap` + `status=confirmed` exige `gap_kind` e **nao entra** no subtotal.
+- Gap nunca e cobravel.
+- Conversa pessoal (`personal=true`) permanece fora de tudo: sem blocos validaveis, sem subtotal, sem Task, sem TimeEntry.
+- Cliente e tarefa sao obrigatorios para validar tempo. Sem cliente ou sem task, a UI deve bloquear a confirmacao/validacao do bloco.
+- A conversa original e a evidencia padrao. Evidencia externa e opcional nesta fatia; pode ser uma nota.
+- IA nao classifica gaps automaticamente nesta fatia; classificacao e manual.
+
+Tipos iniciais de gap (`gap_kind`):
+
+```text
+pernoite
+almoco
+lanche
+outra_tarefa_cliente
+aguardando_cliente
+pausa
+indeterminado
+```
+
+Observacao: `fora_vscode` **nao** e tipo de gap nesta fatia, porque trabalho fora do chat pode ser execucao/evidencia (teste em ERP, consulta em banco, conversa com cliente), nao necessariamente pausa.
+
+Regras de duracao:
+
+- Duracao deve existir e ser maior que zero para um bloco ser confirmado.
+- Exibicao sempre em `HH:MM:SS`.
+- Sem arredondamento comercial.
+- Nao permitir edicao livre de duracao como mecanismo principal de validacao.
+- A validacao deve confirmar, descartar, classificar ou consolidar blocos; nao "digitar uma duracao" desconectada da conversa.
+- `TimeEntry` continua sendo a fonte da verdade oficial futura; nesta fatia ha apenas subtotal validado da Triagem.
+
+Mescla/consolidacao:
+
+- Quando multiplos blocos representam uma mesma linha de trabalho, a experiencia do usuario deve tratar como **um bloco consolidado**.
+- O bloco consolidado deve preservar os detalhes internos como itens narrativos (`A1`, `A2`, `A3` etc.).
+- O subtotal usa o bloco consolidado, nao uma soma duplicada dos blocos originais.
+- A forma tecnica de persistir a mescla (novo registro, marcadores ou outro desenho) fica para a implementacao, desde que a experiencia final seja um unico bloco consolidado.
+
+Overlap:
+
+- Overlap nao e cenario esperado; o metodo de calibracao dos blocos/gaps deve evita-lo.
+- Se detectado, deve haver alerta tecnico simples.
+- A aplicacao nao deve somar tempo duplicado silenciosamente.
+- Nao criar nesta fatia um fluxo sofisticado de resolucao de overlap.
+
+Sincronizacao/reindex:
+
+- A PB-020e valida apenas conversas ja sincronizadas e visiveis na Triagem.
+- Nao ha fluxo esperado de validar conversa nao sincronizada.
+- Reindexacao/sincronizacao posterior nao invalida automaticamente o que ja foi validado.
+- Nao bloquear validacao por hipotese de reindex.
+- Pode haver informacao discreta de ultima sincronizacao; a frente de atualizacao incremental/consistencia das conversas fica para decisao futura.
+
+UX esperada:
+
+- Subpagina ou secao propria dentro da Triagem para validacao de tempo.
+- Visao compacta por turno, com subtotal por conversa/data/turno.
+- Destaque para o total validado.
+- Gaps com badge/indicador visual seguindo o design system.
+- Indicadores de progresso e pendencia, por exemplo "10 de 79 confirmados".
+- Alertas para cliente/task ausentes antes da validacao.
+- Mensagem explicita: "Este subtotal ainda nao criou apontamento oficial."
+
+Fora de escopo desta fatia:
+
+- Criar ou atualizar `TimeEntry`.
+- Criar `Task`.
+- Promover blocos para apontamentos oficiais.
+- Precificacao, fechamento, snapshot ou PDF.
+- IA classificando gaps automaticamente.
+- Anexos formais (prints, SQL, arquivos, links obrigatorios).
+- Fluxo de consolidacao entre multiplas conversas do mesmo cliente.
+
 ## 5. Armadilhas a evitar
 
 - Criar `TimeEntry` definitivo diretamente a partir de timestamps.
