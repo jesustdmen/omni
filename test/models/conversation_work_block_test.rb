@@ -108,7 +108,7 @@ class ConversationWorkBlockTest < ActiveSupport::TestCase
   test "gap confirmado exige gap_kind" do
     b = block(**confirmable_attrs(kind: "gap", client: nil, task: nil))
     assert_not b.valid?
-    assert b.errors[:gap_kind].any?
+    assert_match(/classifique o gap/i, b.errors[:base].join("; "))
 
     b.gap_kind = "almoco"
     assert b.valid?
@@ -123,7 +123,7 @@ class ConversationWorkBlockTest < ActiveSupport::TestCase
   test "execution não aceita gap_kind (mesmo em rascunho)" do
     b = block(kind: "execution", gap_kind: "pausa")
     assert_not b.valid?
-    assert b.errors[:gap_kind].any?
+    assert_match(/só se aplica a blocos de gap/i, b.errors[:base].join("; "))
   end
 
   test "gap_kind vazio normaliza para nil (form compartilhado envia string vazia)" do
@@ -135,19 +135,26 @@ class ConversationWorkBlockTest < ActiveSupport::TestCase
   test "bloco confirmado exige duração > 0" do
     b = block(**confirmable_attrs(duration_seconds: 0))
     assert_not b.valid?
-    assert b.errors[:duration_seconds].any?
+    assert_match(/duração deve ser maior que zero/i, b.errors[:base].join("; "))
   end
 
   test "execution confirmado exige cliente e tarefa (validar tempo)" do
     sem_cliente = block(**confirmable_attrs(client: nil))
     assert_not sem_cliente.valid?
-    assert sem_cliente.errors[:client_id].any?
+    assert_match(/cliente é obrigatório/i, sem_cliente.errors[:base].join("; "))
 
     sem_task = block(**confirmable_attrs(task: nil))
     assert_not sem_task.valid?
-    assert sem_task.errors[:task_id].any?
+    assert_match(/tarefa é obrigatória/i, sem_task.errors[:base].join("; "))
 
     assert block(**confirmable_attrs).valid?
+  end
+
+  test "mensagens de validação PT-BR sem prefixo de atributo em inglês (gate PT-BR)" do
+    b = block(**confirmable_attrs(duration_seconds: 0, client: nil, task: nil))
+    b.valid?
+    texto = b.errors.full_messages.join("; ")
+    assert_no_match(/duration|client\b|task\b|gap kind|is not included/i, texto)
   end
 
   test "gap confirmado NÃO exige cliente/tarefa (não valida tempo), só classificação" do

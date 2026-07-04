@@ -88,7 +88,8 @@ class ConversationWorkBlocksController < ApplicationController
     safe_return_to(fallback: conversation_path(@conversation, mode: "triage", anchor: "blocos"))
   end
 
+  # join("; ") e não to_sentence: com locale :en o conector visível sairia "and".
   def error_message(block, fallback)
-    block.errors.full_messages.to_sentence.presence || fallback
+    block.errors.full_messages.join("; ").presence || fallback
   end
 end

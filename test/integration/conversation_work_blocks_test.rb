@@ -78,11 +78,13 @@ class ConversationWorkBlocksTest < ActionDispatch::IntegrationTest
     assert_equal "draft", b.reload.status
   end
 
-  test "confirmar sem duração/cliente/task é bloqueado (PB-020e)" do
+  test "confirmar sem duração/cliente/task é bloqueado (PB-020e), com flash 100% PT-BR" do
     b = create_block # rascunho livre: duração 0, sem cliente/task
     patch conversation_work_block_path(@conversation, b), params: { work_block: { status: "confirmed" } }
     assert_equal "draft", b.reload.status
-    assert_match(/dura|cliente|tarefa/i, flash[:alert])
+    assert_match(/duração|cliente|tarefa/i, flash[:alert])
+    # Gate PT-BR: sem prefixo de atributo em inglês nem conector "and" do to_sentence.
+    assert_no_match(/duration|client\b|task\b|gap kind|, and /i, flash[:alert])
   end
 
   test "status inválido é ignorado (mantém o atual)" do

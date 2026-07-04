@@ -40,16 +40,16 @@ class ConversationWorkBlock < ApplicationRecord
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :source, presence: true, inclusion: { in: SOURCES }
   validates :duration_seconds, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  # PB-020e — gap_kind só existe em bloco gap, sempre pela lista permitida.
-  validates :gap_kind, inclusion: { in: GAP_KINDS }, allow_nil: true
   validate :end_not_before_start
   # PB-020d — conversa PESSOAL não participa da avaliação de trabalho (decisão de produto):
   # não gera/edita bloco. Bloqueia create e update; destroy (limpeza) segue permitido.
   validate :conversation_not_personal
   # PB-020e — regras de VALIDAÇÃO de tempo (confirmar = validar para o subtotal):
-  # duração > 0 para confirmar; gap confirmado exige classificação; execution não
-  # aceita gap_kind; validar tempo (execution confirmado) exige cliente E tarefa.
-  validate :gap_kind_only_on_gaps
+  # gap_kind só em gap e pela lista permitida; duração > 0 para confirmar; gap
+  # confirmado exige classificação; validar tempo (execution confirmado) exige
+  # cliente E tarefa. Erros em :base com frases PT-BR completas — full_messages
+  # prefixaria o nome do atributo em inglês (o app não tem locale pt-BR).
+  validate :gap_kind_rules
   validate :confirmation_rules
 
   scope :ordered, -> { order(:period_date, :position, :created_at, :id) }
@@ -99,11 +99,13 @@ class ConversationWorkBlock < ApplicationRecord
     errors.add(:base, "Conversa marcada como pessoal. Blocos de trabalho não são gerados para conversas pessoais.")
   end
 
-  # PB-020e — gap_kind é classificação de GAP; execução nunca carrega gap_kind.
-  def gap_kind_only_on_gaps
-    return if gap? || gap_kind.blank?
+  # PB-020e — gap_kind é classificação de GAP: nunca em execução e sempre pela lista
+  # permitida (o CHECK no banco é o backstop).
+  def gap_kind_rules
+    return if gap_kind.blank?
 
-    errors.add(:gap_kind, "só se aplica a blocos de gap")
+    errors.add(:base, "Tipo de gap só se aplica a blocos de gap.") unless gap?
+    errors.add(:base, "Tipo de gap inválido.") unless GAP_KINDS.include?(gap_kind)
   end
 
   # PB-020e — confirmar = validar para o subtotal de tempo. Regras do contrato:
@@ -112,13 +114,13 @@ class ConversationWorkBlock < ApplicationRecord
   def confirmation_rules
     return unless confirmed?
 
-    errors.add(:duration_seconds, "deve ser maior que zero para confirmar o bloco") unless duration_seconds.to_i.positive?
+    errors.add(:base, "Duração deve ser maior que zero para confirmar o bloco.") unless duration_seconds.to_i.positive?
 
     if execution?
-      errors.add(:client_id, "é obrigatório para validar tempo") if client_id.blank?
-      errors.add(:task_id, "é obrigatória para validar tempo") if task_id.blank?
+      errors.add(:base, "Cliente é obrigatório para validar tempo.") if client_id.blank?
+      errors.add(:base, "Tarefa é obrigatória para validar tempo.") if task_id.blank?
     elsif gap_kind.blank?
-      errors.add(:gap_kind, "é obrigatório para confirmar um gap")
+      errors.add(:base, "Classifique o gap (tipo) para confirmar.")
     end
   end
 end

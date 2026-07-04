@@ -96,9 +96,10 @@
           </div>
           <% if block.summary.present? %><p class="work-block__summary"><%= block.summary %></p><% end %>
 
+          <%# join("; ") e não to_sentence: com locale :en o conector sairia "and". %>
           <% blockers = block.validation_blockers %>
           <% if blockers.any? %>
-            <p class="muted work-block__ev-note">⚑ Antes de confirmar: <%= blockers.to_sentence %>.</p>
+            <p class="muted work-block__ev-note">⚑ Antes de confirmar: <%= blockers.join("; ") %>.</p>
           <% end %>
 
           <div class="work-block__actions">
