@@ -129,7 +129,16 @@ module Sync
           end
 
           conversation ||= Conversation.new(thread_id: thread_id)
-          merged = fold(acc_from(conversation), agg)
+          # REPARO (incidente 2026-07-03): se o source persistido NÃO é conversacional,
+          # o registro está contaminado por telemetria — não é um "vencedor" legítimo do
+          # fold (o last_ts contaminado nunca perde por ser >= ao conversacional). O
+          # agregado conversacional limpo SUBSTITUI os campos de sync integralmente
+          # (mesmo uuid ⇒ vínculos humanos preservados; personal/user_id intocados).
+          merged = if existed && !Sources.conversational?(conversation.source)
+            agg
+          else
+            fold(acc_from(conversation), agg)
+          end
           assign(conversation, merged, titles[thread_id])
           conversation.save!
 

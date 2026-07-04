@@ -257,6 +257,43 @@ module Sync
       assert run.items.where(status: "skipped").where("reason ILIKE ?", "%conflito de família%").exists?
     end
 
+    test "REPARO: conversa contaminada por telemetria é substituída pelo agregado limpo (mesmo com last_ts armazenado maior)" do
+      # Estado contaminado da era pré-correção: source de telemetria, workspace trocado,
+      # contadores inflados e last_ts >= ao conversacional (o fold normal nunca repararia).
+      contaminada = Conversation.create!(
+        thread_id: "rep-1", source: "chat_session_index", workspace_hash: "wsTELEMETRIA",
+        title: "Título contaminado", message_count: 655, user_turns: 300, assistant_turns: 300,
+        tool_calls: 55, files_changed: [ "telemetria.rb" ],
+        first_ts: Time.utc(2026, 5, 1, 8), last_ts: Time.utc(2026, 5, 27, 22, 44)
+      )
+
+      run = import_lines([ { thread_id: "rep-1", source: "chat_session_jsonl", workspace_hash: "wsREAL",
+                             title: "Conversa real", message_count: 15, user_turns: 7, assistant_turns: 8,
+                             tool_calls: 2, files_changed: [ "real.rb" ],
+                             first_ts: "2026-05-27T20:00:00+00:00", last_ts: "2026-05-27T22:44:00+00:00" } ])
+
+      c = contaminada.reload
+      assert_equal "chat_session_jsonl", c.source, "source reparado para o conversacional"
+      assert_equal "wsREAL", c.workspace_hash, "workspace reparado"
+      assert_equal 15, c.message_count, "contadores desinflados (substituição, não max)"
+      assert_equal [ "real.rb" ], c.files_changed, "files_changed substituído, não unido"
+      assert_equal Time.utc(2026, 5, 27, 20).to_i, c.first_ts.to_i
+      assert_equal 1, run.updated
+      assert_equal contaminada.id, c.id, "mesmo uuid — vínculos humanos preservados"
+    end
+
+    test "REPARO não regride conversa real: fold normal continua valendo para source conversacional" do
+      import_lines([ { thread_id: "rep-2", source: "codex_session", workspace_hash: "wsA", title: "Atual",
+                       message_count: 10, files_changed: [], first_ts: nil, last_ts: "2026-06-01T10:00:00+00:00" } ])
+      # linha mais antiga NÃO sobrescreve escalares de conversa real (regra de vitória preservada)
+      import_lines([ { thread_id: "rep-2", source: "codex_session", workspace_hash: "wsANTIGO", title: "Antigo",
+                       message_count: 3, files_changed: [], first_ts: nil, last_ts: "2026-05-01T10:00:00+00:00" } ])
+      c = Conversation.find_by!(thread_id: "rep-2")
+      assert_equal "wsA", c.workspace_hash
+      assert_equal "Atual", c.title
+      assert_equal 10, c.message_count
+    end
+
     test "salvaguarda: família diferente de conversa JÁ existente é recusada com auditoria" do
       import_lines([ TELEMETRY_ROW.merge(thread_id: "conf-2", source: "codex_session",
                                          workspace_hash: "wsCX", title: "Codex") ])
