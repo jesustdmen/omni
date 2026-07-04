@@ -9,6 +9,20 @@
 
 ## Entradas
 
+## 2026-07-04 — [INCIDENTE · sync] Reconstrução do banco pós-incidente CONCLUÍDA — incidente ENCERRADO
+### Resumo
+Reconstrução executada em gates auditados, sobre a correção publicada (`e0b6687` contrato "telemetria não é conversa" + `9427d4b` reparo in-place no reimport). **Incidente tecnicamente encerrado**: banco limpo, índice reconstruído, sync religado e regime permanente provado sem recontaminação. Bloqueio operacional da Triagem removido.
+### Gates executados
+- **Gate 1 (preparação):** backup `pg_dump` validado (`tmp/dev_backup_pre_reconstrucao_20260704_091441.sql`, 42.392.830 bytes — retido); baseline congelada (0 drift desde o bloqueio); 15 contagens protegidas registradas.
+- **Gate 2A (reimport corrigido):** telemetria ignorada (2131 linhas/run, item de auditoria agregado); **critério de reparo falhou** (29 contaminadas persistiram) — causa: a regra de vitória por `last_ts` preservava o vencedor contaminado.
+- **Gate 2A.1 (reparo):** correção mínima publicada (`9427d4b`): source persistido NÃO conversacional = estado contaminado ⇒ agregado conversacional limpo **substitui** os campos de sync (mesmo uuid; campos humanos intocados). Reimport reexecutado: **contaminadas 29 → 0** (reais 305 → 334).
+- **Gate 2B (remoção controlada):** runner transacional de uso único; lista de fantasmas **recalculada na hora** + **rechecagem de vínculo humano por consulta** (links/triagens/drafts/blocos/time_entries sem FK = todos 0; abort barulhento se ≠0); **1359/1359 deletadas**; conversas **1693 → 334**; domínio protegido intacto.
+- **Gate 2C (rebuild + regime):** `sync:turn_refs` com o código publicado: **refs 144.885 → 40.410** (`skipped_telemetry=104.681`; covered 329/334 — 5 threads antigas fora do arquivo atual = `:empty` correto); **0 refs de telemetria** (5,8k `role=system` restantes são metadados legítimos de sessão claude/codex); LazyLoader **`:ok`** em conversa comum, ex-contaminada e com decisão humana; **SyncSchedule religado (`enabled=true`)**; **sync completo controlado** (coleta exit=0 + import + reindex) terminou sem recriar fantasmas/contaminadas — integrity final **334/334/0/0**, protegidas 15/15 idênticas.
+### Números finais
+Conversas **1693 → 334** · **29 contaminadas reparadas in-place** · **1359 fantasmas removidas (0 vínculos humanos afetados)** · turn_refs **144.885 → ~40,4k** · refs de telemetria **0** · domínio protegido **15/15 intacto** · SyncSchedule **religado** · regime permanente **provado**.
+### Estado operacional
+Sync (manual/agendado) e **Triagem liberados para uso normal** sobre a base reconstruída. Backup do Gate 1 retido em `tmp/` (gitignored) para descarte futuro a critério do PO.
+
 ## 2026-07-04 — [Docs · banco] Especificação do banco e domínios antes da reconstrução
 ### Resumo
 Criada documentação oficial do banco para proteger registros reais antes da reconstrução pós-incidente de telemetria. A premissa operacional foi registrada de forma explícita: mesmo sem produção formal, já existem lançamentos reais; portanto **demandas, tarefas, apontamentos, cadastros e decisões humanas não são descartáveis**. A reconstrução pode reparar/remover somente dados derivados de sync sem vínculo humano confirmado.

@@ -2,7 +2,7 @@
 
 > Registro de planejamento/requisito levantado em 2026-06-24. Este documento preserva a memoria da conversa de produto antes de alterar backlog, ADRs ou implementar codigo.
 
-> **⛔ BLOQUEIO OPERACIONAL TEMPORARIO (2026-07-03 — incidente de integridade do sync):** ate a reconstrucao do banco de conversas, **nao triar conversas novas** nem confiar em metadados de workspace/cliente sugerido da fila atual — ~80% dos itens eram fantasmas de telemetria e escalares podem estar trocados (ver ADR-011 addendum 2026-07-03 e `DELIVERY_LOG` 2026-07-03). O **sync agendado foi desligado**. Decisoes ja tomadas (triagens/atividades/blocos/validacoes) estao em conversas reais e permanecem validas; PB-020d/PB-020e seguem funcionais e inalteradas. O bloqueio sera removido apos backup → reimport corrigido → limpeza autorizada → rebuild do indice.
+> **✅ BLOQUEIO OPERACIONAL ENCERRADO (2026-07-04):** o bloqueio temporario de 2026-07-03 (incidente de integridade do sync — fantasmas de telemetria na fila) foi **removido** apos a reconstrucao do banco: 29 conversas reparadas, 1359 fantasmas removidas (0 vinculos humanos afetados), indice reconstruido (~40,4k refs, 0 de telemetria), **sync religado** e regime permanente validado. **A Triagem (incl. PB-020d/PB-020e) volta a poder ser usada e testada normalmente sobre a base reconstruida** — a fila agora contem apenas conversas reais. Historico completo em `DELIVERY_LOG` (2026-07-03/04) e ADR-011 (addenda 2026-07-03/04).
 
 ## 1. Visao de produto
 
