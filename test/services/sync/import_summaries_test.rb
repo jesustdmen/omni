@@ -35,20 +35,24 @@ module Sync
       assert_equal 4, run.lines_processed
       assert_equal 2, run.imported
       assert_equal 0, run.updated
-      assert_equal 0, run.skipped
+      # Incidente 2026-07-03: a linha chat_session_index do corpus (telemetria) é ignorada.
+      assert_equal 1, run.skipped
       assert_equal 1, run.error_lines
     end
 
-    test "linha malformada gera um único sync_run_item de erro" do
+    test "linha malformada gera sync_run_item de erro; telemetria gera item agregado" do
       run = import
 
-      assert_equal 1, run.items.count
-      item = run.items.first
-      assert_equal "error", item.status
-      assert_equal 4, item.line_number
+      erros = run.items.where(status: "error")
+      assert_equal 1, erros.count
+      assert_equal 4, erros.first.line_number
+      # 1 item AGREGADO por execução para telemetria (não 1 por linha).
+      telemetria = run.items.where(status: "skipped").where("reason ILIKE ?", "%telemetria%")
+      assert_equal 1, telemetria.count
+      assert_match(/1 linha/, telemetria.first.reason)
     end
 
-    test "merge determinístico do thread_id duplicado (A)" do
+    test "A vem só da linha conversacional (telemetria chat_session_index do corpus ignorada)" do
       import
       a = Conversation.find_by!(thread_id: THREAD_A)
 
@@ -106,18 +110,19 @@ module Sync
 
     # F3.2.1 — regressão do bug de merge com last_ts nulo.
     test "todas as linhas com last_ts nil: primeira linha vence escalares (ordem de leitura)" do
+      # Fontes da MESMA família (json/jsonl VS Code): mesclam por contrato.
       rows = [
-        { thread_id: "tn-1", source: "codex_session", workspace_hash: "wsA", title: "Primeiro título",
+        { thread_id: "tn-1", source: "chat_session_json", workspace_hash: "wsA", title: "Primeiro título",
           message_count: 2, user_turns: 1, assistant_turns: 1, tool_calls: 0, files_changed: [ "a.rb" ],
           first_ts: nil, last_ts: nil },
-        { thread_id: "tn-1", source: "claude_code_session", workspace_hash: "wsB", title: "Segundo título",
+        { thread_id: "tn-1", source: "chat_session_jsonl", workspace_hash: "wsB", title: "Segundo título",
           message_count: 5, user_turns: 3, assistant_turns: 2, tool_calls: 1, files_changed: [ "b.rb" ],
           first_ts: nil, last_ts: nil }
       ]
       import_lines(rows)
       c = Conversation.find_by!(thread_id: "tn-1")
 
-      assert_equal "codex_session", c.source, "escalares da primeira linha (ordem de leitura)"
+      assert_equal "chat_session_json", c.source, "escalares da primeira linha (ordem de leitura)"
       assert_equal "wsA", c.workspace_hash
       assert_equal "Primeiro título", c.title
       assert_equal 5, c.message_count, "contadores = maior valor"
@@ -129,39 +134,140 @@ module Sync
       run2 = import_lines(rows)
       assert_equal 0, run2.imported
       assert_equal 1, Conversation.where(thread_id: "tn-1").count
-      assert_equal "codex_session", Conversation.find_by!(thread_id: "tn-1").source
+      assert_equal "chat_session_json", Conversation.find_by!(thread_id: "tn-1").source
     end
 
     test "linha com last_ts real vence escalares sobre linha anterior com last_ts nil" do
       rows = [
-        { thread_id: "tm-1", source: "codex_session", workspace_hash: "wsNIL", title: "Título nil-ts",
+        { thread_id: "tm-1", source: "chat_session_json", workspace_hash: "wsNIL", title: "Título nil-ts",
           message_count: 1, files_changed: [], first_ts: nil, last_ts: nil },
-        { thread_id: "tm-1", source: "claude_code_session", workspace_hash: "wsREAL", title: "Título real",
+        { thread_id: "tm-1", source: "chat_session_jsonl", workspace_hash: "wsREAL", title: "Título real",
           message_count: 3, files_changed: [], first_ts: "2026-03-01T10:00:00+00:00", last_ts: "2026-03-01T11:00:00+00:00" }
       ]
       import_lines(rows)
       c = Conversation.find_by!(thread_id: "tm-1")
 
-      assert_equal "claude_code_session", c.source, "linha com last_ts real vence"
+      assert_equal "chat_session_jsonl", c.source, "linha com last_ts real vence"
       assert_equal "wsREAL", c.workspace_hash
       assert_equal "Título real", c.title
       assert_equal Time.utc(2026, 3, 1, 11, 0, 0).to_i, c.last_ts.to_i
     end
 
     test "backfill: registro existente com escalares nil é preenchido no reimport" do
-      nil_row = { thread_id: "bf-1", source: nil, workspace_hash: nil, title: nil,
-                  message_count: 1, files_changed: [], first_ts: nil, last_ts: nil }
-      # 1ª importação: sem source/ws (simula o estado defeituoso anterior)
-      import_lines([ nil_row ])
-      assert_nil Conversation.find_by!(thread_id: "bf-1").source
-
-      # 2ª importação: agora a linha traz source/ws (last_ts ainda nil) → backfill
-      import_lines([ nil_row.merge(source: "codex_session", workspace_hash: "wsBF", title: "Título BF") ])
+      # Fonte conversacional presente (linha sem source agora é ignorada por contrato);
+      # o backfill testado é o de workspace/título nulos.
+      base_row = { thread_id: "bf-1", source: "codex_session", workspace_hash: nil, title: nil,
+                   message_count: 1, files_changed: [], first_ts: nil, last_ts: nil }
+      import_lines([ base_row ])
       c = Conversation.find_by!(thread_id: "bf-1")
-      assert_equal "codex_session", c.source, "backfill de escalar antes nulo"
-      assert_equal "wsBF", c.workspace_hash
+      assert_nil c.workspace_hash
+
+      # 2ª importação: agora a linha traz ws/título (last_ts ainda nil) → backfill
+      import_lines([ base_row.merge(workspace_hash: "wsBF", title: "Título BF") ])
+      c.reload
+      assert_equal "codex_session", c.source
+      assert_equal "wsBF", c.workspace_hash, "backfill de escalar antes nulo"
       assert_equal "Título BF", c.title
       assert_equal 1, Conversation.where(thread_id: "bf-1").count
+    end
+
+    # ── Incidente 2026-07-03 — telemetria não é conversa ─────────────────────
+
+    TELEMETRY_ROW = { message_count: 1, files_changed: [], first_ts: nil,
+                      last_ts: "2026-07-01T10:00:00+00:00" }.freeze
+
+    test "chat_editing_state / agent_sessions / chat_session_index NÃO criam Conversation" do
+      rows = %w[chat_editing_state agent_sessions chat_session_index].map.with_index do |src, i|
+        TELEMETRY_ROW.merge(thread_id: "tel-#{i}", source: src, workspace_hash: "wsT#{i}")
+      end
+      run = import_lines(rows)
+
+      assert_equal 0, Conversation.count
+      assert_equal 0, run.imported
+      assert_equal 3, run.skipped, "telemetria conta como skipped"
+      assert_equal "ok", run.status, "telemetria ignorada é esperado — não degrada o status"
+      item = run.items.where(status: "skipped").sole
+      assert_match(/telemetria.*3 linha/i, item.reason)
+    end
+
+    test "fonte desconhecida (fora da lista conversacional) também não cria Conversation" do
+      run = import_lines([ TELEMETRY_ROW.merge(thread_id: "unk-1", source: "fonte_nova_do_pipeline") ])
+      assert_equal 0, Conversation.count
+      assert_equal 1, run.skipped
+    end
+
+    test "telemetria NÃO altera conversa real existente (nem workspace, nem source)" do
+      import_lines([ TELEMETRY_ROW.merge(thread_id: "mix-1", source: "codex_session",
+                                         workspace_hash: "wsREAL", title: "Real") ])
+      run2 = import_lines([ TELEMETRY_ROW.merge(thread_id: "mix-1", source: "agent_sessions",
+                                                workspace_hash: "wsOUTRO", title: "Telemetria",
+                                                last_ts: "2026-07-02T10:00:00+00:00") ])
+      c = Conversation.find_by!(thread_id: "mix-1")
+      assert_equal "codex_session", c.source
+      assert_equal "wsREAL", c.workspace_hash
+      assert_equal "Real", c.title
+      assert_equal 0, run2.updated, "telemetria não conta como update"
+    end
+
+    test "regressão do incidente: mesmo thread_id em 2 workspaces (telemetria × real) não mistura" do
+      rows = [
+        TELEMETRY_ROW.merge(thread_id: "inc-1", source: "chat_editing_state", workspace_hash: "wsA",
+                            message_count: 655),
+        TELEMETRY_ROW.merge(thread_id: "inc-1", source: "chat_session_jsonl", workspace_hash: "wsB",
+                            title: "Conversa real", message_count: 15)
+      ]
+      run = import_lines(rows)
+
+      c = Conversation.find_by!(thread_id: "inc-1")
+      assert_equal "wsB", c.workspace_hash, "workspace vem SÓ da fonte conversacional"
+      assert_equal "chat_session_jsonl", c.source
+      assert_equal 15, c.message_count, "contadores de telemetria não inflam a conversa"
+      assert_equal 1, run.skipped
+    end
+
+    test "json + jsonl (mesma família) do mesmo thread_id continuam mesclando" do
+      rows = [
+        { thread_id: "fam-1", source: "chat_session_json", workspace_hash: "wsF", title: "Estado",
+          message_count: 4, files_changed: [ "a.rb" ], first_ts: "2026-07-01T08:00:00+00:00",
+          last_ts: "2026-07-01T09:00:00+00:00" },
+        { thread_id: "fam-1", source: "chat_session_jsonl", workspace_hash: "wsF", title: "Patches",
+          message_count: 6, files_changed: [ "b.rb" ], first_ts: "2026-07-01T08:00:00+00:00",
+          last_ts: "2026-07-01T10:00:00+00:00" }
+      ]
+      import_lines(rows)
+
+      assert_equal 1, Conversation.where(thread_id: "fam-1").count
+      c = Conversation.find_by!(thread_id: "fam-1")
+      assert_equal "chat_session_jsonl", c.source, "maior last_ts vence"
+      assert_equal 6, c.message_count
+      assert_equal [ "a.rb", "b.rb" ], c.files_changed
+    end
+
+    test "salvaguarda: famílias conversacionais diferentes no arquivo não mesclam em silêncio" do
+      rows = [
+        TELEMETRY_ROW.merge(thread_id: "conf-1", source: "codex_session", workspace_hash: "wsCX", title: "Codex"),
+        TELEMETRY_ROW.merge(thread_id: "conf-1", source: "claude_code_session", workspace_hash: "wsCL", title: "Claude")
+      ]
+      run = import_lines(rows)
+
+      c = Conversation.find_by!(thread_id: "conf-1")
+      assert_equal "codex_session", c.source, "primeira família observada permanece"
+      assert_equal "wsCX", c.workspace_hash
+      assert_equal "partial", run.status, "conflito de família é anomalia"
+      assert run.items.where(status: "skipped").where("reason ILIKE ?", "%conflito de família%").exists?
+    end
+
+    test "salvaguarda: família diferente de conversa JÁ existente é recusada com auditoria" do
+      import_lines([ TELEMETRY_ROW.merge(thread_id: "conf-2", source: "codex_session",
+                                         workspace_hash: "wsCX", title: "Codex") ])
+      run2 = import_lines([ TELEMETRY_ROW.merge(thread_id: "conf-2", source: "claude_code_session",
+                                                workspace_hash: "wsCL", title: "Claude",
+                                                last_ts: "2026-07-05T10:00:00+00:00") ])
+      c = Conversation.find_by!(thread_id: "conf-2")
+      assert_equal "codex_session", c.source, "conversa existente não é sobrescrita"
+      assert_equal "wsCX", c.workspace_hash
+      assert_equal 0, run2.updated
+      assert run2.items.where("reason ILIKE ?", "%conflito de família com conversa existente%").exists?
     end
   end
 end

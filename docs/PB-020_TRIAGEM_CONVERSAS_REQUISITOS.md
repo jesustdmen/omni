@@ -2,6 +2,8 @@
 
 > Registro de planejamento/requisito levantado em 2026-06-24. Este documento preserva a memoria da conversa de produto antes de alterar backlog, ADRs ou implementar codigo.
 
+> **⛔ BLOQUEIO OPERACIONAL TEMPORARIO (2026-07-03 — incidente de integridade do sync):** ate a reconstrucao do banco de conversas, **nao triar conversas novas** nem confiar em metadados de workspace/cliente sugerido da fila atual — ~80% dos itens eram fantasmas de telemetria e escalares podem estar trocados (ver ADR-011 addendum 2026-07-03 e `DELIVERY_LOG` 2026-07-03). O **sync agendado foi desligado**. Decisoes ja tomadas (triagens/atividades/blocos/validacoes) estao em conversas reais e permanecem validas; PB-020d/PB-020e seguem funcionais e inalteradas. O bloqueio sera removido apos backup → reimport corrigido → limpeza autorizada → rebuild do indice.
+
 ## 1. Visao de produto
 
 O Omni deve transformar conversas tecnicas do VS Code em trabalho operacional rastreavel.

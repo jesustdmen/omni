@@ -34,15 +34,21 @@ module Sync
 
       titles = load_json_hash(@titles_path)
       ws_map = load_json_hash(@workspace_maps_path)
-      counters = { lines_processed: 0, imported: 0, updated: 0, skipped: 0, error_lines: 0 }
+      counters = { lines_processed: 0, imported: 0, updated: 0, skipped: 0, error_lines: 0,
+                   skipped_telemetry: 0, family_conflicts: 0 }
 
       begin
         aggregates = aggregate_lines(run, counters)
-        persist(aggregates, titles, ws_map, counters)
-        status = counters[:error_lines].positive? || counters[:skipped].positive? ? "partial" : "ok"
-        run.update!(counters.merge(status: status, finished_at: Time.current))
+        persist(run, aggregates, titles, ws_map, counters)
+        record_telemetry_summary(run, counters)
+        # Telemetria ignorada é comportamento ESPERADO do contrato (não degrada o
+        # status); conflitos de família e demais skips/erros são anomalias → partial.
+        anomalous = counters[:error_lines].positive? || counters[:skipped].positive? ||
+                    counters[:family_conflicts].positive?
+        run.update!(db_counters(counters).merge(status: anomalous ? "partial" : "ok",
+                                                finished_at: Time.current))
       rescue StandardError => e
-        run.update(status: "error", finished_at: Time.current, **counters)
+        run.update(status: "error", finished_at: Time.current, **db_counters(counters))
         raise e
       end
 
@@ -66,6 +72,15 @@ module Sync
           next
         end
 
+        # Incidente 2026-07-03 — TELEMETRIA/METADADO NÃO é conversa: nunca cria nem
+        # mescla Conversation. Fonte desconhecida/ausente também fica de fora
+        # (lista conversacional fechada — Sync::Sources).
+        source = parsed["source"].presence
+        unless Sources.conversational?(source)
+          counters[:skipped_telemetry] += 1
+          next
+        end
+
         thread_id = parsed["thread_id"].presence
         if thread_id.nil?
           counters[:skipped] += 1
@@ -73,21 +88,47 @@ module Sync
           next
         end
 
-        aggregates[thread_id] = fold(aggregates[thread_id] || blank_acc, normalize(parsed))
+        # Salvaguarda: famílias conversacionais DIFERENTES com o mesmo thread_id não
+        # se mesclam em silêncio (não deveria ocorrer — uuid); skip + auditoria.
+        family = Sources.family(source)
+        agg = aggregates[thread_id]
+        if agg && agg[:family] && family != agg[:family]
+          counters[:family_conflicts] += 1
+          run.items.create!(line_number: line_number, status: "skipped", thread_id: thread_id,
+                            reason: "conflito de família de fonte (#{source} × família #{agg[:family]})",
+                            raw_excerpt: excerpt(line))
+          next
+        end
+
+        acc = fold(agg || blank_acc, normalize(parsed))
+        acc[:family] ||= family
+        aggregates[thread_id] = acc
       end
       aggregates
     end
 
     # --- persistência idempotente -----------------------------------------
-    def persist(aggregates, titles, ws_map, counters)
+    def persist(run, aggregates, titles, ws_map, counters)
       ActiveRecord::Base.transaction do
         upsert_known_workspaces(ws_map)
 
         aggregates.each do |thread_id, agg|
           conversation = Conversation.find_by(thread_id: thread_id)
           existed = conversation.present?
-          conversation ||= Conversation.new(thread_id: thread_id)
 
+          # Salvaguarda: conversa existente de OUTRA família conversacional não é
+          # sobrescrita em silêncio (source/workspace ficariam trocados); skip + auditoria.
+          # Conversa contaminada por telemetria (família nil) PODE ser reparada.
+          existing_family = Sources.family(conversation&.source)
+          if existed && existing_family && agg[:family] && existing_family != agg[:family]
+            counters[:family_conflicts] += 1
+            run.items.create!(status: "skipped", thread_id: thread_id,
+                              reason: "conflito de família com conversa existente " \
+                                      "(#{agg[:family]} × #{existing_family}); mescla recusada")
+            next
+          end
+
+          conversation ||= Conversation.new(thread_id: thread_id)
           merged = fold(acc_from(conversation), agg)
           assign(conversation, merged, titles[thread_id])
           conversation.save!
@@ -96,6 +137,24 @@ module Sync
           ensure_workspace_map(conversation.workspace_hash)
         end
       end
+    end
+
+    # Registra UMA linha de auditoria agregada por execução (não 1 por linha de
+    # telemetria — seriam milhares) com o total ignorado.
+    def record_telemetry_summary(run, counters)
+      return unless counters[:skipped_telemetry].positive?
+
+      run.items.create!(status: "skipped",
+                        reason: "telemetria/não conversacional: #{counters[:skipped_telemetry]} " \
+                                "linha(s) ignorada(s) (fora da lista conversacional — Sync::Sources)")
+    end
+
+    # Contadores persistíveis no SyncRun (colunas): telemetria e conflitos entram no
+    # total de `skipped`; o detalhamento fica nos sync_run_items.
+    def db_counters(counters)
+      { lines_processed: counters[:lines_processed], imported: counters[:imported],
+        updated: counters[:updated], error_lines: counters[:error_lines],
+        skipped: counters[:skipped] + counters[:skipped_telemetry] + counters[:family_conflicts] }
     end
 
     # --- regra de merge determinística (F3_CONTRACT_DECISIONS §3) ----------

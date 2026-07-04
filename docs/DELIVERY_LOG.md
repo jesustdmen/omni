@@ -9,6 +9,21 @@
 
 ## Entradas
 
+## 2026-07-03 — [INCIDENTE · sync] Telemetria não é conversa — correção de integridade (implementada; limpeza do banco pendente)
+### Incidente
+Conversas **misturadas entre workspaces**: o Rails importava/indexava todas as fontes do normalized por `thread_id` puro, mas `chat_editing_state` (telemetria de edição), `agent_sessions` (cache de estado) e `chat_session_index` (índice de títulos) **reutilizam o uuid da conversa** e aparecem em N workspaces. Medição: 74 thread_ids multi-workspace e 508 multi-source no summaries; **81% das `conversations` (1364/1693) eram fantasmas de telemetria**; **76% dos turn_refs (110k/145k) eram telemetria `role=system`**. Excluída a telemetria, **0 colisões** — `thread_id` é seguro como chave **restrita a fontes conversacionais**. O grão do pipeline (`source+session_id+thread_id`) sempre esteve correto; **pipeline intocado**.
+### Correção implementada (Rails)
+- **`Sync::Sources`** (novo): lista fechada de fontes CONVERSACIONAIS (`chat_session_json|chat_session_jsonl|copilot_jsonl(_raw)|codex_session|claude_code_session|openai_chatgpt`), telemetria e famílias (`json`/`jsonl` = mesma sessão VS Code).
+- **`Sync::ImportSummaries`**: telemetria/fonte desconhecida **não cria nem mescla** `Conversation` (contador em `skipped` + **item de auditoria agregado** por execução; não degrada status). **Salvaguarda**: famílias conversacionais distintas com o mesmo `thread_id` não se mesclam em silêncio — skip + item `conflito de família` (degrada para `partial`); conversa contaminada por telemetria (família nil) pode ser **reparada** in-place.
+- **`Sync::BuildConversationTurnRefs`**: só fontes conversacionais viram refs (`skipped_telemetry` no report; no-op/fingerprint preservados).
+- **Dry-run read-only `sync:integrity_report`**: classifica o banco. Resultado no dev: **1693 conversas = 305 reais + 29 contaminadas (reparo in-place) + 1359 fantasmas; 0 com vínculo humano** (links/triagem/drafts/blocos/time_entries).
+### Bloqueio operacional temporário
+**Sync agendado DESLIGADO** (`SyncSchedule.enabled=false`) e **triagem de conversas novas suspensa** até a reconstrução — a fila atual contém ~80% fantasmas e metadados possivelmente trocados. Uso somente leitura das decisões já tomadas segue seguro (todas em conversas reais).
+### Próxima etapa (só com autorização)
+Backup `pg_dump` → reimport corrigido (repara contaminadas) → **remoção de fantasmas SEM vínculo humano** → rebuild de turn_refs → religar sync/triagem. Sem deleção nesta rodada.
+### Validação técnica
+Suíte completa **958/3564/0** (+11 testes: 3 fontes de telemetria não criam conversa; telemetria não altera conversa real; regressão do incidente 1 thread × 2 workspaces; json+jsonl mesclam; conflito de família no arquivo e contra conversa existente; refs ignoram telemetria; no-op preservado); rubocop 254/0; brakeman 0; `git diff --check` limpo. ADR-011 addendum 2026-07-03.
+
 ## 2026-07-03 — [PB-020e] Validação de tempo e gaps na Triagem — IMPLEMENTADA E VALIDADA (aceite operacional pendente)
 ### Resumo
 Transforma os blocos de trabalho (PB-020d) em **subtotal validado** dentro da Triagem: subpágina **`/conversations/:id/time_validation`** (link "Validar tempo" no card de blocos) revisa blocos por data/turno, confirma execuções, classifica gaps e exibe o total em **`HH:MM:SS`** — deixando explícito que **"Este subtotal ainda não criou apontamento oficial."** NÃO cria `TimeEntry`, NÃO cria `Task`, NÃO altera `ConversationLink`, NÃO toca PB-020a/b/c.

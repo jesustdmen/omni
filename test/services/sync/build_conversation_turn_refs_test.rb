@@ -18,8 +18,8 @@ module Sync
       File.write(@path, lines.map { |h| JSON.generate(h) }.join("\n") + "\n")
     end
 
-    def line(role: "user", ts: "2026-01-01T00:00:00+00:00", filler: "")
-      { "thread_id" => "tt-1", "role" => role, "timestamp" => ts, "pad" => filler }
+    def line(role: "user", ts: "2026-01-01T00:00:00+00:00", filler: "", source: "claude_code_session")
+      { "thread_id" => "tt-1", "source" => source, "role" => role, "timestamp" => ts, "pad" => filler }
     end
 
     test "build cria refs e re-build idêntico é no-op" do
@@ -67,6 +67,42 @@ module Sync
       r2 = Sync::BuildConversationTurnRefs.call(path: @path)
       assert_not r2.no_op, "mtime diferente não deve cair em no-op"
       assert_not_equal ts_old.id, r2.turn_source.id
+    end
+
+    # ── Incidente 2026-07-03 — telemetria não vira turno indexado ────────────
+
+    test "linhas de telemetria NÃO geram refs; conversacionais geram; status segue ok" do
+      write_sessions([
+        line,                                                  # conversacional
+        line(role: "assistant"),                               # conversacional
+        line(role: "system", source: "chat_editing_state"),    # telemetria
+        line(role: "system", source: "agent_sessions"),        # telemetria
+        line(role: "system", source: "chat_session_index")     # telemetria (índice)
+      ])
+      r = Sync::BuildConversationTurnRefs.call(path: @path)
+
+      assert_equal 2, ConversationTurnRef.count, "só as linhas conversacionais viram refs"
+      assert_equal 3, r.skipped_telemetry
+      assert_equal "ok", r.status, "telemetria ignorada é esperado — não degrada o status"
+      assert_equal 1, r.covered_conversations
+    end
+
+    test "linha sem source não vira ref (lista conversacional fechada)" do
+      write_sessions([ { "thread_id" => "tt-1", "role" => "user", "timestamp" => "2026-01-01T00:00:00+00:00" } ])
+      r = Sync::BuildConversationTurnRefs.call(path: @path)
+      assert_equal 0, ConversationTurnRef.count
+      assert_equal 1, r.skipped_telemetry
+    end
+
+    test "no-op/fingerprint preservado com telemetria no arquivo" do
+      write_sessions([ line, line(role: "system", source: "chat_editing_state") ])
+      r1 = Sync::BuildConversationTurnRefs.call(path: @path)
+      assert_not r1.no_op
+      assert_equal 1, ConversationTurnRef.count
+
+      r2 = Sync::BuildConversationTurnRefs.call(path: @path)
+      assert r2.no_op, "mesmo arquivo (com telemetria) segue no-op idempotente"
+      assert_equal 1, ConversationTurnRef.count
     end
 
     test "fingerprint inclui cabeça, miolo e cauda (arquivo grande)" do

@@ -15,7 +15,7 @@ module Sync
 
     Report = Struct.new(
       :lines_processed, :refs_created, :refs_updated, :skipped_no_thread,
-      :skipped_no_conversation, :malformed_lines, :distinct_threads,
+      :skipped_no_conversation, :skipped_telemetry, :malformed_lines, :distinct_threads,
       :covered_conversations, :source_fingerprint, :status, :turn_source, :no_op,
       keyword_init: true
     )
@@ -102,6 +102,14 @@ module Sync
             next
           end
 
+          # Incidente 2026-07-03 — só fontes CONVERSACIONAIS viram turno indexado.
+          # Telemetria (chat_editing_state/agent_sessions/chat_session_index) reutiliza
+          # o uuid da conversa como thread_id e contaminaria o índice/render.
+          unless Sources.conversational?(parsed["source"].presence)
+            counters[:skipped_telemetry] += 1
+            next
+          end
+
           thread_id = parsed["thread_id"].presence
           if thread_id.nil?
             counters[:skipped_no_thread] += 1
@@ -173,7 +181,8 @@ module Sync
         started_at: Time.current, finished_at: Time.current, status: status,
         lines_processed: counters[:lines_processed], imported: counters[:refs_created],
         updated: counters[:refs_updated],
-        skipped: counters[:skipped_no_thread] + counters[:skipped_no_conversation],
+        skipped: counters[:skipped_no_thread] + counters[:skipped_no_conversation] +
+                 counters[:skipped_telemetry],
         error_lines: counters[:malformed_lines]
       )
     end
@@ -184,6 +193,7 @@ module Sync
         lines_processed: counters[:lines_processed], refs_created: counters[:refs_created],
         refs_updated: counters[:refs_updated], skipped_no_thread: counters[:skipped_no_thread],
         skipped_no_conversation: counters[:skipped_no_conversation],
+        skipped_telemetry: counters[:skipped_telemetry],
         malformed_lines: counters[:malformed_lines], distinct_threads: counters[:distinct_threads],
         covered_conversations: counters[:covered_conversations],
         source_fingerprint: fingerprint_label(fp), status: status, turn_source: source, no_op: no_op
@@ -193,7 +203,7 @@ module Sync
     def no_op_report(source, fp)
       Report.new(
         lines_processed: 0, refs_created: 0, refs_updated: 0, skipped_no_thread: 0,
-        skipped_no_conversation: 0, malformed_lines: 0,
+        skipped_no_conversation: 0, skipped_telemetry: 0, malformed_lines: 0,
         distinct_threads: source.conversation_turn_refs.distinct.count(:thread_id),
         covered_conversations: source.conversation_turn_refs.distinct.count(:conversation_id),
         source_fingerprint: fingerprint_label(fp), status: "ok", turn_source: source, no_op: true

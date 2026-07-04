@@ -18,7 +18,9 @@ module ConversationTurns
     teardown { FileUtils.remove_entry(@dir) if Dir.exist?(@dir) }
 
     def line(role: "user", ts: "2026-01-01T00:00:00+00:00", text: "oi", filler: "")
-      { "thread_id" => "ll-1", "role" => role, "timestamp" => ts, "text" => text, "pad" => filler }
+      # `source` conversacional: linhas sem fonte não são indexadas (incidente 2026-07-03).
+      { "thread_id" => "ll-1", "source" => "claude_code_session", "role" => role,
+        "timestamp" => ts, "text" => text, "pad" => filler }
     end
 
     def write(lines)
