@@ -18,6 +18,15 @@
 > foi eliminado na 1ª inspeção do PO). Exceção pré-existente: telas Devise em inglês — fora
 > da fatia.
 >
+> **PB-023e — filtros avançados (2026-07-09):** novo componente transversal
+> `FilterBarComponent` — **combobox multi-seleção estilo "token input"** (chips dentro do
+> campo, busca ao digitar, menu com "Nenhum resultado") substitui os selects nativos de valor
+> único nas listas do core. Régua de UI: `.combo__control` (borda `--border-strong`, foco em
+> petróleo via `--ring`); chips `.combo__chip` (fundo `--accent-soft-bg`, × acessível); menu
+> `.combo__menu` (sombra `--shadow-md`, opção em hover petróleo claro). Base = `<select
+> multiple>` (fonte de verdade + fallback sem JS). Tokens do ADR-026; sem estilo inline (CSP);
+> Stimulus próprio (sem lib externa); PT-BR. Reutilizável — 1 componente, N telas.
+>
 > Referência histórica: régua do hi-fi original (`_mockup/uploads/Hi-fi *.png` +
 > `_mockup/spec-hifi.jsx`/`spec-task-tabs.jsx`). Auditoria de 2026-06-17; patch **F2.UI.1**.
 > A F2.UI é **baseline visual provisório**; o redesign final é o ADR-026 (antes: "Fase 5").

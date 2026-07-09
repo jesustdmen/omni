@@ -1,5 +1,6 @@
 class TasksController < ApplicationController
   include Paginated # paginação (allowlist + "Mostrar tudo")
+  include MultiFilter # PB-023e — filtros multi-valor (array-safe + allowlist)
   before_action :set_task, only: %i[show edit update destroy]
 
   # PB-004a — opções de paginação (allowlist) e default. (centralizadas no concern)
@@ -30,6 +31,16 @@ class TasksController < ApplicationController
     @status_options = ConfigurableStatus.for_entity(Task::STATUS_ENTITY).ordered.pluck(:name, :key)
     @types = Task::TYPES
     @filters_active = filters_active?
+  end
+
+  # PB-023e — seleções sanitizadas (multi-valor) para a barra de filtros.
+  helper_method :selected_task_filters
+  def selected_task_filters
+    @selected_task_filters ||= {
+      status: filter_list(:status, allowlist: ConfigurableStatus.for_entity(Task::STATUS_ENTITY).pluck(:key)),
+      type: filter_list(:type, allowlist: Task::TYPES),
+      client_id: filter_ids(:client_id, Client)
+    }
   end
 
   def show
@@ -101,13 +112,14 @@ class TasksController < ApplicationController
 
   # Aplica busca (título/descrição) + filtros combináveis no BANCO. Valores
   # inválidos são ignorados com segurança (não filtram).
+  # PB-023e — filtros multi-valor (status/tipo/cliente aceitam 1..N valores;
+  # allowlist no MultiFilter; vazio = não filtra; compat. com escalar antigo).
   def filtered_tasks(scope)
+    sel = selected_task_filters
     scope = apply_search(scope)
-    # Status/Tipo: só aplicam se forem valores conhecidos (allowlist).
-    scope = scope.where(status: params[:status]) if Task.status_key?(params[:status])
-    scope = scope.where(type: params[:type]) if Task::TYPES.include?(params[:type])
-    # Cliente: aplica só se houver cliente com esse id (id inválido → ignora).
-    scope = scope.where(client_id: params[:client_id]) if valid_client?(params[:client_id])
+    scope = scope.where(status: sel[:status]) if sel[:status].any?
+    scope = scope.where(type: sel[:type]) if sel[:type].any?
+    scope = scope.where(client_id: sel[:client_id]) if sel[:client_id].any?
     scope
   end
 
@@ -127,13 +139,8 @@ class TasksController < ApplicationController
     end
   end
 
-  def valid_client?(client_id)
-    client_id.present? && Client.exists?(id: client_id)
-  end
-
   def filters_active?
-    params[:q].present? || Task.status_key?(params[:status]) ||
-      Task::TYPES.include?(params[:type]) || valid_client?(params[:client_id])
+    params[:q].present? || selected_task_filters.values.any?(&:any?)
   end
 
   # sanitized_per_page / show_all_per_page? / per_page_select_options vêm de Paginated.

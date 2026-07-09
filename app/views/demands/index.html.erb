@@ -7,18 +7,23 @@
   </div>
 </div>
 
-<%# PB-005 — busca + filtros combináveis (GET; preserva via query params). %>
-<%= form_with url: demands_path, method: :get, class: "filters" do |f| %>
-  <%= f.search_field :q, value: params[:q], placeholder: "Buscar título, descrição ou observações" %>
-  <%= f.select :priority, options_for_select([ [ "Prioridade: todas", "" ] ] + @priorities.map { |p| [ Demand.priority_label(p), p ] }, params[:priority]) %>
-  <%= f.select :origin, options_for_select([ [ "Origem: todas", "" ] ] + @origins.map { |o| [ Demand.origin_label(o), o ] }, params[:origin]) %>
-  <%# PB-018 — Demanda tem status fixo; rótulos PT-BR (Pendente/Convertida). %>
-  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ Demand::STATUS_LABELS.fetch(s, s.humanize), s ] }, params[:status]) %>
-  <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
-  <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
-  <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
-  <%= link_to "Limpar filtros", demands_path, class: "btn btn--ghost btn--sm" %>
-<% end %>
+<%# PB-023e — filtros avançados multi-valor (chips removíveis; busca; GET/URL). %>
+<% sel = selected_demand_filters %>
+<%= render FilterBarComponent.new(
+      url: demands_path, query: request.query_parameters,
+      search: { value: params[:q], placeholder: "Buscar título, descrição ou observações" },
+      filters: [
+        { key: :priority, label: "Prioridade",
+          options: @priorities.map { |p| [ Demand.priority_label(p), p ] }, selected: sel[:priority] },
+        { key: :origin, label: "Origem",
+          options: @origins.map { |o| [ Demand.origin_label(o), o ] }, selected: sel[:origin] },
+        { key: :status, label: "Status",
+          options: @statuses.map { |s| [ Demand::STATUS_LABELS.fetch(s, s.humanize), s ] }, selected: sel[:status] },
+        { key: :client_id, label: "Cliente", searchable: true,
+          options: @clients, selected: sel[:client_id] }
+      ],
+      per_page: { options: per_page_select_options, selected: per_page_selected }
+    ) %>
 
 <%# PB-005 — carrega a página 1x (any?/each sobre o array; sem query EXISTS extra). %>
 <% demands = @demands.to_a %>

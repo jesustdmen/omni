@@ -9,6 +9,61 @@
 
 ## Entradas
 
+## 2026-07-09 — [PB-023e · redesign] Filtros avançados com multi-seleção e chips — IMPLEMENTADA E VALIDADA (aceite visual do PO pendente)
+### Resumo
+Componente transversal de filtros substitui os selects nativos de valor único por
+**dropdowns de multi-seleção com busca interna e chips removíveis**, com estado na URL
+(params multi-valor) e sanitização por allowlist. **Sem migration/schema/banco/sync.**
+### Entregue
+- **Componente reutilizável `FilterBarComponent`** (ViewComponent + template ERB): busca
+  textual opcional, um **combobox multi-seleção estilo "token input" por critério** (chips
+  DENTRO do campo, busca ao digitar, menu de opções com "Nenhum resultado"), seletor de "por
+  página" e botões Filtrar/Limpar. A base de cada combobox é um `<select multiple name="key[]">`
+  — fonte de verdade do form e fallback funcional sem JS. *(A 1ª versão usava dropdowns
+  `<details>`+checkboxes; trocada por token-input após feedback visual do PO — ficou poluído/
+  sobreposto.)*
+- **Stimulus `combobox_controller`** (melhoria progressiva): oculta o `<select multiple>` e
+  monta a UI de token — renderiza os chips dos selecionados, filtra as opções ao digitar,
+  adiciona/remove por clique (ou Backspace/Enter/Esc), botão de limpar. Sincroniza tudo de
+  volta no `<select>` (o form envia `key[]`). Sem dependência externa (Stimulus + CSS próprio).
+- **Auto-aplica ao mudar a seleção (2026-07-09):** escolher uma opção, remover um chip (× ou
+  Backspace) ou limpar um campo dispara `requestSubmit()` no form GET — **sem clicar em
+  "Filtrar"**. **Digitar apenas filtra as opções localmente** (não consulta o servidor até
+  selecionar um valor). Como não envia `page`, volta à **página 1** ao mudar filtros. No modo
+  JS o botão **"Filtrar" fica oculto** (o Stimulus marca `.filter-bar--js`); **sem JS** ele
+  permanece e o form segue funcional com `<select multiple>` + Filtrar. O seletor "por página"
+  também auto-submete no modo JS (`filter_bar_controller`); a busca textual submete no Enter.
+- **Concern `MultiFilter`**: leitura array-safe de `params[key]` (escalar OU array →
+  Array), sanitizada por allowlist; `filter_ids` valida existência de ids em 1 query
+  (sem N+1). Nunca interpola em SQL (`where(col: array)`).
+- **Telas migradas** (5): **Demandas** (prioridade, origem, status, cliente), **Tarefas**
+  (status, tipo, cliente), **Clientes** (status; aba Contatos: cliente, status, principal —
+  preservando a aba via `extra`), **Projetos** (cliente, status), **Contratos** (empresa,
+  cliente, status). Busca ao digitar em todos (útil sobretudo em cliente/empresa). **Horas**
+  ficou fora (não possui filtros equivalentes).
+- **PT-BR** em toda a UI nova (rótulos, "todos", "Limpar filtros", chips "Critério: Valor").
+### Comportamento de params/URL
+Multi-valor via convenção Rails `key[]=a&key[]=b`; **compatível com o formato escalar antigo**
+(`?status=todo` continua filtrando — MultiFilter normaliza ambos). Remover um chip = GET com
+aquele valor fora, resto preservado, volta à página 1. "Limpar filtros" zera tudo (mantém só
+neutros, ex.: aba). Recarregar a URL mantém a seleção marcada (checkboxes `checked`).
+### Testes/validações
+Suíte **972/3641/0** (`OMNI_RUN_PIPELINE_INTERNALLY=0`); rubocop **0**; brakeman **0**;
+`zeitwerk:check` OK; `git diff --check` limpo. Novo `test/integration/filter_bar_test.rb`
+(12 testes): multi-seleção em Demandas e Tarefas; seleção refletida no `<select multiple>`
+(fonte de verdade + estado na URL); limpar (inclusive preservando a aba em Clientes);
+combinação de critérios; **valor fora da allowlist ignorado** (texto e id inexistente);
+compat. com param escalar; combobox renderizado (select multiple + token input). Testes de
+PT-BR e de status configurável ajustados ao novo markup. CSS/JS (`combobox_controller`)
+servidos em `localhost:3030` (HTTP 200).
+### Escopo negativo
+Sem migration/schema/banco; sync/pipeline intocados; sem PB-023b (workspace) nem re-skin
+amplo (PB-023c); Conversas/Triagem não tocadas; **sem dependência JS externa** (Stimulus
+próprio); nada de `_mockup/redesign`; Graphify/tooling e `docs/metodo/` fora.
+### Estado
+**Implementada e validada tecnicamente; aguardando aceite visual do PO.** Sem commit/push
+até o aceite (commit local sugerido; push = gate separado).
+
 ## 2026-07-09 — [PB-023a · redesign] Fundação visual do core operacional — IMPLEMENTADA E VALIDADA (aceite visual do PO pendente)
 ### Resumo
 Primeira fatia do redesign (ADR-026) implementada sobre o Rails/Hotwire existente: tokens

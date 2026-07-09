@@ -7,15 +7,18 @@
   </div>
 </div>
 
-<%# PB-007 — busca + filtros combináveis (GET; preserva via query params). %>
-<%= form_with url: projects_path, method: :get, class: "filters" do |f| %>
-  <%= f.search_field :q, value: params[:q], placeholder: "Buscar nome ou descrição" %>
-  <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
-  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @status_options, params[:status]) %>
-  <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
-  <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
-  <%= link_to "Limpar filtros", projects_path, class: "btn btn--ghost btn--sm" %>
-<% end %>
+<%# PB-023e — filtros avançados multi-valor (chips removíveis; busca; GET/URL). %>
+<% sel = selected_project_filters %>
+<%= render FilterBarComponent.new(
+      url: projects_path, query: request.query_parameters,
+      search: { value: params[:q], placeholder: "Buscar nome ou descrição" },
+      filters: [
+        { key: :client_id, label: "Cliente", searchable: true,
+          options: @clients, selected: sel[:client_id] },
+        { key: :status, label: "Status", options: @status_options, selected: sel[:status] }
+      ],
+      per_page: { options: per_page_select_options, selected: per_page_selected }
+    ) %>
 
 <% projects = @projects.to_a %>
 <% if projects.any? %>

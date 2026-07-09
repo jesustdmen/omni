@@ -13,18 +13,23 @@
   <%= link_to "Contatos", clients_path(tab: "contacts"), class: "tab#{' tab--active' if @tab == 'contacts'}" %>
 </nav>
 
+<% sel = selected_client_filters %>
 <% if @tab == "contacts" %>
   <%# ===================== CONTATOS ===================== %>
-  <%= form_with url: clients_path, method: :get, class: "filters" do |f| %>
-    <%= hidden_field_tag :tab, "contacts" %>
-    <%= f.search_field :q, value: params[:q], placeholder: "Buscar nome, e-mail, telefone ou cargo" %>
-    <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients_for_filter, params[:client_id]) %>
-    <%= f.select :status, options_for_select([ [ "Status do cliente: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
-    <%= f.select :primary, options_for_select([ [ "Principal: todos", "" ], [ "Principal: sim", "yes" ], [ "Principal: não", "no" ] ], params[:primary]) %>
-    <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
-    <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
-    <%= link_to "Limpar filtros", clients_path(tab: "contacts"), class: "btn btn--ghost btn--sm" %>
-  <% end %>
+  <%# PB-023e — filtros avançados multi-valor (preserva a aba via `extra`). %>
+  <%= render FilterBarComponent.new(
+        url: clients_path, query: request.query_parameters, extra: { tab: "contacts" },
+        search: { value: params[:q], placeholder: "Buscar nome, e-mail, telefone ou cargo" },
+        filters: [
+          { key: :client_id, label: "Cliente", searchable: true,
+            options: @clients_for_filter, selected: sel[:client_id] },
+          { key: :status, label: "Status do cliente",
+            options: @statuses.map { |s| [ s.humanize, s ] }, selected: sel[:status] },
+          { key: :primary, label: "Principal",
+            options: [ [ "Sim", "yes" ], [ "Não", "no" ] ], selected: sel[:primary] }
+        ],
+        per_page: { options: per_page_select_options, selected: per_page_selected }
+      ) %>
 
   <% contacts = @contacts.to_a %>
   <% if contacts.any? %>
@@ -69,14 +74,16 @@
 
 <% else %>
   <%# ===================== EMPRESAS ===================== %>
-  <%= form_with url: clients_path, method: :get, class: "filters" do |f| %>
-    <%= hidden_field_tag :tab, "companies" %>
-    <%= f.search_field :q, value: params[:q], placeholder: "Buscar razão social, nome fantasia ou CNPJ" %>
-    <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + @statuses.map { |s| [ s.humanize, s ] }, params[:status]) %>
-    <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
-    <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
-    <%= link_to "Limpar filtros", clients_path(tab: "companies"), class: "btn btn--ghost btn--sm" %>
-  <% end %>
+  <%# PB-023e — filtros avançados multi-valor (preserva a aba via `extra`). %>
+  <%= render FilterBarComponent.new(
+        url: clients_path, query: request.query_parameters, extra: { tab: "companies" },
+        search: { value: params[:q], placeholder: "Buscar razão social, nome fantasia ou CNPJ" },
+        filters: [
+          { key: :status, label: "Status",
+            options: @statuses.map { |s| [ s.humanize, s ] }, selected: sel[:status] }
+        ],
+        per_page: { options: per_page_select_options, selected: per_page_selected }
+      ) %>
 
   <% companies = @companies.to_a %>
   <% if companies.any? %>

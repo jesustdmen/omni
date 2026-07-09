@@ -1,5 +1,6 @@
 class ProjectsController < ApplicationController
   include Paginated # paginação (allowlist + "Mostrar tudo")
+  include MultiFilter # PB-023e — filtros multi-valor (array-safe + allowlist)
   before_action :set_project, only: %i[show edit update destroy duplicate]
 
   PER_PAGE_OPTIONS = Paginated::PER_PAGE_OPTIONS
@@ -22,6 +23,15 @@ class ProjectsController < ApplicationController
     # Inclui inativos (filtrar registros antigos). Pares [label, key].
     @status_options = ConfigurableStatus.for_entity(Project::STATUS_ENTITY).ordered.pluck(:name, :key)
     @filters_active = project_filters_active?
+  end
+
+  # PB-023e — seleções sanitizadas (multi-valor) para a barra de filtros.
+  helper_method :selected_project_filters
+  def selected_project_filters
+    @selected_project_filters ||= {
+      status: filter_list(:status, allowlist: ConfigurableStatus.for_entity(Project::STATUS_ENTITY).pluck(:key)),
+      client_id: filter_ids(:client_id, Client)
+    }
   end
 
   def show
@@ -87,10 +97,12 @@ class ProjectsController < ApplicationController
 
   # --- PB-007 — busca, filtros e paginação ---------------------------------
 
+  # PB-023e — filtros multi-valor (cliente/status aceitam 1..N valores).
   def filtered_projects(scope)
+    sel = selected_project_filters
     scope = apply_project_search(scope)
-    scope = scope.where(client_id: params[:client_id]) if valid_client?(params[:client_id])
-    scope = scope.where(status: params[:status]) if Project.status_key?(params[:status])
+    scope = scope.where(client_id: sel[:client_id]) if sel[:client_id].any?
+    scope = scope.where(status: sel[:status]) if sel[:status].any?
     scope
   end
 
@@ -103,12 +115,8 @@ class ProjectsController < ApplicationController
     scope.where("name ILIKE :p OR description ILIKE :p", p: pattern)
   end
 
-  def valid_client?(client_id)
-    client_id.present? && Client.exists?(id: client_id)
-  end
-
   def project_filters_active?
-    params[:q].present? || valid_client?(params[:client_id]) || Project.status_key?(params[:status])
+    params[:q].present? || selected_project_filters.values.any?(&:any?)
   end
 
   # sanitized_per_page / show_all_per_page? vêm de Paginated.

@@ -98,7 +98,7 @@ class ConfigurableStatusesTest < ActionDispatch::IntegrationTest
     get tasks_path
     assert_response :success
     # filtro de status traz o label PT-BR configurado
-    assert_select "select[name='status'] option", text: "Em andamento"
+    assert_select "select[name=?] option", "status[]", text: "Em andamento" # PB-023e — filtro virou combobox
     # badge mostra o label configurado
     assert_select "span.badge--config", text: "Em andamento"
   end
@@ -107,7 +107,7 @@ class ConfigurableStatusesTest < ActionDispatch::IntegrationTest
     Project.create!(name: "Proj X", status: "planning", client: @client)
     get projects_path
     assert_response :success
-    assert_select "select[name='status'] option", text: "Planejamento"
+    assert_select "select[name=?] option", "status[]", text: "Planejamento" # PB-023e — filtro virou combobox
     assert_select "span.badge--config", text: "Planejamento"
   end
 

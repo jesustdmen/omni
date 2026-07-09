@@ -23,7 +23,8 @@ class PtbrTermsTest < ActionDispatch::IntegrationTest
     Task.create!(title: "T", type: "development", status: "todo", client: @client)
     get tasks_path
     assert_select "span.badge", text: "Desenvolvimento"
-    assert_select "select[name='type'] option", text: "Suporte"
+    # PB-023e — filtro de tipo virou dropdown multi-seleção (checkbox + label PT-BR).
+    assert_select "select[name=?] option", "type[]", text: "Suporte"
     refute_match(/>Development</, response.body)
   end
 
@@ -32,8 +33,9 @@ class PtbrTermsTest < ActionDispatch::IntegrationTest
     get demands_path
     assert_match("WhatsApp", response.body)
     assert_select "span.badge", text: "Alta"
-    assert_select "select[name='origin'] option", text: "Reunião"
-    assert_select "select[name='priority'] option", text: "Média"
+    # PB-023e — filtros de origem/prioridade viraram dropdowns multi-seleção (labels PT-BR).
+    assert_select "select[name=?] option", "origin[]", text: "Reunião"
+    assert_select "select[name=?] option", "priority[]", text: "Média"
     refute_match(/>Whatsapp</, response.body) # não deve aparecer o humanize cru
   end
 

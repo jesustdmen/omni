@@ -1,5 +1,6 @@
 class DemandsController < ApplicationController
   include Paginated # paginação (allowlist + "Mostrar tudo")
+  include MultiFilter # PB-023e — filtros multi-valor (array-safe + allowlist)
   before_action :set_demand, only: %i[show edit update destroy convert]
 
   PER_PAGE_OPTIONS = Paginated::PER_PAGE_OPTIONS
@@ -25,6 +26,17 @@ class DemandsController < ApplicationController
     @priorities = Demand::PRIORITIES
     @origins = Demand::ORIGINS
     @filters_active = demand_filters_active?
+  end
+
+  # PB-023e — seleções sanitizadas (multi-valor) expostas à barra de filtros.
+  helper_method :selected_demand_filters
+  def selected_demand_filters
+    @selected_demand_filters ||= {
+      priority: filter_list(:priority, allowlist: Demand::PRIORITIES),
+      origin: filter_list(:origin, allowlist: Demand::ORIGINS),
+      status: filter_list(:status, allowlist: Demand.statuses.keys),
+      client_id: filter_ids(:client_id, Client)
+    }
   end
 
   def show
@@ -97,12 +109,16 @@ class DemandsController < ApplicationController
 
   # --- PB-005 — busca, filtros e paginação (padrão PB-004a) -----------------
 
+  # PB-023e — filtros multi-valor: cada critério aceita 1..N valores
+  # (`where(col: array)`); vazio = não filtra. Compatível com o formato
+  # escalar antigo (o MultiFilter normaliza ambos para Array).
   def filtered_demands(scope)
+    sel = selected_demand_filters
     scope = apply_demand_search(scope)
-    scope = scope.where(priority: params[:priority]) if Demand::PRIORITIES.include?(params[:priority])
-    scope = scope.where(origin: params[:origin]) if Demand::ORIGINS.include?(params[:origin])
-    scope = scope.where(status: params[:status]) if Demand.statuses.key?(params[:status])
-    scope = scope.where(client_id: params[:client_id]) if valid_client?(params[:client_id])
+    scope = scope.where(priority: sel[:priority]) if sel[:priority].any?
+    scope = scope.where(origin: sel[:origin]) if sel[:origin].any?
+    scope = scope.where(status: sel[:status]) if sel[:status].any?
+    scope = scope.where(client_id: sel[:client_id]) if sel[:client_id].any?
     scope
   end
 
@@ -115,14 +131,8 @@ class DemandsController < ApplicationController
     scope.where("title ILIKE :p OR description ILIKE :p OR observations ILIKE :p", p: pattern)
   end
 
-  def valid_client?(client_id)
-    client_id.present? && Client.exists?(id: client_id)
-  end
-
   def demand_filters_active?
-    params[:q].present? || Demand::PRIORITIES.include?(params[:priority]) ||
-      Demand::ORIGINS.include?(params[:origin]) || Demand.statuses.key?(params[:status]) ||
-      valid_client?(params[:client_id])
+    params[:q].present? || selected_demand_filters.values.any?(&:any?)
   end
 
   # sanitized_per_page / show_all_per_page? vêm de Paginated.

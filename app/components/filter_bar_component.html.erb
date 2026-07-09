@@ -1,0 +1,53 @@
+<%= form_with url: @url, method: :get, class: "filter-bar",
+      data: { controller: "filter-bar", turbo_action: "advance" } do |f| %>
+  <% hidden_extra.each do |k, v| %>
+    <%= hidden_field_tag k, v %>
+  <% end %>
+
+  <% if @search %>
+    <div class="filter-bar__search">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <%= f.search_field :q, value: @search[:value], placeholder: @search[:placeholder],
+            "aria-label": @search[:placeholder] || "Buscar", autocomplete: "off" %>
+    </div>
+  <% end %>
+
+  <% @filters.each do |filter| %>
+    <% selected = Array(filter[:selected]).map(&:to_s) %>
+    <%# PB-023e — combobox estilo "token input": chips DENTRO do campo, busca ao
+        digitar, menu de opções. O <select multiple> é a fonte de verdade e o
+        fallback sem JS (o Stimulus o oculta e monta a UI de token). %>
+    <div class="combo" data-controller="combobox"
+         data-combobox-placeholder-value="<%= filter[:label] %>">
+      <%= select_tag "#{filter[:key]}[]",
+            options_for_select(filter[:options], selected),
+            multiple: true, class: "combo__source",
+            "aria-label": filter[:label],
+            data: { combobox_target: "source" } %>
+      <div class="combo__control" data-combobox-target="control"
+           data-action="click->combobox#toggle" tabindex="-1">
+        <span class="combo__chips" data-combobox-target="chips"></span>
+        <input type="text" class="combo__input" data-combobox-target="input"
+               data-action="input->combobox#filter focus->combobox#open keydown->combobox#keydown"
+               placeholder="<%= filter[:label] %>" autocomplete="off"
+               aria-label="<%= filter[:label] %>">
+        <button type="button" class="combo__clear" data-combobox-target="clear"
+                data-action="click->combobox#clearAll" aria-label="Limpar <%= filter[:label] %>" hidden>×</button>
+        <span class="combo__caret" aria-hidden="true">▾</span>
+      </div>
+      <ul class="combo__menu" data-combobox-target="menu" role="listbox" hidden></ul>
+    </div>
+  <% end %>
+
+  <% if @per_page %>
+    <%# Auto-submete ao trocar (modo JS); sem JS, aplica pelo botão Filtrar. %>
+    <%= f.select :per_page, options_for_select(@per_page[:options], @per_page[:selected]), {},
+          class: "filter-bar__per-page", data: { action: "change->filter-bar#submit" } %>
+  <% end %>
+
+  <%# Filtrar é fallback sem JS (o CSS o oculta quando o Stimulus marca .filter-bar--js). %>
+  <%= f.submit @submit_label, class: "btn btn--primary btn--sm filter-bar__submit" %>
+  <% if any_active? %>
+    <%= link_to "Limpar filtros", clear_url, class: "btn btn--ghost btn--sm" %>
+  <% end %>
+<% end %>

@@ -9,15 +9,21 @@
   </div>
 </div>
 
-<%= form_with url: contracts_path, method: :get, class: "filters" do |f| %>
-  <%= f.search_field :q, value: params[:q], placeholder: "Buscar nas observações" %>
-  <%= f.select :provider_company_id, options_for_select([ [ "Empresa: todas", "" ] ] + @provider_companies, params[:provider_company_id]) %>
-  <%= f.select :client_id, options_for_select([ [ "Cliente: todos", "" ] ] + @clients, params[:client_id]) %>
-  <%= f.select :status, options_for_select([ [ "Status: todos", "" ] ] + Contract::STATUSES.map { |s| [ Contract::STATUS_LABELS[s], s ] }, params[:status]) %>
-  <%= f.select :per_page, options_for_select(per_page_select_options, per_page_selected) %>
-  <%= f.submit "Filtrar", class: "btn btn--outline btn--sm" %>
-  <%= link_to "Limpar filtros", contracts_path, class: "btn btn--ghost btn--sm" %>
-<% end %>
+<%# PB-023e — filtros avançados multi-valor (chips removíveis; busca; GET/URL). %>
+<% sel = selected_contract_filters %>
+<%= render FilterBarComponent.new(
+      url: contracts_path, query: request.query_parameters,
+      search: { value: params[:q], placeholder: "Buscar nas observações" },
+      filters: [
+        { key: :provider_company_id, label: "Empresa", searchable: true,
+          options: @provider_companies, selected: sel[:provider_company_id] },
+        { key: :client_id, label: "Cliente", searchable: true,
+          options: @clients, selected: sel[:client_id] },
+        { key: :status, label: "Status",
+          options: Contract::STATUSES.map { |s| [ Contract::STATUS_LABELS[s], s ] }, selected: sel[:status] }
+      ],
+      per_page: { options: per_page_select_options, selected: per_page_selected }
+    ) %>
 
 <% contracts = @contracts.to_a %>
 <% if contracts.any? %>

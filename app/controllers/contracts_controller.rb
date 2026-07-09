@@ -3,6 +3,7 @@
 # validada no model (Rails). NÃO toca TimeEntry; sem cálculo/fechamento/relatório.
 class ContractsController < ApplicationController
   include Paginated
+  include MultiFilter # PB-023e — filtros multi-valor (array-safe + allowlist)
   before_action :set_contract, only: %i[show edit update destroy]
 
   PER_PAGE_OPTIONS = Paginated::PER_PAGE_OPTIONS
@@ -23,6 +24,16 @@ class ContractsController < ApplicationController
     @provider_companies = ProviderCompany.ordered.pluck(:name, :id)
     @clients = Client.ordered.pluck(:name, :id)
     @filters_active = contract_filters_active?
+  end
+
+  # PB-023e — seleções sanitizadas (multi-valor) para a barra de filtros.
+  helper_method :selected_contract_filters
+  def selected_contract_filters
+    @selected_contract_filters ||= {
+      provider_company_id: filter_ids(:provider_company_id, ProviderCompany),
+      client_id: filter_ids(:client_id, Client),
+      status: filter_list(:status, allowlist: Contract::STATUSES)
+    }
   end
 
   def show
@@ -83,23 +94,15 @@ class ContractsController < ApplicationController
       pattern = "%#{term.gsub('\\', '\\\\\\\\').gsub('%', '\\%').gsub('_', '\\_')}%"
       scope = scope.where("notes ILIKE :p", p: pattern)
     end
-    scope = scope.where(provider_company_id: params[:provider_company_id]) if valid_provider?(params[:provider_company_id])
-    scope = scope.where(client_id: params[:client_id]) if valid_client?(params[:client_id])
-    scope = scope.where(status: params[:status]) if Contract::STATUSES.include?(params[:status])
+    sel = selected_contract_filters
+    scope = scope.where(provider_company_id: sel[:provider_company_id]) if sel[:provider_company_id].any?
+    scope = scope.where(client_id: sel[:client_id]) if sel[:client_id].any?
+    scope = scope.where(status: sel[:status]) if sel[:status].any?
     scope
   end
 
-  def valid_provider?(id)
-    id.present? && ProviderCompany.exists?(id: id)
-  end
-
-  def valid_client?(id)
-    id.present? && Client.exists?(id: id)
-  end
-
   def contract_filters_active?
-    params[:q].present? || valid_provider?(params[:provider_company_id]) ||
-      valid_client?(params[:client_id]) || Contract::STATUSES.include?(params[:status])
+    params[:q].present? || selected_contract_filters.values.any?(&:any?)
   end
 
   # sanitized_per_page / show_all_per_page? vêm de Paginated.

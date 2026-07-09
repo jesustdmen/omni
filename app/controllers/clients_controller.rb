@@ -1,5 +1,6 @@
 class ClientsController < ApplicationController
   include Paginated # paginação (allowlist + "Mostrar tudo")
+  include MultiFilter # PB-023e — filtros multi-valor (array-safe + allowlist)
   before_action :set_client, only: %i[show edit update destroy]
 
   # PB-006 — listagem operacional com abas Empresas/Contatos.
@@ -15,6 +16,18 @@ class ClientsController < ApplicationController
     @statuses = Client.distinct.pluck(:status).compact.sort
 
     @tab == "contacts" ? load_contacts : load_companies
+  end
+
+  # PB-023e — seleções sanitizadas (multi-valor) para a barra de filtros.
+  # `status` é freeform (valores distintos do banco); `primary` é yes/no.
+  helper_method :selected_client_filters
+  def selected_client_filters
+    statuses = Client.distinct.pluck(:status).compact.map(&:to_s)
+    @selected_client_filters ||= {
+      status: filter_list(:status, allowlist: statuses),
+      client_id: filter_ids(:client_id, Client),
+      primary: filter_list(:primary, allowlist: %w[yes no])
+    }
   end
 
   def show
@@ -87,7 +100,8 @@ class ClientsController < ApplicationController
 
   def filtered_companies(scope)
     scope = apply_company_search(scope)
-    scope = scope.where(status: params[:status]) if valid_status?(params[:status])
+    statuses = selected_client_filters[:status]
+    scope = scope.where(status: statuses) if statuses.any?
     scope
   end
 
@@ -106,7 +120,7 @@ class ClientsController < ApplicationController
   end
 
   def company_filters_active?
-    params[:q].present? || valid_status?(params[:status])
+    params[:q].present? || selected_client_filters[:status].any?
   end
 
   # --- Contatos ------------------------------------------------------------
@@ -125,23 +139,29 @@ class ClientsController < ApplicationController
   end
 
   def filtered_contacts(scope)
+    sel = selected_client_filters
     term = params[:q].to_s.strip
     if term.present?
       p = "%#{escape_like(term)}%"
       scope = scope.where("contacts.name ILIKE :p OR contacts.email ILIKE :p OR contacts.phone ILIKE :p OR contacts.position ILIKE :p", p: p)
     end
-    scope = scope.where(client_id: params[:client_id]) if valid_client?(params[:client_id])
-    scope = scope.joins(:client).where(clients: { status: params[:status] }) if valid_status?(params[:status])
-    case params[:primary]
-    when "yes" then scope = scope.where(is_primary: true)
-    when "no" then scope = scope.where(is_primary: false)
-    end
+    scope = scope.where(client_id: sel[:client_id]) if sel[:client_id].any?
+    scope = scope.joins(:client).where(clients: { status: sel[:status] }) if sel[:status].any?
+    # `primary` yes/no → booleano. Marcar ambos (ou nenhum) = sem filtro.
+    scope = apply_primary_filter(scope, sel[:primary])
     scope
   end
 
+  # yes → is_primary true; no → false; ambos/vazio → não filtra.
+  def apply_primary_filter(scope, primary)
+    return scope unless primary.size == 1
+
+    scope.where(is_primary: primary.first == "yes")
+  end
+
   def contact_filters_active?
-    params[:q].present? || valid_client?(params[:client_id]) ||
-      valid_status?(params[:status]) || %w[yes no].include?(params[:primary])
+    sel = selected_client_filters
+    params[:q].present? || sel[:client_id].any? || sel[:status].any? || sel[:primary].any?
   end
 
   # --- helpers comuns ------------------------------------------------------
@@ -149,14 +169,6 @@ class ClientsController < ApplicationController
   # Escapa curingas do LIKE (% e _) e o escape (\) → tratados como texto.
   def escape_like(term)
     term.gsub("\\", "\\\\\\\\").gsub("%", "\\%").gsub("_", "\\_")
-  end
-
-  def valid_status?(status)
-    status.present? && Client.where(status: status).exists?
-  end
-
-  def valid_client?(client_id)
-    client_id.present? && Client.exists?(id: client_id)
   end
 
   # sanitized_per_page / show_all_per_page? vêm de Paginated.

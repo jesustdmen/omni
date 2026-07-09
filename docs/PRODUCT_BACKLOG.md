@@ -542,18 +542,23 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 - **PB-023d — Configurações reorganizada + Aparência:** sub-navegação por seção; nova seção
   **Aparência** (tema claro/escuro/sistema + cor de destaque `--accent` por allowlist do ADR-026;
   preferência **por dispositivo**, sem persistência no banco).
-- **PB-023e — Filtros avançados com multi-seleção e chips (transversal) — Aprovada, NÃO
-  autorizada (registrada 2026-07-09):** pedido do PO identificado durante a inspeção visual da
-  PB-023a e **deliberadamente separado de escopo** (muda o contrato de params/queries dos
-  filtros — nova frente funcional, não fundação visual). **Contrato mínimo:** componente
-  **transversal** de filtros para as listas; **múltiplos valores por critério** quando fizer
-  sentido; selecionados viram **chips com ✕** para remover; **busca/digitação** quando a lista
-  for longa (ex.: clientes); filtros **preservados por params na URL** (compatível com
-  `return_to`/PB-013b); ação **limpar filtros**; **sem dependência pesada** — avaliar
-  implementação própria **Hotwire/Stimulus** (ex.: `<details>` + checkboxes com melhoria
-  progressiva) **antes** de biblioteca externa; revisão de **controllers/queries/testes** das
-  listas afetadas (tarefas, demandas, clientes, projetos, contratos, conversas). Substitui
-  também o popup nativo dos selects (não estilizável — motivação visual do PO).
+- **PB-023e — Filtros avançados com multi-seleção e chips (transversal) — IMPLEMENTADA E
+  VALIDADA (2026-07-09; aguardando aceite visual do PO):** entregue conforme o contrato —
+  componente reutilizável `FilterBarComponent` (ViewComponent) + `multiselect_controller`
+  (Stimulus próprio, sem dependência externa) + concern `MultiFilter` (params array-safe +
+  allowlist, sem N+1). Comboboxes multi-seleção estilo "token input" (chips dentro do campo,
+  busca ao digitar, menu com "Nenhum resultado"; base `<select multiple name="key[]">` como
+  fonte de verdade + fallback sem JS); estado na URL; "Limpar filtros"; compat. com o formato
+  escalar antigo. *(Trocado de dropdown `<details>` para token-input após feedback do PO; e
+  passou a **auto-aplicar** ao selecionar/remover chip — `requestSubmit()` no form GET, sem
+  clicar em "Filtrar", que fica oculto no modo JS e é fallback sem JS; digitar só filtra
+  opções localmente.)* Migradas:
+  **Demandas, Tarefas, Clientes (com aba preservada), Projetos, Contratos** (Horas não tem
+  filtros — fora). Suíte 972/3641/0; rubocop/brakeman 0; zeitwerk OK. Detalhe no `DELIVERY_LOG`
+  (2026-07-09). Contrato original preservado abaixo: componente **transversal** de filtros;
+  múltiplos valores por critério; chips com ✕; busca em listas longas; params na URL; limpar;
+  sem dependência pesada (Stimulus próprio antes de lib externa); revisão de controllers/
+  queries/testes. **Conversas/Triagem não migradas nesta fatia** (fora do core; etapa 2).
 
 **Decisões pendentes do PO (registradas no ADR-026):** herança de valor/hora contrato→apontamentos
 (e criação do vínculo tarefa↔contrato, migration aditiva opcional — interage com PB-020c/PB-021);
