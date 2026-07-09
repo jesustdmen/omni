@@ -9,6 +9,68 @@
 
 ## Entradas
 
+## 2026-07-09 — [PB-023a · redesign] Fundação visual do core operacional — IMPLEMENTADA E VALIDADA (aceite visual do PO pendente)
+### Resumo
+Primeira fatia do redesign (ADR-026) implementada sobre o Rails/Hotwire existente: tokens
+visuais oficiais, fontes locais, ícones oficiais, shell novo (sidebar 238px + topbar 58px),
+navegação do core revisada e Dashboard redesenhado como prova dos tokens. **Sem migration,
+sem mudança de schema/rotas/comportamento de domínio.**
+### Entregue
+- **Tokens (ADR-026)** como CSS custom properties em `application.css` — paleta petróleo
+  `#0e6e6b`, neutros quentes, tons de status, bolinhas de status/prioridade, raios/sombras,
+  `--sidebar-w: 238px`/`--topbar-h: 58px`. Componentes existentes herdaram a pele via variáveis.
+- **Fontes locais** (`app/assets/fonts/`, ~102 KB): Space Grotesk (var 300–700, títulos),
+  Hanken Grotesk (var 100–900, corpo), IBM Plex Mono (400/500/600, códigos/durações);
+  `@font-face` + `FONTS-LICENSE.md` (OFL 1.1). Sem CDN (CSP — ADR-012).
+- **Ícones**: subconjunto de 9 ícones *line* da biblioteca oficial Remix Icon (Apache 2.0),
+  vendorizados como path data em `SidebarComponent::NAV_ICONS` com atribuição.
+- **Shell**: sidebar com busca global incorporada + nav do core (Visão geral / Trabalho:
+  Tarefas, Demandas, Clientes, Projetos, **Horas** / Comercial: Contratos, **Apuração inerte**
+  ("em breve") / Sistema: Configurações); **grupo Conversas removido do menu** (rotas intactas);
+  topbar com área de título por tela (`content_for :topbar`; Dashboard adota) + **chip de
+  timers com soma do tempo** (pulso `omniPulse`; contagem+soma em 1 query `pluck`).
+- **Acesso secundário** em `/settings`: card "Áreas fora do menu" (Triagem, Conversas,
+  Console de sincronização, Apuração).
+- **Dashboard**: saudação, 4 stat cards (Space Grotesk 32/600), Tarefas recentes, card "Hoje"
+  em petróleo claro (horas/apontamentos/timers — dia operacional Brasília, ADR-023) e
+  Demandas pendentes (bolinha de prioridade, alta primeiro). Placeholders de conversas removidos.
+- **PT-BR**: "Time entries" → **"Horas"** (sidebar, tela, aba da tarefa). Exceção registrada:
+  telas Devise (login/senha) seguem nos textos padrão em inglês — pré-existente, fora da fatia.
+### Ajustes da 1ª inspeção visual do PO (2026-07-09)
+- **Botões de submit em PT-BR** nos 8 formulários (`clients`, `contacts`, `contracts`,
+  `demands`, `projects`, `provider_companies`, `tasks`, `time_entries`): `f.submit` sem rótulo
+  caía no default inglês do Rails ("Update Task" etc. — pré-existente, alcançado pela regra
+  PT-BR da fatia) → rótulos explícitos "Salvar alterações" / "Criar tarefa|cliente|…".
+- **Busca da sidebar**: o ícone sobrepunha o placeholder — a regra genérica
+  `form input[type="search"]` vencia a da sidebar por especificidade e zerava o
+  `padding-left`; seletor corrigido para `.sidebar__search input[type="search"]`.
+- **Selects de filtro com opções longas** (ex.: razão social em Demandas → Cliente):
+  `max-width: 260px` + `text-overflow: ellipsis` para não estourar a barra de filtros
+  (o popup aberto é nativo do navegador, não estilizável).
+### Testes/validações
+Suíte **960/3577/0** (`OMNI_RUN_PIPELINE_INTERNALLY=0`); rubocop **0**; brakeman **0**;
+`zeitwerk:check` OK; `git diff --check` limpo. App validado em `http://localhost:3030`
+(CSS compilado; 5 woff2 resolvidas pelo Propshaft com digest, HTTP 200; rotas fora do menu
+vivas por URL: `/triage`, `/conversations`, `/sync_runs`, `/work_time_reports` → 302 login).
+Testes de navegação atualizados (Triagem fora do menu + acesso via Configurações; Apuração
+inerte + rota acessível; rótulo Horas; saudação do dashboard).
+### Escopo negativo
+Sem migration/schema/banco; pipeline intocado; PB-020d/e intocadas (só saíram do menu);
+sem PB-023b (workspace) nem contrato→horas; **nada copiado/versionado de `_mockup/redesign`**
+(ícones do repositório oficial RemixIcon; fontes do Google Fonts; tokens do ADR-026);
+Graphify/tooling e `docs/metodo/` fora.
+### Frente nova identificada na inspeção (separada de escopo)
+Durante a inspeção visual o PO pediu **filtros com multi-seleção e chips** (digitar+Enter vira
+chip com ✕; ou droplist multi-seleção; geral para filtros). **Deliberadamente separado da
+PB-023a** — muda o contrato de params/queries das listas (nova frente funcional transversal).
+Registrado como **PB-023e** no `PRODUCT_BACKLOG §6.2` (Aprovada, não autorizada; nada
+implementado nesta rodada).
+### Estado
+**Implementada, validada e ACEITA PELO PO (2026-07-09)**, após os ajustes da 1ª inspeção
+(validados no runtime: 10/10 formulários com rótulos PT-BR via render no processo do
+`omni_web`; CSS vivo com as correções). **Commit local único (código+assets+testes+docs);
+push permanece gate separado.**
+
 ## 2026-07-09 — [Docs · produto] Redesign do core operacional formalizado (ADR-026 + PB-023) — docs-only
 ### Resumo
 Formalizada em documentação oficial a nova direção do produto: **redesign do core operacional

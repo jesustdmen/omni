@@ -1,8 +1,11 @@
-<%# PB-003c — aviso global de timers em andamento. Renderiza só quando há ≥1
-    (1 query COUNT via helper memoizado; sem consulta por item). %>
+<%# PB-003c — aviso global de timers em andamento (ADR-026: chip petróleo com
+    contagem + soma do tempo decorrido). Renderiza só quando há ≥1
+    (1 COUNT + 1 pluck via helpers memoizados; sem consulta por item). %>
 <% count = running_timers_count %>
 <% if count.positive? %>
   <%= link_to running_time_entries_path, class: "topbar__timers" do %>
-    ⏱ <%= pluralize(count, "timer") %> em andamento
+    <span class="timers-dot" aria-hidden="true"></span>
+    <%= pluralize(count, "timer") %> em andamento
+    <span class="timers-sum">· <%= duration_hms(running_timers_elapsed_seconds) %></span>
   <% end %>
 <% end %>

@@ -28,7 +28,7 @@ class TimeEntriesTest < ActionDispatch::IntegrationTest
     stopped_entry
     get time_entries_path
     assert_response :success
-    assert_select "h1", "Time entries"
+    assert_select "h1", "Horas"
     assert_select "td", /Bug X/
   end
 

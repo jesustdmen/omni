@@ -12,7 +12,8 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
     follow_redirect!
     assert_response :success
-    assert_select "h1", "Dashboard"
+    # ADR-026 (PB-023a) — dashboard redesenhado abre com saudação ao usuário.
+    assert_select "h1", /Olá, jt/
   end
 
   test "login inválido não autentica" do

@@ -515,7 +515,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Aprovado** (ADR-026 aceito; fatias abaixo registradas). **Nenhuma fatia autorizada para execução ainda.** |
+| Status | **Em execução** — **PB-023a IMPLEMENTADA, VALIDADA E ACEITA PELO PO (2026-07-09; commit local; push = gate separado)**; fatias b/c/d/e Aprovadas, **não autorizadas**. |
 | Problema que resolve | O uso diário exige navegação excessiva (lista↔detalhe de tarefa, apontamentos em telas separadas) e a navegação principal mistura core diário com operação técnica e frentes em maturação. |
 | Origem/evidência | Decisão do PO (2026-07-09); auditoria read-only app atual × direção de produto; **ADR-026**. |
 | Critério de aceite | Core diário em 8 telas (Dashboard, Tarefas, Demandas, Clientes, Projetos, Horas, Contratos, Configurações) com a identidade visual do ADR-026; Tarefas como workspace lista+detalhe; Conversas/Triagem fora da nav principal (rotas intactas); Sync via Configurações; Apuração adiada (menu inerte). Aceite do PO por fatia. |
@@ -525,7 +525,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Fatias (todas Aprovadas; execução mediante autorização explícita por fatia):**
 
-- **PB-023a — Fundação visual + shell (sem migration):** tokens do ADR-026 como CSS custom
+- **PB-023a — Fundação visual + shell (sem migration) — IMPLEMENTADA E VALIDADA (2026-07-09; aguardando aceite visual do PO):** entregue conforme contrato — tokens como CSS custom properties, fontes locais (OFL, `app/assets/fonts/`), ícones oficiais Remix Icon (path data vendorizado, Apache 2.0), shell novo (sidebar 238px c/ busca + topbar 58px c/ chip de timers com soma), nav do core (Conversas/Triagem fora do menu c/ acesso via Configurações; Apuração inerte; "Time entries"→"Horas"), Dashboard redesenhado (card "Hoje" + Demandas pendentes). Suíte 960/3577/0; rubocop/brakeman 0; zeitwerk OK; validado em `localhost:3030`. Detalhe no `DELIVERY_LOG` (2026-07-09). Contrato original: tokens do ADR-026 como CSS custom
   properties; fontes locais (Space Grotesk, Hanken Grotesk, IBM Plex Mono) via asset pipeline;
   ícones via dependência oficial (Remix Icon line) substituindo os SVGs autorais; sidebar/topbar
   novos (nav do core; Conversas/Triagem fora do menu com acesso secundário preservado; Sync via
@@ -542,6 +542,18 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 - **PB-023d — Configurações reorganizada + Aparência:** sub-navegação por seção; nova seção
   **Aparência** (tema claro/escuro/sistema + cor de destaque `--accent` por allowlist do ADR-026;
   preferência **por dispositivo**, sem persistência no banco).
+- **PB-023e — Filtros avançados com multi-seleção e chips (transversal) — Aprovada, NÃO
+  autorizada (registrada 2026-07-09):** pedido do PO identificado durante a inspeção visual da
+  PB-023a e **deliberadamente separado de escopo** (muda o contrato de params/queries dos
+  filtros — nova frente funcional, não fundação visual). **Contrato mínimo:** componente
+  **transversal** de filtros para as listas; **múltiplos valores por critério** quando fizer
+  sentido; selecionados viram **chips com ✕** para remover; **busca/digitação** quando a lista
+  for longa (ex.: clientes); filtros **preservados por params na URL** (compatível com
+  `return_to`/PB-013b); ação **limpar filtros**; **sem dependência pesada** — avaliar
+  implementação própria **Hotwire/Stimulus** (ex.: `<details>` + checkboxes com melhoria
+  progressiva) **antes** de biblioteca externa; revisão de **controllers/queries/testes** das
+  listas afetadas (tarefas, demandas, clientes, projetos, contratos, conversas). Substitui
+  também o popup nativo dos selects (não estilizável — motivação visual do PO).
 
 **Decisões pendentes do PO (registradas no ADR-026):** herança de valor/hora contrato→apontamentos
 (e criação do vínculo tarefa↔contrato, migration aditiva opcional — interage com PB-020c/PB-021);
@@ -569,6 +581,6 @@ etapa 2 do redesign para Conversas/Triagem; persistência futura de turnos, se r
 
 **Saneamento documental (2026-06-24, docs-only):** PB-020 redividida em **PB-020a (Apuração) / PB-020b (Validação) / PB-020c (Prévia de precificação)** — corrige o drift que fundia apuração com valoração por contrato. **Apuração não depende de contrato; contrato é precificação.** Fluxo: Conversas/Tarefas → Apuração → Validação → Precificação → Fechamento (PB-021) → Relatório/PDF (PB-022).
 
-**Redesign do core operacional (2026-07-09, docs-only):** **ADR-026 aceito** + **PB-023 registrado** (§6.2) com fatias a/b/c/d Aprovadas — fundação visual/shell → workspace fundido de Tarefas → re-skin do core → Configurações/Aparência. **Nenhuma fatia autorizada para execução ainda.**
+**Redesign do core operacional (2026-07-09):** **ADR-026 aceito** + **PB-023 registrado** (§6.2). **PB-023a (fundação visual/shell/dashboard) IMPLEMENTADA, VALIDADA E ACEITA PELO PO em 2026-07-09** (ajustes da inspeção aplicados: botões PT-BR, busca da sidebar, selects contidos; commit local; **push = gate separado**); fatias b (workspace de Tarefas), c (re-skin do core), d (Configurações/Aparência) e **e (filtros avançados com multi-seleção e chips — registrada a partir da inspeção do PO)** Aprovadas, **não autorizadas**.
 
 **Próxima decisão do PO:** **aceite operacional** das fatias **implementadas/validadas — aguardando aceite** (PB-019b Contratos, PB-020a Apuração) e da **frente de Triagem** (entregue/publicada; aceite operacional ainda não registrado). **Nada novo será implementado sem autorização explícita.** Itens **não iniciados**: Validação/Precificação (PB-020b/c), Fechamentos (PB-021), Relatórios/PDF (PB-022), **frente de tempo da Triagem** (classificação de gaps, validação de tempo, rascunho de apontamento, promoção a TimeEntry), **Redesign do core (PB-023a..d)**, Desktop, Revisão de código. **Decisões pendentes do PO:** granularidade da validação (PB-020b); status de contrato que valoriza (PB-020c — Suspenso?); horas sem contrato no fechamento (PB-021); **herança contrato→horas e vínculo tarefa↔contrato (ADR-026/PB-023)**; **etapa 2 do redesign (Conversas/Triagem)**.

@@ -1,61 +1,107 @@
 /*
- * Omni/Continuity — Baseline visual hi-fi (F2.UI).
+ * Omni — Fundação visual do core operacional (ADR-026 / PB-023a).
  *
- * Design system próprio, escrito do zero (sem Tailwind/Bootstrap/dependências
- * externas e sem fontes/assets dos protótipos). Apenas apresentação visual.
- * Inspirado na linguagem dos hi-fi (SaaS limpo, sidebar clara, cards brancos),
- * sem copiar HTML/CSS/JSX/assets das referências.
+ * Design system próprio; tokens oficiais definidos no ADR-026 (fonte de
+ * verdade). Fontes servidas localmente (app/assets/fonts, OFL — ver
+ * FONTS-LICENSE.md); sem CDNs (CSP restrita, ADR-012).
  *
  * Servido pelo Propshaft a partir de app/assets/stylesheets/application.css.
  */
 
 /* ------------------------------------------------------------------ */
-/* Tokens                                                              */
+/* Fontes locais (ADR-026)                                            */
+/* ------------------------------------------------------------------ */
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("space-grotesk-var.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("hanken-grotesk-var.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("ibm-plex-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("ibm-plex-mono-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("ibm-plex-mono-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tokens (ADR-026 — valores oficiais)                                */
 /* ------------------------------------------------------------------ */
 :root {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", var(--font-sans);
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 
-  --bg: #f6f7f9;
+  --bg: #eceae4;
   --surface: #ffffff;
-  --surface-subtle: #fafbfc;
-  --sidebar-bg: #fbfbfc;
+  --surface-subtle: #faf9f6;
+  --sidebar-bg: #fbfaf7;
+  --rail-bg: #fcfbf9;
 
-  --border: #e6e8eb;
-  --border-strong: #d4d7dc;
+  --border: #e6e3dc;
+  --border-strong: #d9d5cb;
+  --border-subtle: #f2f0ea;
 
-  --text: #16181d;
-  --text-muted: #5b626d;
-  --text-subtle: #98a0ac;
+  --text: #1a2b29;
+  --text-muted: #4a5a56;
+  --text-subtle: #8a958f;
+  --text-faint: #b0b7ae;
 
-  --accent: #14161a;
-  --accent-hover: #2b2f37;
+  /* Accent petróleo (trocável por dispositivo na PB-023d via --accent). */
+  --accent: #0e6e6b;
+  --accent-hover: #0e5c59;
+  --accent-dark: #0e5c59;
   --accent-contrast: #ffffff;
+  --accent-soft-bg: #e2efee;
+  --accent-soft-border: #d3e7e5;
 
-  --link: #1f5fdd;
+  --link: #0e6e6b;
 
   /* tons de status / pílulas / flash */
-  --tone-neutral-bg: #f1f3f5;
-  --tone-neutral-text: #4a525e;
-  --tone-neutral-border: #e2e5ea;
+  --tone-neutral-bg: #f0efea;
+  --tone-neutral-text: #55635f;
+  --tone-neutral-border: #e3e1d9;
 
-  --tone-info-bg: #eaf1fe;
-  --tone-info-text: #1b4dc4;
-  --tone-info-border: #cfddfb;
+  --tone-info-bg: #e9effc;
+  --tone-info-text: #2158cf;
+  --tone-info-border: #cdd9f6;
 
-  --tone-success-bg: #e7f6ed;
-  --tone-success-text: #197a43;
-  --tone-success-border: #c2e6cf;
+  --tone-success-bg: #e6f4ec;
+  --tone-success-text: #178a50;
+  --tone-success-border: #c4e3d1;
 
-  --tone-warning-bg: #fef3c7;
-  --tone-warning-text: #8a5a08;
-  --tone-warning-border: #f6e1a3;
+  --tone-warning-bg: #fdf1da;
+  --tone-warning-text: #b45309;
+  --tone-warning-border: #f2dcae;
 
   --tone-danger-bg: #fdebe9;
   --tone-danger-text: #b42318;
   --tone-danger-border: #f6cfca;
 
-  /* tons adicionais alinhados ao hi-fi (spec-hifi.jsx): completed=violeta,
-     support=ciano, commercial=rosa */
+  /* tons adicionais (tipos de tarefa etc.) */
   --tone-violet-bg: #ede9fe;
   --tone-violet-text: #6d3bd1;
   --tone-violet-border: #d7ccf7;
@@ -68,18 +114,26 @@
   --tone-pink-text: #b83280;
   --tone-pink-border: #f7c6e0;
 
-  --radius: 12px;
+  /* bolinhas de status/prioridade (ADR-026) */
+  --dot-open: #64748b;
+  --dot-progress: #2563eb;
+  --dot-review: #b45309;
+  --dot-done: #178a50;
+  --dot-cancel: #dc2626;
+
+  --radius: 14px;
   --radius-md: 9px;
-  --radius-sm: 6px;
-  --radius-pill: 999px;
+  --radius-sm: 7px;
+  --radius-pill: 99px;
 
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .05);
-  --shadow-md: 0 1px 2px rgba(16, 24, 40, .04), 0 4px 12px rgba(16, 24, 40, .06);
+  --shadow-sm: 0 1px 2px rgba(20, 42, 38, .05), 0 1px 3px rgba(20, 42, 38, .05);
+  --shadow-md: 0 1px 2px rgba(20, 42, 38, .04), 0 4px 12px rgba(20, 42, 38, .07);
+  --shadow-hover: 0 6px 18px -12px rgba(20, 42, 38, .3);
 
-  --ring: 0 0 0 3px rgba(20, 22, 26, .12);
+  --ring: 0 0 0 3px rgba(14, 110, 107, .16);
 
-  --sidebar-w: 240px;
-  --topbar-h: 56px;
+  --sidebar-w: 238px;
+  --topbar-h: 58px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -102,9 +156,10 @@ body {
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-h1, h2, h3 { color: var(--text); line-height: 1.25; }
-h1 { font-size: 1.5rem; font-weight: 650; margin: 0 0 4px; letter-spacing: -.01em; }
-h2 { font-size: 1.05rem; font-weight: 600; margin: 28px 0 12px; }
+/* Títulos em Space Grotesk (ADR-026 — "nomes de tela / títulos"). */
+h1, h2, h3 { color: var(--text); line-height: 1.25; font-family: var(--font-display); }
+h1 { font-size: 26px; font-weight: 600; margin: 0 0 4px; letter-spacing: -.01em; line-height: 1.16; }
+h2 { font-size: 1.06rem; font-weight: 600; margin: 28px 0 12px; }
 
 p { margin: 0 0 12px; }
 
@@ -146,48 +201,79 @@ p { margin: 0 0 12px; }
   display: flex;
   align-items: center;
   gap: 9px;
-  font-weight: 650;
-  font-size: .95rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: .98rem;
   color: var(--text);
   padding: 6px 8px 4px;
 }
 .sidebar__brand .brand-mark {
-  width: 22px; height: 22px;
-  border-radius: 7px;
+  width: 24px; height: 24px;
+  border-radius: 8px;
   background: var(--accent);
   color: var(--accent-contrast);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: .72rem; font-weight: 700;
+  font-size: .76rem; font-weight: 700;
 }
 .sidebar__brand .brand-sub {
   display: block; font-size: .7rem; font-weight: 500; color: var(--text-subtle);
+  font-family: var(--font-sans);
 }
 
-.sidebar__nav { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+/* Busca global na sidebar (shell ADR-026). O seletor repete o atributo para
+   vencer a regra genérica `form input[type="search"]` (que zerava o
+   padding-left e fazia o ícone sobrepor o placeholder). */
+.sidebar__search { position: relative; margin: 12px 4px 0; }
+.sidebar__search input[type="search"] {
+  width: 100%;
+  font: inherit;
+  font-size: .82rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 7px 10px 7px 30px;
+}
+.sidebar__search input::placeholder { color: var(--text-subtle); }
+.sidebar__search .search-icon {
+  position: absolute;
+  left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--text-subtle);
+  font-size: .9rem;
+  pointer-events: none;
+}
+
+.sidebar__nav { margin-top: 16px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
 
 .nav-group { display: flex; flex-direction: column; gap: 1px; }
 .nav-group__title {
   font-size: .68rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--text-subtle);
   padding: 0 8px 4px;
 }
 
-.sidebar__nav a {
+.sidebar__nav a,
+.sidebar__nav .nav-item--disabled {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   color: var(--text-muted);
   text-decoration: none;
   padding: 7px 9px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-weight: 500;
   font-size: .875rem;
 }
-.sidebar__nav a:hover { background: #eef0f3; color: var(--text); text-decoration: none; }
-.sidebar__nav a.is-active { background: #e9ebee; color: var(--text); font-weight: 600; }
+.sidebar__nav a:hover { background: var(--surface-subtle); color: var(--text); text-decoration: none; }
+.sidebar__nav a.is-active { background: var(--accent-soft-bg); color: var(--accent); font-weight: 600; }
+.sidebar__nav .nav-icon { display: block; width: 17px; height: 17px; flex: 0 0 auto; opacity: .85; }
+.sidebar__nav a.is-active .nav-icon { opacity: 1; }
+/* Item inerte (ex.: Apuração — adiada pelo ADR-026): visível, sem ação. */
+.sidebar__nav .nav-item--disabled { color: var(--text-faint); cursor: default; }
+.sidebar__nav .nav-item--disabled .soon-flag { margin-left: auto; }
 
 .sidebar__footer {
   margin-top: auto;
@@ -224,43 +310,27 @@ p { margin: 0 0 12px; }
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 24px;
+  padding: 0 26px;
   position: sticky;
   top: 0;
   z-index: 5;
 }
-.topbar__search {
-  position: relative;
-  flex: 1;
-  max-width: 460px;
-}
-.topbar__search input {
-  width: 100%;
-  font: inherit;
-  font-size: .85rem;
+/* Título/subtítulo da tela na topbar (content_for :topbar; adoção por tela
+   avança nas fatias PB-023b/c — o Dashboard já usa). */
+.topbar__screen { display: flex; flex-direction: column; min-width: 0; }
+.topbar__screen-title {
+  font-family: var(--font-display);
+  font-size: .95rem;
+  font-weight: 600;
   color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  padding: 7px 14px 7px 34px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.topbar__search input::placeholder { color: var(--text-subtle); }
-.topbar__search .search-icon {
-  position: absolute;
-  left: 12px; top: 50%; transform: translateY(-50%);
+.topbar__screen-sub {
+  font-size: .74rem;
   color: var(--text-subtle);
-  font-size: .9rem;
-  pointer-events: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .topbar__spacer { flex: 1; }
-.topbar__hint {
-  font-size: .72rem;
-  color: var(--text-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 2px 8px;
-  background: var(--surface-subtle);
-}
 
 /* ------------------------------------------------------------------ */
 /* Flash                                                              */
@@ -430,7 +500,7 @@ p { margin: 0 0 12px; }
 .triage-row__actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .triage-row--compact { flex-direction: row; align-items: center; gap: 8px; }
 .triage-row--compact .triage-row__title { flex: 1; min-width: 0; font-weight: 500; font-size: 12.5px; }
-.mono { font-family: ui-monospace, monospace; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .triage-noclient { padding: 0; overflow: hidden; border-color: var(--tone-danger-border); }
 .triage-noclient__head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--tone-danger-bg); border-bottom: 1px solid var(--tone-danger-border); }
 .triage-noclient__icon { width: 22px; height: 22px; border-radius: 50%; background: #fff; color: var(--tone-danger-text); display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--tone-danger-border); }
@@ -621,7 +691,7 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .te-history .te-date { white-space: nowrap; }
 .te-history .te-desc { white-space: normal; overflow-wrap: anywhere; max-width: 360px; color: var(--text); }
 .te-history .te-col-duration { text-align: right; white-space: nowrap; }
-.te-history .te-col-duration strong { font-variant-numeric: tabular-nums; }
+.te-history .te-col-duration strong { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
 /* PB-003b — grupos por dia + subtotal diário. */
 .te-history .te-day__head th { text-align: left; background: var(--surface-subtle, #f6f7f9); color: var(--text-muted); font-size: .8rem; font-weight: 600; }
 /* PB-003c — cabeçalho da data com padding horizontal (alinha à 1ª coluna). */
@@ -741,15 +811,36 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
 .sync-progress__fill { height: 100%; background: var(--accent); transition: width .4s ease; }
 .sync-progress__hint { font-size: .78rem; margin-top: 6px; }
 
-/* PB-003c — nota de sobreposição + aviso global de timers na topbar. */
+/* PB-003c — nota de sobreposição + chip global de timers na topbar.
+   ADR-026: chip em petróleo claro, contagem + soma do tempo em mono. */
 .te-overlap-note { font-size: .8rem; margin-top: 4px; }
-.topbar__timers { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--radius-pill, 999px); background: var(--tone-warning-bg, #fef3c7); color: var(--tone-warning-text, #8a5a08); font-size: .82rem; font-weight: 600; text-decoration: none; }
-.topbar__timers:hover { filter: brightness(.97); }
+.topbar__timers {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+  border-radius: var(--radius-pill, 99px);
+  background: var(--accent-soft-bg, #e2efee);
+  color: var(--accent-dark, #0e5c59);
+  border: 1px solid var(--accent-soft-border, #d3e7e5);
+  font-size: .8rem; font-weight: 600; text-decoration: none;
+}
+.topbar__timers:hover { filter: brightness(.97); text-decoration: none; }
+.topbar__timers .timers-sum { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.topbar__timers .timers-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  animation: omniPulse 1.5s ease-in-out infinite;
+}
+@keyframes omniPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .45; transform: scale(.8); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar__timers .timers-dot { animation: none; }
+}
 
 /* ------------------------------------------------------------------ */
 /* F3.UI.1 — console read-only (conversas / sync runs)                */
 /* ------------------------------------------------------------------ */
-.mono { font-family: ui-monospace, "Cascadia Code", "Consolas", monospace; font-size: .82rem; }
+.mono { font-family: var(--font-mono); font-size: .82rem; font-variant-numeric: tabular-nums; }
 
 /* filtros inline (formulário GET, somente leitura) */
 .filters {
@@ -769,6 +860,9 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
   border-radius: var(--radius-md);
   background: var(--surface);
 }
+/* PB-023a — selects com opções longas (ex.: razão social de cliente) não
+   estouram a barra de filtros; o valor fechado trunca com reticências. */
+.filters select { max-width: 260px; text-overflow: ellipsis; }
 .filters input[type="search"] { min-width: 240px; }
 
 .pagination {
@@ -839,18 +933,62 @@ a.tab:hover, a.tab:focus-visible { color: var(--text); border-bottom-color: var(
   color: var(--text-subtle);
   margin: 0 0 8px;
 }
-.metric__value { font-size: 1.9rem; font-weight: 650; letter-spacing: -.02em; line-height: 1; }
+.metric__value {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 600; letter-spacing: -.02em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
 .metric__foot { font-size: .78rem; color: var(--text-muted); margin: 8px 0 0; }
 .metric--placeholder { border-style: dashed; background: var(--surface-subtle); }
+.metric:hover { box-shadow: var(--shadow-hover); border-color: #cfe3e1; }
 
 .dash-cols {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
+  align-items: start;
 }
 @media (min-width: 920px) {
-  .dash-cols { grid-template-columns: 3fr 2fr; }
+  .dash-cols { grid-template-columns: 2fr 1fr; }
 }
+.dash-col { display: flex; flex-direction: column; gap: 16px; }
+.dash-col .card + .card { margin-top: 0; }
+
+/* Saudação do dashboard (ADR-026 — H2 de tela 26/600). */
+.dash-greeting h1 { margin-bottom: 2px; }
+
+/* Card "Hoje" (petróleo claro — ADR-026). */
+.today-card {
+  background: var(--accent-soft-bg);
+  border-color: var(--accent-soft-border);
+}
+.today-card .card__title { color: var(--accent-dark); }
+.today-metrics { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.today-metrics li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: .85rem; color: var(--accent-dark); }
+.today-metrics .today-value {
+  font-family: var(--font-mono);
+  font-weight: 600; font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-dark);
+}
+
+/* Card "Demandas pendentes" (contagem + bolinha de prioridade). */
+.card__subhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.card__subhead .card__title { margin: 0 0 14px; }
+
+.count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 7px;
+  border-radius: var(--radius-pill);
+  background: var(--tone-danger-bg); color: var(--tone-danger-text);
+  border: 1px solid var(--tone-danger-border);
+  font-size: .78rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.prio-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.prio-dot--high   { background: var(--dot-cancel); }
+.prio-dot--medium { background: var(--dot-review); }
+.prio-dot--low    { background: var(--dot-open); }
 
 /* lista compacta dentro de card (tarefas recentes / atividade) */
 .list-tight { list-style: none; margin: 0; padding: 0; }

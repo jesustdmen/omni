@@ -56,7 +56,7 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_select "dd", /Portal/
     assert_select ".tab", /Detalhes/
     assert_select ".tab", /Conversas/
-    assert_select ".tab", /Time entries/
+    assert_select ".tab", /Horas/
     assert_select ".tab", /Histórico/
     assert_select ".tab", /Demanda/
   end
@@ -68,7 +68,7 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a.tab[href=?]", "#tab-detalhes", /Detalhes/
     assert_select "a.tab[href=?]", "#tab-conversas", /Conversas/
-    assert_select "a.tab[href=?]", "#tab-time", /Time entries/
+    assert_select "a.tab[href=?]", "#tab-time", /Horas/
     assert_select "a.tab[href=?]", "#tab-demanda", /Demanda/ # PB-004c — agora é link
     # Histórico continua "em breve" (sem href, não-link).
     assert_select "span.tab.soon", /Histórico/
@@ -89,7 +89,7 @@ class TasksTest < ActionDispatch::IntegrationTest
     assert_select "#tab-conversas", /C1/
   end
 
-  test "aba Time entries mostra lista read-only e total de duração" do
+  test "aba Horas mostra lista read-only e total de duração" do
     task = @client.tasks.create!(title: "Bug X", type: "support")
     t = Time.current
     task.time_entries.create!(start_time: t, end_time: t + 30.seconds)

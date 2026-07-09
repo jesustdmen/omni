@@ -18,8 +18,13 @@ class TriageTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path
   end
 
-  test "sidebar tem item Triagem (grupo Conversas)" do
+  # ADR-026 (PB-023a) — Conversas/Triagem saem da navegação principal nesta
+  # etapa; rota segue funcional e há acesso secundário em Configurações.
+  test "sidebar NÃO tem item Triagem; acesso secundário fica em Configurações" do
     get root_path
+    assert_select ".sidebar__nav a[href=?]", triage_path, count: 0
+
+    get settings_path
     assert_select "a[href=?]", triage_path, text: /Triagem/
   end
 

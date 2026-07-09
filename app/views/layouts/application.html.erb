@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
   <head>
-    <title><%= content_for(:title) || "App" %></title>
+    <title><%= content_for(:title) || "Omni" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="App">
+    <meta name="application-name" content="Omni">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -33,6 +33,12 @@
             <span class="brand-mark">O</span>
             <span>Omni<span class="brand-sub">Continuity</span></span>
           </div>
+          <%# PB-013 — busca global (GET /search) na sidebar (shell ADR-026). Funciona sem JS. %>
+          <%= form_with url: search_path, method: :get, class: "sidebar__search", data: { turbo: false } do |f| %>
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <%= f.search_field :q, value: params[:q], placeholder: "Buscar…",
+                  "aria-label": "Buscar no Omni", autocomplete: "off" %>
+          <% end %>
           <%= render(SidebarComponent.new(current_path: request.path)) %>
           <div class="sidebar__footer">
             <span class="sidebar__user"><%= current_user.username %></span>
@@ -44,15 +50,12 @@
       <div class="app-body">
         <% if user_signed_in? %>
           <header class="topbar">
-            <%# PB-013 — busca global (GET /search). Funciona sem JS. %>
-            <%= form_with url: search_path, method: :get, class: "topbar__search", data: { turbo: false } do |f| %>
-              <span class="search-icon" aria-hidden="true">⌕</span>
-              <%= f.search_field :q, value: params[:q], placeholder: "Buscar tarefas, conversas, clientes…",
-                    "aria-label": "Buscar no Omni", autocomplete: "off" %>
+            <%# Título/subtítulo da tela (ADR-026); adoção por tela nas fatias PB-023b/c. %>
+            <% if content_for?(:topbar) %>
+              <%= yield :topbar %>
             <% end %>
             <div class="topbar__spacer"></div>
             <%= render "shared/running_timers_banner" %>
-            <span class="topbar__hint">Baseline visual</span>
           </header>
         <% end %>
 

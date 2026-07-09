@@ -1,17 +1,17 @@
 <% content_for :title, "Dashboard" %>
 
-<div class="page-head">
-  <div class="page-head__titles">
-    <h1>Dashboard</h1>
-    <p class="page-head__sub">Bem-vindo, <%= current_user.username %>. Visão geral do domínio de trabalho.</p>
+<%# ADR-026 (PB-023a) — título/subtítulo da tela na topbar (primeira tela a adotar). %>
+<% content_for :topbar do %>
+  <div class="topbar__screen">
+    <span class="topbar__screen-title">Dashboard</span>
+    <span class="topbar__screen-sub">Visão geral do seu trabalho</span>
   </div>
-</div>
+<% end %>
 
-<%# Único sinal sóbrio de funcionalidade futura (triagem/conversas) — sem números reais. %>
-<div class="callout">
-  <span class="callout__icon" aria-hidden="true">⚠</span>
-  <div class="callout__text">
-    <strong>Triagem de conversas</strong> aparecerá aqui quando o sync de conversas estiver ativo <span class="muted">(em breve)</span>.
+<div class="page-head dash-greeting">
+  <div class="page-head__titles">
+    <h1>Olá, <%= current_user.username %></h1>
+    <p class="page-head__sub">Seu ponto de partida do dia: números, tarefas recentes e demandas pendentes.</p>
   </div>
 </div>
 
@@ -32,14 +32,9 @@
     <p class="metric__foot"><%= link_to "Ver tarefas", tasks_path %></p>
   </div>
   <div class="metric">
-    <p class="metric__label">Demandas abertas</p>
+    <p class="metric__label">Demandas pendentes</p>
     <div class="metric__value"><%= @pending_demands_count %></div>
     <p class="metric__foot"><%= @demands_count %> no total · <%= link_to "ver", demands_path %></p>
-  </div>
-  <div class="metric metric--placeholder">
-    <p class="metric__label">Conversas hoje</p>
-    <div class="metric__value muted">—</div>
-    <p class="metric__foot muted">em breve</p>
   </div>
 </div>
 
@@ -56,14 +51,43 @@
           </li>
         <% end %>
       </ul>
+      <p class="metric__foot"><%= link_to "Ver todas as tarefas", tasks_path %></p>
     <% else %>
       <p class="muted">Nenhuma tarefa ainda. <%= link_to "Criar a primeira", new_task_path %>.</p>
     <% end %>
   </section>
 
-  <section class="card">
-    <h2 class="card__title">Conversas — hoje</h2>
-    <%# Sem backend de conversas nesta fase — sinal discreto, sem pílula de placeholder. %>
-    <p class="muted">O feed de conversas vinculadas aparecerá aqui em breve.</p>
-  </section>
+  <div class="dash-col">
+    <section class="card today-card">
+      <h2 class="card__title">Hoje</h2>
+      <ul class="today-metrics">
+        <li>Horas lançadas <span class="today-value"><%= duration_label(@today_seconds) %></span></li>
+        <li>Apontamentos <span class="today-value"><%= @today_entries_count %></span></li>
+        <li>Timers em andamento <span class="today-value"><%= running_timers_count %></span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <div class="card__subhead">
+        <h2 class="card__title">Demandas pendentes</h2>
+        <% if @pending_demands_count.positive? %>
+          <span class="count-badge" title="Demandas pendentes"><%= @pending_demands_count %></span>
+        <% end %>
+      </div>
+      <% if @pending_demands.any? %>
+        <ul class="list-tight">
+          <% @pending_demands.each do |demand| %>
+            <li>
+              <span class="prio-dot prio-dot--<%= demand.priority %>" title="<%= demand.priority_label %>" aria-hidden="true"></span>
+              <span class="grow"><%= link_to demand.title, demand %></span>
+              <span class="muted"><%= demand.client&.name || "sem cliente" %></span>
+            </li>
+          <% end %>
+        </ul>
+        <p class="metric__foot"><%= link_to "Ver todas as demandas", demands_path(status: "pending") %></p>
+      <% else %>
+        <p class="muted">Nenhuma demanda pendente. 🎉</p>
+      <% end %>
+    </section>
+  </div>
 </div>

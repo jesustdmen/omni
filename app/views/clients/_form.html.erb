@@ -31,7 +31,7 @@
   </div>
 
   <div>
-    <%= f.submit %>
+    <%= f.submit(client.persisted? ? "Salvar alterações" : "Criar cliente") %>
     <%# PB-013b — Cancelar volta à origem; senão ao detalhe (edição) ou à lista (novo). %>
     <%= link_to "Cancelar", (@return_to.presence || (client.persisted? ? client : clients_path)), class: "btn btn--ghost btn--sm" %>
   </div>

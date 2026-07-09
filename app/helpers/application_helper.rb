@@ -142,10 +142,20 @@ module ApplicationHelper
     digits.sub(/\A(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})\z/, '\1.\2.\3/\4-\5')
   end
 
-  # PB-003c — contagem de timers em andamento (no máximo 1 query COUNT por página;
-  # memoizada). Sem consulta por item.
+  # PB-003c/ADR-026 — timers em andamento para o chip global da topbar:
+  # UMA query (`pluck` memoizado) serve contagem E soma do tempo decorrido.
+  # Sem consulta por item.
+  def running_timer_start_times
+    @running_timer_start_times ||= TimeEntry.running.pluck(:start_time)
+  end
+
   def running_timers_count
-    @running_timers_count ||= TimeEntry.running.count
+    running_timer_start_times.size
+  end
+
+  def running_timers_elapsed_seconds
+    now = Time.current
+    running_timer_start_times.sum { |started| [ (now - started).to_i, 0 ].max }
   end
 
   def action_icon(name)

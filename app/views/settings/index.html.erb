@@ -39,4 +39,20 @@
     </p>
     <p><%= link_to "Gerenciar empresas prestadoras", provider_companies_path, class: "btn btn--primary btn--sm" %></p>
   </div>
+
+  <%# ADR-026 (PB-023a) — áreas fora do menu principal nesta etapa: seguem
+      funcionais por rota; acesso secundário aqui até o redesign delas. %>
+  <div class="card settings-hub__card">
+    <div class="subhead"><h2>Áreas fora do menu</h2></div>
+    <p class="muted">
+      Telas que saíram da navegação principal no redesign do core (ADR-026),
+      mas continuam funcionais: conversas de IA, triagem e o console de sincronização.
+    </p>
+    <p class="actions">
+      <%= link_to "Central de Triagem", triage_path, class: "btn btn--outline btn--sm" %>
+      <%= link_to "Conversas", conversations_path, class: "btn btn--outline btn--sm" %>
+      <%= link_to "Console de sincronização", sync_runs_path, class: "btn btn--outline btn--sm" %>
+      <%= link_to "Apuração de horas", work_time_reports_path, class: "btn btn--outline btn--sm" %>
+    </p>
+  </div>
 </div>

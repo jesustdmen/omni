@@ -7,6 +7,17 @@
 > abaixo fica **superseded** para as telas do core conforme as fatias PB-023a..d forem entregues
 > (até lá, as telas seguem no baseline). Conversas/Triagem permanecem no baseline até a etapa 2.
 >
+> **Aderência PB-023a (2026-07-09):** tokens do ADR-026 implementados como CSS custom properties
+> em `application.css` (`--accent #0e6e6b`, neutros quentes, `--sidebar-w 238px`,
+> `--topbar-h 58px`, raios/sombras/`omniPulse`); fontes locais via `@font-face`
+> (`app/assets/fonts/`, OFL); ícones Remix Icon line (subconjunto oficial vendorizado).
+> **Shell + Dashboard aderentes**; demais telas do core herdaram a paleta/tipografia via
+> variáveis (re-skin fino por tela = PB-023b/c). Verificação: fontes servidas com digest
+> (Propshaft, HTTP 200); sem estilo inline (CSP); PT-BR nos textos novos e nos **botões de
+> submit de todos os formulários** ("Salvar alterações"/"Criar …" — o default inglês do Rails
+> foi eliminado na 1ª inspeção do PO). Exceção pré-existente: telas Devise em inglês — fora
+> da fatia.
+>
 > Referência histórica: régua do hi-fi original (`_mockup/uploads/Hi-fi *.png` +
 > `_mockup/spec-hifi.jsx`/`spec-task-tabs.jsx`). Auditoria de 2026-06-17; patch **F2.UI.1**.
 > A F2.UI é **baseline visual provisório**; o redesign final é o ADR-026 (antes: "Fase 5").

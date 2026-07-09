@@ -35,7 +35,7 @@
   <%= link_to "#tab-conversas", class: "tab" do %>
     Conversas<% if @linked_conversations.any? %> <span class="tab__count">(<%= @linked_conversations.size %>)</span><% end %>
   <% end %>
-  <%= link_to "Time entries", "#tab-time", class: "tab" %>
+  <%= link_to "Horas", "#tab-time", class: "tab" %>
   <span class="tab soon" aria-disabled="true">Histórico<span class="soon-flag">em breve</span></span>
   <%= link_to "#tab-demanda", class: "tab" do %>
     Demanda<% if @origin_demand %> <span class="tab__count">(1)</span><% end %>

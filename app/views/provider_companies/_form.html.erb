@@ -20,7 +20,7 @@
   <div><label><%= f.check_box :active %> Ativa</label></div>
 
   <div>
-    <%= f.submit %>
+    <%= f.submit(provider_company.persisted? ? "Salvar alterações" : "Criar empresa prestadora") %>
     <%# PB-013b — Cancelar volta à origem; senão à lista. %>
     <%= link_to "Cancelar", (@return_to.presence || provider_companies_path), class: "btn btn--ghost btn--sm" %>
   </div>

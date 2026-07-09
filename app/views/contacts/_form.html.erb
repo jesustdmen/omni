@@ -18,7 +18,7 @@
   <div><%= f.label :is_primary, "Contato primário" %> <%= f.check_box :is_primary %></div>
 
   <div>
-    <%= f.submit %>
+    <%= f.submit(contact.persisted? ? "Salvar alterações" : "Criar contato") %>
     <%# PB-013b — Cancelar volta à origem (cliente ou aba global Contatos). %>
     <%= link_to "Cancelar", (@return_to.presence || client), class: "btn btn--ghost btn--sm" %>
   </div>

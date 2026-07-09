@@ -39,7 +39,7 @@
   <div><%= f.label :description, "Descrição" %><br><%= f.text_area :description, rows: 3 %></div>
 
   <div>
-    <%= f.submit %>
+    <%= f.submit(task.persisted? ? "Salvar alterações" : "Criar tarefa") %>
     <%# PB-013b — Cancelar volta à origem (lista filtrada/detalhe); senão à lista. %>
     <%= link_to "Cancelar", (@return_to.presence || (task.persisted? ? task : tasks_path)), class: "btn btn--ghost btn--sm" %>
   </div>

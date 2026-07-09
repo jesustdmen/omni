@@ -1,8 +1,30 @@
-# Sidebar de navegação da Fundação (ADR-001 — ViewComponent).
-# Apenas apresentação: agrupa os itens reais existentes (sem rotas novas).
+# Sidebar de navegação do core operacional (ADR-026 / PB-023a — ViewComponent).
+# Apenas apresentação: agrupa itens de rotas existentes (sem rotas novas).
+#
+# Navegação do core (ADR-026): Conversas/Triagem/Sync ficam FORA do menu
+# principal nesta etapa (rotas intactas; acesso secundário via Configurações);
+# Apuração aparece INERTE (adiada até seu redesign).
 class SidebarComponent < ViewComponent::Base
-  Item = Struct.new(:label, :path)
+  Item = Struct.new(:label, :path, :icon, :disabled) do
+    def disabled? = !!disabled
+  end
   Group = Struct.new(:title, :items)
+
+  # Subconjunto de ícones da biblioteca oficial Remix Icon (estilo *line*),
+  # vendorizado como path data (viewBox 24x24, fill currentColor).
+  # Fonte: https://github.com/Remix-Design/RemixIcon — Apache License 2.0.
+  # Sem CDN (CSP restrita — ADR-012); sem assets de mockups locais.
+  NAV_ICONS = {
+    "dashboard" => "M14 21C13.4477 21 13 20.5523 13 20V12C13 11.4477 13.4477 11 14 11H20C20.5523 11 21 11.4477 21 12V20C21 20.5523 20.5523 21 20 21H14ZM4 13C3.44772 13 3 12.5523 3 12V4C3 3.44772 3.44772 3 4 3H10C10.5523 3 11 3.44772 11 4V12C11 12.5523 10.5523 13 10 13H4ZM9 11V5H5V11H9ZM4 21C3.44772 21 3 20.5523 3 20V16C3 15.4477 3.44772 15 4 15H10C10.5523 15 11 15.4477 11 16V20C11 20.5523 10.5523 21 10 21H4ZM5 19H9V17H5V19ZM15 19H19V13H15V19ZM13 4C13 3.44772 13.4477 3 14 3H20C20.5523 3 21 3.44772 21 4V8C21 8.55228 20.5523 9 20 9H14C13.4477 9 13 8.55228 13 8V4ZM15 5V7H19V5H15Z",
+    "task" => "M19 4H5V20H19V4ZM3 2.9918C3 2.44405 3.44749 2 3.9985 2H19.9997C20.5519 2 20.9996 2.44772 20.9997 3L21 20.9925C21 21.5489 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5447 3 21.0082V2.9918ZM11.2929 13.1213L15.5355 8.87868L16.9497 10.2929L11.2929 15.9497L7.40381 12.0607L8.81802 10.6464L11.2929 13.1213Z",
+    "inbox" => "M21 3C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H21ZM7.41604 14H4V19H20V14H16.584C15.8124 15.7659 14.0503 17 12 17C9.94968 17 8.1876 15.7659 7.41604 14ZM20 5H4V12H9C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12H20V5Z",
+    "building" => "M21 19H23V21H1V19H3V4C3 3.44772 3.44772 3 4 3H14C14.5523 3 15 3.44772 15 4V19H19V11H17V9H20C20.5523 9 21 9.44772 21 10V19ZM5 5V19H13V5H5ZM7 11H11V13H7V11ZM7 7H11V9H7V7Z",
+    "folder" => "M4 5V19H20V7H11.5858L9.58579 5H4ZM12.4142 5H21C21.5523 5 22 5.44772 22 6V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H10.4142L12.4142 5Z",
+    "time" => "M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM13 12H17V14H11V7H13V12Z",
+    "file-list" => "M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19ZM8 7H16V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z",
+    "calculator" => "M4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2ZM5 4V20H19V4H5ZM7 6H17V10H7V6ZM7 12H9V14H7V12ZM7 16H9V18H7V16ZM11 12H13V14H11V12ZM11 16H13V18H11V16ZM15 12H17V18H15V12Z",
+    "settings" => "M3.33946 17.0002C2.90721 16.2515 2.58277 15.4702 2.36133 14.6741C3.3338 14.1779 3.99972 13.1668 3.99972 12.0002C3.99972 10.8345 3.3348 9.824 2.36353 9.32741C2.81025 7.71651 3.65857 6.21627 4.86474 4.99001C5.7807 5.58416 6.98935 5.65534 7.99972 5.072C9.01009 4.48866 9.55277 3.40635 9.4962 2.31604C11.1613 1.8846 12.8847 1.90004 14.5031 2.31862C14.4475 3.40806 14.9901 4.48912 15.9997 5.072C17.0101 5.65532 18.2187 5.58416 19.1346 4.99007C19.7133 5.57986 20.2277 6.25151 20.66 7.00021C21.0922 7.7489 21.4167 8.53025 21.6381 9.32628C20.6656 9.82247 19.9997 10.8336 19.9997 12.0002C19.9997 13.166 20.6646 14.1764 21.6359 14.673C21.1892 16.2839 20.3409 17.7841 19.1347 19.0104C18.2187 18.4163 17.0101 18.3451 15.9997 18.9284C14.9893 19.5117 14.4467 20.5941 14.5032 21.6844C12.8382 22.1158 11.1148 22.1004 9.49633 21.6818C9.55191 20.5923 9.00929 19.5113 7.99972 18.9284C6.98938 18.3451 5.78079 18.4162 4.86484 19.0103C4.28617 18.4205 3.77172 17.7489 3.33946 17.0002ZM8.99972 17.1964C10.0911 17.8265 10.8749 18.8227 11.2503 19.9659C11.7486 20.0133 12.2502 20.014 12.7486 19.9675C13.1238 18.8237 13.9078 17.8268 14.9997 17.1964C16.0916 16.5659 17.347 16.3855 18.5252 16.6324C18.8146 16.224 19.0648 15.7892 19.2729 15.334C18.4706 14.4373 17.9997 13.2604 17.9997 12.0002C17.9997 10.74 18.4706 9.5632 19.2729 8.6665C19.1688 8.4405 19.0538 8.21822 18.9279 8.00021C18.802 7.78219 18.667 7.57148 18.5233 7.36842C17.3457 7.61476 16.0911 7.43414 14.9997 6.80405C13.9083 6.17395 13.1246 5.17768 12.7491 4.03455C12.2509 3.98714 11.7492 3.98646 11.2509 4.03292C10.8756 5.17671 10.0916 6.17364 8.99972 6.80405C7.9078 7.43447 6.65245 7.61494 5.47428 7.36803C5.18485 7.77641 4.93463 8.21117 4.72656 8.66637C5.52881 9.56311 5.99972 10.74 5.99972 12.0002C5.99972 13.2604 5.52883 14.4372 4.72656 15.3339C4.83067 15.5599 4.94564 15.7822 5.07152 16.0002C5.19739 16.2182 5.3324 16.4289 5.47612 16.632C6.65377 16.3857 7.90838 16.5663 8.99972 17.1964ZM11.9997 15.0002C10.3429 15.0002 8.99972 13.6571 8.99972 12.0002C8.99972 10.3434 10.3429 9.00021 11.9997 9.00021C13.6566 9.00021 14.9997 10.3434 14.9997 12.0002C14.9997 13.6571 13.6566 15.0002 11.9997 15.0002ZM11.9997 13.0002C12.552 13.0002 12.9997 12.5525 12.9997 12.0002C12.9997 11.4479 12.552 11.0002 11.9997 11.0002C11.4474 11.0002 10.9997 11.4479 10.9997 12.0002C10.9997 12.5525 11.4474 13.0002 11.9997 13.0002Z"
+  }.freeze
 
   def initialize(current_path:)
     @current_path = current_path.to_s
@@ -11,31 +33,38 @@ class SidebarComponent < ViewComponent::Base
   def groups
     [
       Group.new("Visão geral", [
-        Item.new("Dashboard", "/")
+        Item.new("Dashboard", "/", "dashboard")
       ]),
       Group.new("Trabalho", [
-        Item.new("Clientes", "/clients"),
-        Item.new("Projetos", "/projects"),
-        Item.new("Tarefas", "/tasks"),
-        Item.new("Demandas", "/demands"),
-        Item.new("Time entries", "/time_entries")
+        Item.new("Tarefas", "/tasks", "task"),
+        Item.new("Demandas", "/demands", "inbox"),
+        Item.new("Clientes", "/clients", "building"),
+        Item.new("Projetos", "/projects", "folder"),
+        Item.new("Horas", "/time_entries", "time")
       ]),
       Group.new("Comercial", [
-        Item.new("Apuração", "/work_time_reports"),
-        Item.new("Contratos", "/contracts")
-      ]),
-      Group.new("Conversas", [
-        Item.new("Triagem", "/triage"),
-        Item.new("Conversas", "/conversations"),
-        Item.new("Sync", "/sync_runs")
+        Item.new("Contratos", "/contracts", "file-list"),
+        # ADR-026: Apuração adiada — item visível porém inerte (rota segue por URL).
+        Item.new("Apuração de horas", "/work_time_reports", "calculator", true)
       ]),
       Group.new("Sistema", [
-        Item.new("Configurações", "/settings")
+        Item.new("Configurações", "/settings", "settings")
       ])
     ]
   end
 
   def active?(item)
     item.path == "/" ? @current_path == "/" : @current_path.start_with?(item.path)
+  end
+
+  # SVG do ícone (Remix Icon line — fill, não stroke), aria-hidden: o nome
+  # acessível vem do texto do item. Path data por allowlist (NAV_ICONS).
+  def icon_svg(name)
+    path = NAV_ICONS.fetch(name.to_s, nil)
+    return if path.nil?
+
+    tag.svg(viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": "true", class: "nav-icon") do
+      tag.path("", d: path)
+    end
   end
 end

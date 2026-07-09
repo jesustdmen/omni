@@ -20,9 +20,15 @@ class WorkTimeReportsTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path
   end
 
-  test "sidebar tem item Apuração (grupo Comercial)" do
+  # ADR-026 (PB-023a) — Apuração adiada: item do menu visível porém inerte
+  # (sem link); a rota segue acessível por URL e via Configurações.
+  test "sidebar mostra Apuração inerte (sem link); rota segue acessível" do
     get root_path
-    assert_select "a[href=?]", work_time_reports_path, text: /Apuração/
+    assert_select ".sidebar__nav a[href=?]", work_time_reports_path, count: 0
+    assert_select ".sidebar__nav .nav-item--disabled", /Apuração de horas/
+
+    get work_time_reports_path
+    assert_response :success
   end
 
   test "renderiza a tela em PT-BR com título e filtros" do

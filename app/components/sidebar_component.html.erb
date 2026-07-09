@@ -3,7 +3,16 @@
     <div class="nav-group">
       <span class="nav-group__title"><%= group.title %></span>
       <% group.items.each do |item| %>
-        <%= link_to item.label, item.path, class: ("is-active" if active?(item)) %>
+        <% if item.disabled? %>
+          <%# ADR-026 — item adiado: visível, sem ação (rota segue acessível por URL). %>
+          <span class="nav-item--disabled" aria-disabled="true" title="Aguardando redesign (ADR-026)">
+            <%= icon_svg(item.icon) %><%= item.label %><span class="soon-flag">em breve</span>
+          </span>
+        <% else %>
+          <%= link_to item.path, class: ("is-active" if active?(item)) do %>
+            <%= icon_svg(item.icon) %><%= item.label %>
+          <% end %>
+        <% end %>
       <% end %>
     </div>
   <% end %>

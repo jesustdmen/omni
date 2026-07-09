@@ -35,7 +35,7 @@
   <% end %>
 
   <div>
-    <%= f.submit %>
+    <%= f.submit(time_entry.persisted? ? "Salvar alterações" : "Criar apontamento") %>
     <%# PB-013b — Cancelar volta à origem; senão ao detalhe (edição) ou à lista (novo). %>
     <%= link_to "Cancelar", (@return_to.presence || (time_entry.persisted? ? time_entry : time_entries_path)), class: "btn btn--ghost btn--sm" %>
   </div>
