@@ -29,6 +29,16 @@
 > **Apuração de horas → Validação → Precificação → Fechamento → Relatório/PDF** — onde a **apuração não
 > depende de contrato** (contrato é precificação; ADR-025 + addendum). Os marcos F-* abaixo não foram
 > reescritos para refletir essa onda; consulte `PRODUCT_BACKLOG`/`PROJECT_STATUS` para o estado atual.
+>
+> **Nota (2026-07-09) — trilha Redesign do core operacional (ADR-026 / PB-023):** decisão de produto
+> de redesenhar o **core diário** sobre o Rails/Hotwire existente — 8 telas (Dashboard, Tarefas,
+> Demandas, Clientes, Projetos, Horas, Contratos, Configurações), com **Tarefas fundida em workspace
+> lista+detalhe** (Turbo Frames, fatia posterior), **Conversas/Triagem fora da navegação principal
+> nesta etapa** (rotas/funcionalidade intactas; redesign do domínio = etapa 2), **Sync como admin via
+> Configurações** e **Apuração adiada**. Tokens visuais oficiais consolidados no **ADR-026** (o repo
+> não depende de referências locais). Fatias em `PRODUCT_BACKLOG.md §6.2` (PB-023a fundação visual sem
+> migration → PB-023b workspace de Tarefas → PB-023c demais telas → PB-023d Configurações/Aparência).
+> **Docs-only em 2026-07-09; execução aguarda autorização explícita do PO.**
 
 ### Fase 0 — Decisão arquitetural — ✅ Concluída (baseline aprovado, 2026-06-16)
 - **Objetivo:** transformar o diagnóstico em decisões revisáveis.

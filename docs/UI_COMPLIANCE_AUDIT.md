@@ -1,8 +1,15 @@
 # Omni — Régua de conformidade visual (UI)
 
-> Referência curta para manter as telas alinhadas ao hi-fi (`_mockup/uploads/Hi-fi *.png` +
+> **⚠ Régua vigente a partir do ADR-026 (2026-07-09):** a fonte oficial de tokens visuais
+> (cores, tipografia, medidas, raios, sombras, animação) passa a ser o
+> **[ADR-026 — Redesign do core operacional](adr/ADR-026-redesign-core-operacional.md)** —
+> autossuficiente, sem dependência de referências locais não versionadas. O baseline F2.UI
+> abaixo fica **superseded** para as telas do core conforme as fatias PB-023a..d forem entregues
+> (até lá, as telas seguem no baseline). Conversas/Triagem permanecem no baseline até a etapa 2.
+>
+> Referência histórica: régua do hi-fi original (`_mockup/uploads/Hi-fi *.png` +
 > `_mockup/spec-hifi.jsx`/`spec-task-tabs.jsx`). Auditoria de 2026-06-17; patch **F2.UI.1**.
-> A F2.UI é **baseline visual provisório**; o redesign final é Fase 5.
+> A F2.UI é **baseline visual provisório**; o redesign final é o ADR-026 (antes: "Fase 5").
 
 ## Tokens principais do hi-fi (`spec-hifi.jsx`)
 - Fundo `#ffffff`; sidebar `#fafafa`; texto `#0a0a0a`; muted `#71717a`; borda `#e4e4e7`; primário **`#18181b`**; radius **8px**; fonte `system-ui` 14px/1.5.

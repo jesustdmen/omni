@@ -500,6 +500,55 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 ---
 
+## 6.2. Redesign do core operacional (ADR-026) — Etapa 0, 2026-07-09
+
+> **Decisão de produto formalizada em docs (docs-only nesta etapa).** O Omni ficou operacionalmente
+> burocrático, com telas demais e o fluxo principal (trabalhar a tarefa) espalhado entre lista e
+> detalhe. O **ADR-026** define o redesign do core diário **sobre o Rails/Hotwire existente**
+> (sem greenfield/SPA), com tokens visuais oficiais consolidados no próprio ADR — o repositório
+> **não depende** de referências visuais locais não versionadas. **Decisões negativas:** não
+> reimplementar conversas; não mexer em sync/pipeline; não mudar banco na 1ª fatia; não implementar
+> herança contrato→horas sem decisão do PO; não versionar/copiar mockups; sem CDNs (CSP/ADR-012).
+
+### PB-023 — Redesign do core operacional
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovado** (ADR-026 aceito; fatias abaixo registradas). **Nenhuma fatia autorizada para execução ainda.** |
+| Problema que resolve | O uso diário exige navegação excessiva (lista↔detalhe de tarefa, apontamentos em telas separadas) e a navegação principal mistura core diário com operação técnica e frentes em maturação. |
+| Origem/evidência | Decisão do PO (2026-07-09); auditoria read-only app atual × direção de produto; **ADR-026**. |
+| Critério de aceite | Core diário em 8 telas (Dashboard, Tarefas, Demandas, Clientes, Projetos, Horas, Contratos, Configurações) com a identidade visual do ADR-026; Tarefas como workspace lista+detalhe; Conversas/Triagem fora da nav principal (rotas intactas); Sync via Configurações; Apuração adiada (menu inerte). Aceite do PO por fatia. |
+| Fora de escopo | Redesign de Conversas/Triagem (etapa 2) e da Apuração; herança contrato→horas; mudanças de schema na 1ª fatia; sync/pipeline; greenfield/SPA. |
+| Dependências | **ADR-026**; ADR-001/002 (Rails/Hotwire), ADR-012 (CSP — fontes/ícones locais), ADR-024 (cores de status configuráveis seguem mandando nos badges). |
+| Relacionado | UI-01/02/03, UI-07, WD-04, WD-07, WD-12; F2.UI (baseline superseded). |
+
+**Fatias (todas Aprovadas; execução mediante autorização explícita por fatia):**
+
+- **PB-023a — Fundação visual + shell (sem migration):** tokens do ADR-026 como CSS custom
+  properties; fontes locais (Space Grotesk, Hanken Grotesk, IBM Plex Mono) via asset pipeline;
+  ícones via dependência oficial (Remix Icon line) substituindo os SVGs autorais; sidebar/topbar
+  novos (nav do core; Conversas/Triagem fora do menu com acesso secundário preservado; Sync via
+  Configurações; Apuração inerte; chip global de timers com soma); Dashboard como prova dos
+  tokens. **Critério:** suíte verde; sem mudança de rota/schema/comportamento; todas as telas
+  atuais seguem funcionais.
+- **PB-023b — Workspace fundido de Tarefas:** lista (coluna fixa com busca/filtros) + detalhe
+  (timer, checklist, horas, demanda de origem, vínculos) na mesma tela via **Turbo Frames**;
+  substitui a navegação `/tasks` ↔ `/tasks/:id` como experiência principal (rotas/URLs por UUID
+  preservadas). Reabre UI-02/UI-03.
+- **PB-023c — Re-skin das demais telas do core:** Demandas, Clientes, Projetos, **Horas**
+  (unifica `/time_entries` + `/time_entries/running`: timers em execução no topo + tabela) e
+  Contratos, no padrão visual da fundação.
+- **PB-023d — Configurações reorganizada + Aparência:** sub-navegação por seção; nova seção
+  **Aparência** (tema claro/escuro/sistema + cor de destaque `--accent` por allowlist do ADR-026;
+  preferência **por dispositivo**, sem persistência no banco).
+
+**Decisões pendentes do PO (registradas no ADR-026):** herança de valor/hora contrato→apontamentos
+(e criação do vínculo tarefa↔contrato, migration aditiva opcional — interage com PB-020c/PB-021);
+etapa 2 do redesign para Conversas/Triagem; persistência futura de turnos, se retomada.
+
+---
+
 ## 7. Próxima ação recomendada
 
 **PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c); **PB-005** (demandas), **PB-006** (clientes/contatos + CNPJ — ADR-022) e **PB-007** (projetos + duplicação) entregues. **As 4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas — lacuna operacional da PB-001 fechada.**
@@ -520,4 +569,6 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Saneamento documental (2026-06-24, docs-only):** PB-020 redividida em **PB-020a (Apuração) / PB-020b (Validação) / PB-020c (Prévia de precificação)** — corrige o drift que fundia apuração com valoração por contrato. **Apuração não depende de contrato; contrato é precificação.** Fluxo: Conversas/Tarefas → Apuração → Validação → Precificação → Fechamento (PB-021) → Relatório/PDF (PB-022).
 
-**Próxima decisão do PO:** **aceite operacional** das fatias **implementadas/validadas — aguardando aceite** (PB-019b Contratos, PB-020a Apuração) e da **frente de Triagem** (entregue/publicada; aceite operacional ainda não registrado). **Nada novo será implementado sem autorização explícita.** Itens **não iniciados**: Validação/Precificação (PB-020b/c), Fechamentos (PB-021), Relatórios/PDF (PB-022), **frente de tempo da Triagem** (classificação de gaps, validação de tempo, rascunho de apontamento, promoção a TimeEntry), Desktop, Revisão de código. **Decisões pendentes do PO:** granularidade da validação (PB-020b); status de contrato que valoriza (PB-020c — Suspenso?); horas sem contrato no fechamento (PB-021).
+**Redesign do core operacional (2026-07-09, docs-only):** **ADR-026 aceito** + **PB-023 registrado** (§6.2) com fatias a/b/c/d Aprovadas — fundação visual/shell → workspace fundido de Tarefas → re-skin do core → Configurações/Aparência. **Nenhuma fatia autorizada para execução ainda.**
+
+**Próxima decisão do PO:** **aceite operacional** das fatias **implementadas/validadas — aguardando aceite** (PB-019b Contratos, PB-020a Apuração) e da **frente de Triagem** (entregue/publicada; aceite operacional ainda não registrado). **Nada novo será implementado sem autorização explícita.** Itens **não iniciados**: Validação/Precificação (PB-020b/c), Fechamentos (PB-021), Relatórios/PDF (PB-022), **frente de tempo da Triagem** (classificação de gaps, validação de tempo, rascunho de apontamento, promoção a TimeEntry), **Redesign do core (PB-023a..d)**, Desktop, Revisão de código. **Decisões pendentes do PO:** granularidade da validação (PB-020b); status de contrato que valoriza (PB-020c — Suspenso?); horas sem contrato no fechamento (PB-021); **herança contrato→horas e vínculo tarefa↔contrato (ADR-026/PB-023)**; **etapa 2 do redesign (Conversas/Triagem)**.

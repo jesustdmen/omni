@@ -9,6 +9,40 @@
 
 ## Entradas
 
+## 2026-07-09 — [Docs · produto] Redesign do core operacional formalizado (ADR-026 + PB-023) — docs-only
+### Resumo
+Formalizada em documentação oficial a nova direção do produto: **redesign do core operacional
+sobre o Rails/Hotwire existente** (sem greenfield/SPA). Diagnóstico: o Omni ficou burocrático,
+com telas demais e o fluxo principal espalhado (lista↔detalhe de tarefa, horas em telas
+separadas); decisões de MVP (console de conversas, baseline F2.UI) não devem conduzir o core.
+Insumo: estudo visual local **não versionado**, usado só como referência — os valores foram
+**consolidados no ADR** (o repo não depende do material local).
+### Entregue
+- **`docs/adr/ADR-026-redesign-core-operacional.md`** (novo, Aceito): core diário = 8 telas;
+  Tarefas → workspace lista+detalhe (Turbo Frames, fatia posterior); Conversas/Triagem fora da
+  nav principal nesta etapa (rotas intactas; etapa 2 futura); Sync = admin via Configurações;
+  Apuração adiada; **tokens visuais oficiais** (paleta petróleo, tipografia, medidas) no próprio
+  ADR; fontes/ícones locais (sem CDN — CSP/ADR-012); escopo negativo e decisões pendentes
+  registrados.
+- **`ARCHITECTURE_DECISIONS_INDEX.md`**: linha do ADR-026.
+- **`ROADMAP.md`**: nota da trilha Redesign (2026-07-09).
+- **`FEATURE_MATRIX.md`**: nota do redesign na seção UI; UI-02/UI-03 reabertas pelo PB-023b.
+- **`PRODUCT_BACKLOG.md`**: seção **§6.2** com **PB-023** e fatias a/b/c/d (Aprovadas; execução
+  aguarda autorização por fatia); §7 atualizado com as novas decisões pendentes do PO.
+- **`UI_COMPLIANCE_AUDIT.md`**: régua vigente passa a apontar para os tokens do ADR-026
+  (baseline F2.UI superseded conforme fatias forem entregues).
+### Escopo negativo
+Sem alteração de código, schema, migrations, pipeline, banco ou execução de sync. Nada de
+`_mockup/` copiado, versionado ou referenciado como dependência permanente. Graphify/tooling e
+`docs/metodo/` fora do escopo.
+### Evidência
+Diff docs-only (`git status`/`git diff -- docs`); `git diff --check` limpo. Entrega documental —
+evidência substitui aceite visual (não há UI nesta rodada).
+### Próximo passo
+Autorização explícita do PO para a **PB-023a** (fundação visual + shell + dashboard; sem
+migration). Decisões pendentes: herança contrato→horas / vínculo tarefa↔contrato; etapa 2
+(Conversas/Triagem).
+
 ## 2026-07-04 — [INCIDENTE · sync] Reconstrução do banco pós-incidente CONCLUÍDA — incidente ENCERRADO
 ### Resumo
 Reconstrução executada em gates auditados, sobre a correção publicada (`e0b6687` contrato "telemetria não é conversa" + `9427d4b` reparo in-place no reimport). **Incidente tecnicamente encerrado**: banco limpo, índice reconstruído, sync religado e regime permanente provado sem recontaminação. Bloqueio operacional da Triagem removido.
