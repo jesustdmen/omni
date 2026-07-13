@@ -61,7 +61,10 @@ module App
     # URL e o token do agente; o comando do pipeline é fixo NO agente (allowlist).
     # `host.docker.internal` resolve o host a partir do container (Docker Desktop).
     config.x.pipeline_agent_url   = ENV.fetch("OMNI_PIPELINE_AGENT_URL", "http://host.docker.internal:8765")
-    config.x.pipeline_agent_token = ENV.fetch("OMNI_PIPELINE_AGENT_TOKEN", "omni-dev-agent")
+    # Onda 0 — sem token default utilizável: o valor vem por ENV (o devstack gera/
+    # compartilha um token forte, git-ignored). Vazio → o agente responde 401 e a
+    # coleta degrada com segurança (nunca há token hardcoded no repositório).
+    config.x.pipeline_agent_token = ENV.fetch("OMNI_PIPELINE_AGENT_TOKEN", "")
     config.x.pipeline_timeout     = ENV.fetch("OMNI_PIPELINE_TIMEOUT", "1800").to_i
   end
 end

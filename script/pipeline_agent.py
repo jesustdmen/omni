@@ -14,32 +14,42 @@ só exit code + um resumo seguro. O Omni então importa /normalized.
 F7.7 — o pipeline agora é NATIVO do Omni (app/pipeline/run_collect.py); NÃO depende
 mais do RepoB em runtime. RepoB permanece apenas como referência read-only.
 
-Segurança
----------
-- escuta em 127.0.0.1 (e, opcionalmente, no IP que o container alcança) e EXIGE
-  um token compartilhado em todo request (header X-Agent-Token);
-- comando FIXO: [python, run_collect.py [args fixos]] — nunca recebe comando,
-  path ou argumento do cliente;
+Segurança (Onda 0 — endurecimento)
+-----------------------------------
+- **Token forte obrigatório** (X-Agent-Token): sem `OMNI_AGENT_TOKEN` com pelo
+  menos MIN_TOKEN_LEN caracteres, o agente **recusa iniciar**. Não há default
+  utilizável. Comparação em tempo constante (hmac.compare_digest).
+- **Bind loopback por padrão** (127.0.0.1). Bind não-loopback (ex.: 0.0.0.0 para
+  o container alcançar) **exige opt-in explícito** `OMNI_AGENT_ALLOW_PUBLIC_BIND=1`;
+  sem ele, o agente **recusa iniciar**.
+- **Limite de corpo HTTP** (MAX_BODY): requests maiores recebem 413.
+- **/health mínimo e sem segredos**: só `{"ok": true, "runner_present": bool}` —
+  não expõe status de execução, resumo, paths, timestamps ou erro interno.
+- comando FIXO: [python, run_collect.py [--skip-ingest]] — nunca recebe comando,
+  path ou argumento livre do cliente;
 - uma execução por vez (lock); /run é síncrono e devolve o resultado;
 - timeout fixo configurável: mata o processo ao estourar;
-- nunca loga conteúdo de conversa/segredos; resumo só com as últimas linhas,
-  com paths absolutos redigidos.
+- nunca loga token nem conteúdo de conversa/segredos; resumo só com as últimas
+  linhas, com paths absolutos redigidos.
 
-Autossuficiente: só biblioteca padrão (http.server, subprocess, json).
+Autossuficiente: só biblioteca padrão (http.server, subprocess, json, hmac).
 
 Uso
 ---
-    python script/pipeline_agent.py
-Variáveis de ambiente (todas opcionais; defaults para a máquina de dev):
-    OMNI_AGENT_HOST     bind (default 0.0.0.0 — para o container alcançar)
-    OMNI_AGENT_PORT     porta (default 8765)
-    OMNI_AGENT_TOKEN    token compartilhado (default "omni-dev-agent")
-    OMNI_PIPELINE_DIR   diretório do pipeline NATIVO (default c:\\Sandbox\\_omni\\app\\pipeline)
-    OMNI_PIPELINE_PYTHON executável python do pipeline (default: .venv ou "python")
-    OMNI_PIPELINE_TIMEOUT timeout em segundos (default 1800)
+    OMNI_AGENT_TOKEN=<token-forte> python script/pipeline_agent.py
+Variáveis de ambiente:
+    OMNI_AGENT_TOKEN               (OBRIGATÓRIA) token forte compartilhado
+    OMNI_AGENT_HOST               bind (default 127.0.0.1)
+    OMNI_AGENT_ALLOW_PUBLIC_BIND  "1" p/ permitir bind não-loopback (opt-in)
+    OMNI_AGENT_PORT               porta (default 8765)
+    OMNI_AGENT_MAX_BODY           limite do corpo em bytes (default 1024)
+    OMNI_PIPELINE_DIR             diretório do pipeline NATIVO
+    OMNI_PIPELINE_PYTHON          executável python do pipeline
+    OMNI_PIPELINE_TIMEOUT         timeout em segundos (default 1800)
 """
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import re
@@ -50,13 +60,20 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-HOST = os.environ.get("OMNI_AGENT_HOST", "0.0.0.0")
+# --- Configuração (lida do ambiente; sem defaults inseguros) -----------------
+MIN_TOKEN_LEN = 16
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
+
+HOST = os.environ.get("OMNI_AGENT_HOST", "127.0.0.1")
 PORT = int(os.environ.get("OMNI_AGENT_PORT", "8765"))
-TOKEN = os.environ.get("OMNI_AGENT_TOKEN", "omni-dev-agent")
+TOKEN = os.environ.get("OMNI_AGENT_TOKEN", "")
+ALLOW_PUBLIC_BIND = os.environ.get("OMNI_AGENT_ALLOW_PUBLIC_BIND", "").lower() in ("1", "true", "yes")
+MAX_BODY = int(os.environ.get("OMNI_AGENT_MAX_BODY", "1024"))
 PIPELINE_DIR = Path(os.environ.get("OMNI_PIPELINE_DIR", r"c:\Sandbox\_omni\app\pipeline"))
 TIMEOUT = int(os.environ.get("OMNI_PIPELINE_TIMEOUT", "1800"))
 
-# Executável Python do pipeline: usa o .venv do RepoB se existir, senão "python".
+
+# Executável Python do pipeline: usa o .venv se existir, senão "python".
 def _resolve_python() -> str:
     explicit = os.environ.get("OMNI_PIPELINE_PYTHON")
     if explicit:
@@ -64,15 +81,49 @@ def _resolve_python() -> str:
     venv = PIPELINE_DIR.parent / ".venv" / "Scripts" / "python.exe"
     return str(venv) if venv.exists() else "python"
 
+
 PYTHON = _resolve_python()
-# F7.7 — entrypoint NATIVO do Omni (coleta + normalização, sem report). Antes apontava
-# para o run_pipeline.py do RepoB; agora o pipeline é interno (app/pipeline).
+# F7.7 — entrypoint NATIVO do Omni (coleta + normalização, sem report).
 RUNNER = PIPELINE_DIR / "run_collect.py"
 
 _lock = threading.Lock()
 _last = {"status": "idle", "exit_code": None, "summary": None, "finished_at": None}
 
 _ABS_PATH = re.compile(r"[A-Za-z]:\\[^\s]*|/[^\s]*/")
+
+
+def is_loopback(host: str) -> bool:
+    return host in LOOPBACK_HOSTS
+
+
+def startup_error() -> str | None:
+    """Regras de inicialização segura. Retorna a mensagem de erro ou None se OK.
+
+    Não inclui o token na mensagem (nunca vazar segredo em log/erro).
+    """
+    if len(TOKEN) < MIN_TOKEN_LEN:
+        return (f"OMNI_AGENT_TOKEN ausente ou fraco: defina um token forte "
+                f"(>= {MIN_TOKEN_LEN} caracteres). Abortando.")
+    if not is_loopback(HOST) and not ALLOW_PUBLIC_BIND:
+        return (f"bind não-loopback ({HOST}) exige OMNI_AGENT_ALLOW_PUBLIC_BIND=1 "
+                f"(opt-in explícito). Abortando.")
+    return None
+
+
+def token_ok(provided: str) -> bool:
+    """Comparação em tempo constante do token do request."""
+    return hmac.compare_digest(provided or "", TOKEN)
+
+
+def build_cmd(skip_ingest: bool) -> list[str]:
+    """Comando FIXO: nunca recebe comando/path/arg livre do cliente.
+
+    `skip_ingest` só decide a presença de uma flag fixa do próprio runner.
+    """
+    cmd = [PYTHON, str(RUNNER)]
+    if skip_ingest:
+        cmd.append("--skip-ingest")
+    return cmd
 
 
 def _safe(text: str) -> str:
@@ -93,9 +144,7 @@ def _run_pipeline(skip_ingest: bool) -> dict:
         return {"ok": False, "exit_code": None, "timed_out": False,
                 "summary": "Ambiente do pipeline inválido: run_collect.py ausente."}
 
-    cmd = [PYTHON, str(RUNNER)]
-    if skip_ingest:
-        cmd.append("--skip-ingest")  # flag fixo do próprio runner (não é input livre)
+    cmd = build_cmd(skip_ingest)
 
     try:
         proc = subprocess.run(
@@ -123,16 +172,16 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _authed(self) -> bool:
-        return self.headers.get("X-Agent-Token", "") == TOKEN
+        return token_ok(self.headers.get("X-Agent-Token", ""))
 
-    def log_message(self, *args):  # silencia o log default (não vaza paths)
+    def log_message(self, *args):  # silencia o log default (não vaza paths/token)
         pass
 
     def do_GET(self):
         if self.path == "/health":
-            # health não exige token (só confirma que o agente está vivo + ambiente ok)
-            self._send(200, {"ok": True, "runner_present": RUNNER.exists(),
-                             "busy": _lock.locked(), "last": _last})
+            # /health NÃO exige token e é MÍNIMO: só liveness + presença do runner.
+            # Nunca expõe status/summary/paths/timestamps/erro (dados operacionais).
+            self._send(200, {"ok": True, "runner_present": RUNNER.exists()})
             return
         if not self._authed():
             self._send(401, {"ok": False, "error": "unauthorized"})
@@ -150,14 +199,23 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"ok": False, "error": "not found"})
             return
 
+        # Limite de corpo: rejeita Content-Length inválido/ausente-grande ou > MAX_BODY.
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            self._send(400, {"ok": False, "error": "bad content-length"})
+            return
+        if length < 0 or length > MAX_BODY:
+            self._send(413, {"ok": False, "error": "payload too large"})
+            return
+
         # corpo opcional: { "skip_ingest": bool } — único parâmetro aceito (flag fixo).
-        length = int(self.headers.get("Content-Length", "0") or "0")
         raw = self.rfile.read(length) if length else b"{}"
         try:
             params = json.loads(raw or b"{}")
         except json.JSONDecodeError:
             params = {}
-        skip_ingest = bool(params.get("skip_ingest", False))
+        skip_ingest = bool(params.get("skip_ingest", False)) if isinstance(params, dict) else False
 
         if not _lock.acquire(blocking=False):
             self._send(409, {"ok": False, "error": "already running"})
@@ -173,10 +231,15 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    err = startup_error()
+    if err:
+        print(f"[agent] ERRO: {err}", file=sys.stderr)
+        sys.exit(1)
     if not RUNNER.exists():
         print(f"[agent] AVISO: run_collect.py não encontrado em {RUNNER}", file=sys.stderr)
-    print(f"[agent] Omni pipeline-agent escutando em {HOST}:{PORT} (python={PYTHON})")
-    print(f"[agent] pipeline_dir={PIPELINE_DIR} timeout={TIMEOUT}s")
+    bind_note = "loopback" if is_loopback(HOST) else "público (opt-in)"
+    print(f"[agent] Omni pipeline-agent escutando em {HOST}:{PORT} ({bind_note}; python={PYTHON})")
+    print(f"[agent] pipeline_dir={PIPELINE_DIR} timeout={TIMEOUT}s max_body={MAX_BODY}B")
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
 
 

@@ -9,6 +9,77 @@
 
 ## Entradas
 
+## 2026-07-13 — [Onda 0 · estabilização/segurança] Deps, endurecimento do pipeline-agent e caracterização de exclusões — VALIDADA TECNICAMENTE
+### Resumo
+Onda de estabilização/segurança sem features novas e sem redesign arquitetural: atualização de
+dependências vulneráveis, endurecimento do agente de pipeline (token/bind/health/corpo),
+adaptação atômica do devstack ao novo contrato, e **caracterização** (sem alterar) do
+comportamento de exclusão em cascata. **Nenhuma migration; banco development, sync, Ollama e
+pipeline reais não foram tocados.**
+### Dependências atualizadas (bundler-audit sem vulnerabilidades)
+- `concurrent-ruby` 1.3.6 → **1.3.7**; `crass` 1.0.6 → **1.0.7**; `nokogiri` 1.19.3 → **1.19.4**;
+  `websocket-driver` 0.8.1 → **0.8.2** (bump conservador; só `Gemfile.lock`).
+### Segurança do pipeline-agent (`script/pipeline_agent.py`)
+- **Token forte obrigatório**: sem `OMNI_AGENT_TOKEN` (>= 16 chars) o agente **recusa iniciar**;
+  **removido o default `omni-dev-agent`** em todos os consumidores (agent/up/jobs/`application.rb`).
+  Comparação em tempo constante (`hmac.compare_digest`).
+- **Bind loopback por padrão** (127.0.0.1); bind não-loopback exige **opt-in explícito**
+  `OMNI_AGENT_ALLOW_PUBLIC_BIND=1`, senão recusa iniciar.
+- **/health mínimo**: `{"ok": true, "runner_present": bool}` — sem status/summary/paths/
+  timestamps/erro. Preserva o que o `Sync::PipelineRunner` lê.
+- **Limite de corpo HTTP** (`OMNI_AGENT_MAX_BODY`, default 1 KB) → 413; Content-Length inválido → 400.
+- Preservados: comando **FIXO** (`run_collect.py [--skip-ingest]`), lock de 1 execução, timeout,
+  redação de paths. Nunca loga o token.
+### Adaptação do devstack (atômica; token nunca versionado)
+- Novo helper `.devstack/agent_token.sh`: reutiliza `OMNI_AGENT_TOKEN` forte se já houver; senão
+  lê `.devstack/.agent_token`; senão **gera token aleatório de 32 bytes**, persiste no arquivo
+  (git-ignored via novo `.devstack/.gitignore`, isolado — **sem tocar o `.gitignore` da raiz**) e
+  reusa. Não imprime o token; aplica `umask 177`/`chmod 600` **quando o ambiente suporta**.
+- `agent.sh`/`up.sh`/`jobs.sh` passam a compartilhar **o mesmo token** (agente ↔ Rails/worker) e
+  o `agent.sh` faz o **opt-in de bind público** para o container alcançar via `host.docker.internal`.
+- **Contrato de token unificado (fonte única no helper):** `OMNI_AGENT_TOKEN` é a variável
+  **canônica** (lida pelo agente) e `OMNI_PIPELINE_AGENT_TOKEN` é **alias de compatibilidade**
+  (lido pelo Rails/worker). O helper é a **única** fonte: se só uma (forte) estiver definida, usa
+  seu valor **para as duas**; **divergência entre as variáveis causa falha imediata** (sem exibir
+  os tokens); **variável explicitamente fraca (<16) causa falha** (não substitui em silêncio);
+  nenhuma definida → arquivo local ou geração. Ao final exporta as duas com **o mesmo valor**.
+  `up.sh`/`jobs.sh` **consomem só o resultado do helper** (não resolvem o token por conta própria).
+### Testes
+- **Python isolados** (`script/test_pipeline_agent.py`, stdlib `unittest`, sem pipeline/rede
+  externa) — **13/13**: startup sem/fraco token barra; bind público sem opt-in barra; opt-in
+  permite; /health mínimo sem dados operacionais; /run sem/errado token → 401; corpo grande → 413;
+  comando fixo; token não vaza em erro.
+- **Contrato de token** (`.devstack/test_agent_token.sh`, **7/7**): só canônica; só alias; ambas
+  iguais; ambas diferentes → falha; explícita fraca → falha; nenhuma → arquivo/geração; token
+  nunca exibido.
+- **Caracterização Rails** (`test/integration/deletion_cascade_characterization_test.rb`, **2/2**)
+  — **documenta comportamento perigoso existente**, não regra desejada (ver decisão pendente).
+### Validações (todas verdes)
+`OMNI_RUN_PIPELINE_INTERNALLY=0 bin/rails test` **976/3670/0**; rubocop **0**; brakeman **0**;
+`bundler-audit check` **sem vulnerabilidades**; `importmap audit` **limpo**; `zeitwerk:check` OK;
+testes Python **13/13**. **Smoke do devstack** (sem coleta/sync/Ollama real): Rails `/up` 200,
+worker running, `/health` mínimo, `/run` sem token 401, **Rails→agente via `host.docker.internal`
+com token compartilhado 200**, token não vazou no log, encerramento limpo. **Smoke do contrato
+explícito repetido com SOMENTE `OMNI_PIPELINE_AGENT_TOKEN` definido:** o helper unificou as duas
+variáveis e o Rails alcançou o agente (HTTP 200) com o token do alias.
+### 🔶 DECISÃO PENDENTE DO PO — integridade de exclusões (NÃO aplicada)
+**Diagnóstico factual:** FK `projects→clients` e `tasks→clients` são `on_delete: cascade`
+(+ `Client has_many :projects/:tasks, dependent: :destroy`) e `ClientsController#destroy` faz
+`@client.destroy` sem guarda. **Excluir um Client apaga em cascata projetos, tarefas, checklists,
+apontamentos e vínculos de conversa** — contradiz `DATABASE_DOMAINS §3/§4` (tasks/time_entries são
+registros humanos reais que devem sobreviver). Contrato já bloqueia (`restrict_with_error`).
+**Proposta (a decidir; não implementar sem aprovação):** (1) migration aditiva trocando
+`projects→clients` e `tasks→clients` de `cascade` para **`restrict`** (+ `dependent: :restrict_with_error`
+no model); (2) **arquivamento** em vez de exclusão (flag `archived_at`/`active` em Client/Project/
+Task) para "remover da operação" sem perder histórico; (3) UI de exclusão passa a bloquear com
+mensagem clara quando houver dependentes. **Impacto:** muda comportamento de `DELETE /clients/:id`
+(hoje destrói; passaria a bloquear/arquivar); exige migration + ajuste de controller + testes. Até
+a decisão, o comportamento atual permanece **inalterado** e apenas **caracterizado por teste**.
+### Escopo negativo
+Sem migration/schema; banco development não modificado (só o banco de teste, pelos testes); sync,
+Ollama e pipeline reais não acionados; `_mockup/redesign`, Graphify/tooling e `docs/metodo/`
+intocados.
+
 ## 2026-07-09 — [PB-023e · redesign] Filtros avançados com multi-seleção e chips — IMPLEMENTADA E VALIDADA (aceite visual do PO pendente)
 ### Resumo
 Componente transversal de filtros substitui os selects nativos de valor único por

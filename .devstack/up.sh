@@ -37,7 +37,12 @@ rm -f "$APP_DIR/tmp/pids/server.pid" 2>/dev/null || true
 # OMNI_RUN_PIPELINE_INTERNALLY=0. Mesmos defaults do worker/agente.
 RUN_PIPELINE="${OMNI_RUN_PIPELINE_INTERNALLY:-1}"
 AGENT_URL="${OMNI_PIPELINE_AGENT_URL:-http://host.docker.internal:8765}"
-AGENT_TOKEN="${OMNI_PIPELINE_AGENT_TOKEN:-omni-dev-agent}"
+# Token: consome SOMENTE o resultado do helper central (fonte única do contrato).
+# O helper valida/unifica OMNI_AGENT_TOKEN ↔ OMNI_PIPELINE_AGENT_TOKEN e exporta
+# as duas com o mesmo valor. up.sh NÃO resolve o token por conta própria.
+# shellcheck source=/dev/null
+. "$(dirname "$0")/agent_token.sh"
+AGENT_TOKEN="$OMNI_PIPELINE_AGENT_TOKEN"
 PIPELINE_TIMEOUT="${OMNI_PIPELINE_TIMEOUT:-1800}"
 
 # IA local (Ollama) — a sugestão de atividades da Triagem chama o Ollama do HOST. De dentro

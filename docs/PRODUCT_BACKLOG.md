@@ -515,7 +515,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 | Campo | Valor |
 |---|---|
 | Prioridade | P1 |
-| Status | **Em execução** — **PB-023a IMPLEMENTADA, VALIDADA E ACEITA PELO PO (2026-07-09; commit local; push = gate separado)**; fatias b/c/d/e Aprovadas, **não autorizadas**. |
+| Status | **Em execução** — **PB-023a e PB-023e ACEITAS PELO PO E PUBLICADAS (2026-07-09; `ead9f80`, `ef161cd`)**; fatias b/c/d Aprovadas, **não autorizadas**. |
 | Problema que resolve | O uso diário exige navegação excessiva (lista↔detalhe de tarefa, apontamentos em telas separadas) e a navegação principal mistura core diário com operação técnica e frentes em maturação. |
 | Origem/evidência | Decisão do PO (2026-07-09); auditoria read-only app atual × direção de produto; **ADR-026**. |
 | Critério de aceite | Core diário em 8 telas (Dashboard, Tarefas, Demandas, Clientes, Projetos, Horas, Contratos, Configurações) com a identidade visual do ADR-026; Tarefas como workspace lista+detalhe; Conversas/Triagem fora da nav principal (rotas intactas); Sync via Configurações; Apuração adiada (menu inerte). Aceite do PO por fatia. |
@@ -525,7 +525,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
 
 **Fatias (todas Aprovadas; execução mediante autorização explícita por fatia):**
 
-- **PB-023a — Fundação visual + shell (sem migration) — IMPLEMENTADA E VALIDADA (2026-07-09; aguardando aceite visual do PO):** entregue conforme contrato — tokens como CSS custom properties, fontes locais (OFL, `app/assets/fonts/`), ícones oficiais Remix Icon (path data vendorizado, Apache 2.0), shell novo (sidebar 238px c/ busca + topbar 58px c/ chip de timers com soma), nav do core (Conversas/Triagem fora do menu c/ acesso via Configurações; Apuração inerte; "Time entries"→"Horas"), Dashboard redesenhado (card "Hoje" + Demandas pendentes). Suíte 960/3577/0; rubocop/brakeman 0; zeitwerk OK; validado em `localhost:3030`. Detalhe no `DELIVERY_LOG` (2026-07-09). Contrato original: tokens do ADR-026 como CSS custom
+- **PB-023a — Fundação visual + shell (sem migration) — ACEITA PELO PO E PUBLICADA (2026-07-09, `ead9f80`):** entregue conforme contrato — tokens como CSS custom properties, fontes locais (OFL, `app/assets/fonts/`), ícones oficiais Remix Icon (path data vendorizado, Apache 2.0), shell novo (sidebar 238px c/ busca + topbar 58px c/ chip de timers com soma), nav do core (Conversas/Triagem fora do menu c/ acesso via Configurações; Apuração inerte; "Time entries"→"Horas"), Dashboard redesenhado (card "Hoje" + Demandas pendentes). Suíte 960/3577/0; rubocop/brakeman 0; zeitwerk OK; validado em `localhost:3030`. Detalhe no `DELIVERY_LOG` (2026-07-09). Contrato original: tokens do ADR-026 como CSS custom
   properties; fontes locais (Space Grotesk, Hanken Grotesk, IBM Plex Mono) via asset pipeline;
   ícones via dependência oficial (Remix Icon line) substituindo os SVGs autorais; sidebar/topbar
   novos (nav do core; Conversas/Triagem fora do menu com acesso secundário preservado; Sync via
@@ -543,7 +543,7 @@ Enquanto estes gates não forem aceitos, F7 permanece como P2.
   **Aparência** (tema claro/escuro/sistema + cor de destaque `--accent` por allowlist do ADR-026;
   preferência **por dispositivo**, sem persistência no banco).
 - **PB-023e — Filtros avançados com multi-seleção e chips (transversal) — IMPLEMENTADA E
-  VALIDADA (2026-07-09; aguardando aceite visual do PO):** entregue conforme o contrato —
+  ACEITA PELO PO E PUBLICADA (2026-07-09, `ef161cd`):** entregue conforme o contrato —
   componente reutilizável `FilterBarComponent` (ViewComponent) + `multiselect_controller`
   (Stimulus próprio, sem dependência externa) + concern `MultiFilter` (params array-safe +
   allowlist, sem N+1). Comboboxes multi-seleção estilo "token input" (chips dentro do campo,

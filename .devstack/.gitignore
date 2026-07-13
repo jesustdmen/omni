@@ -1,0 +1,3 @@
+# Onda 0 — token local compartilhado do pipeline-agent (nunca versionar).
+# Regra isolada em .devstack/ para não interferir no .gitignore da raiz.
+.agent_token
