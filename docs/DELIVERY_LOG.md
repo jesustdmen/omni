@@ -9,7 +9,7 @@
 
 ## Entradas
 
-## 2026-07-13 — [Onda 0 · estabilização/segurança] Deps, endurecimento do pipeline-agent e caracterização de exclusões — VALIDADA TECNICAMENTE
+## 2026-07-13 — [Onda 0 · estabilização/segurança] Deps, endurecimento do pipeline-agent e caracterização de exclusões — PUBLICADA EM MAIN (`3571dba`)
 ### Resumo
 Onda de estabilização/segurança sem features novas e sem redesign arquitetural: atualização de
 dependências vulneráveis, endurecimento do agente de pipeline (token/bind/health/corpo),
@@ -79,6 +79,10 @@ a decisão, o comportamento atual permanece **inalterado** e apenas **caracteriz
 Sem migration/schema; banco development não modificado (só o banco de teste, pelos testes); sync,
 Ollama e pipeline reais não acionados; `_mockup/redesign`, Graphify/tooling e `docs/metodo/`
 intocados.
+### Publicação
+**Publicada em `main` no commit `3571dba`** (2026-07-13). A **decisão sobre o cascade de
+exclusão continua PENDENTE do PO e não foi implementada** — nenhuma migration/alteração de
+schema; o comportamento atual segue apenas **caracterizado por teste**.
 
 ## 2026-07-09 — [PB-023e · redesign] Filtros avançados com multi-seleção e chips — IMPLEMENTADA E VALIDADA (aceite visual do PO pendente)
 ### Resumo
