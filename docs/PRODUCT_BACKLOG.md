@@ -566,6 +566,56 @@ etapa 2 do redesign para Conversas/Triagem; persistência futura de turnos, se r
 
 ---
 
+## 6.3. Omni Desktop Shell (ADR-027) — Etapa 0, 2026-07-13
+
+> **Decisão de produto/arquitetura formalizada em docs (docs-only nesta etapa).** Hoje o Omni só é
+> utilizável por comandos manuais (subir `omni_db`, `.devstack/up.sh`, esperar o Puma, garantir o
+> agente, abrir o navegador). O **ADR-027** decide entregar um **shell desktop em Tauri (Rust)** que
+> embute uma **WebView em `localhost:3030`** e **reutiliza 100% do Rails/Hotwire** — mesma cara
+> desktop e web, sem SPA/reescrita. Duas camadas: **(A) janela** + **(B) supervisor** (sobe o stack,
+> healthcheck, splash, tray, supervisiona o `pipeline_agent.py`). **Runtime do MVP = Docker**
+> (reaproveita `.devstack`); runtime **nativo = Fase 2**. **Absorve** a pendência "Desktop Runtime /
+> Serviços Autopersistidos" de 25/06 (em `PB-020_TRIAGEM_CONVERSAS_REQUISITOS.md`). **Decisões
+> negativas:** não alterar o Rails para a casca funcionar nas fatias a/b (a fatia c tem contrato e
+> addenda próprios); não migrar runtime p/ nativo no MVP; não
+> reescrever agentes em Rust (sidecars Python); não abandonar o navegador; casca **fora de `app/`**;
+> sem CDNs (CSP/ADR-012).
+
+### PB-024 — Omni Desktop Shell
+
+| Campo | Valor |
+|---|---|
+| Prioridade | P1 |
+| Status | **Aprovada (ADR-027 aceito, docs-only).** **PB-024a AUTORIZADA para execução após a publicação deste contrato**; **PB-024b/c/d aprovadas, não autorizadas** (execução mediante autorização explícita por fatia). |
+| Problema que resolve | O Omni não é utilizável como produto diário: exige uma sequência de comandos manuais para subir o stack e abrir o navegador; o agente de pipeline não tem "quem o ligue"; o índice de turnos exige reindexação manual (`sync:turn_refs`). |
+| Origem/evidência | Decisão do PO (2026-07-13); **ADR-027**; pendência "Desktop Runtime" de 25/06 (`PB-020_TRIAGEM_CONVERSAS_REQUISITOS.md`). |
+| Critério de aceite | Aplicativo desktop empacotado (instalador/ícone/tray) que, com dois cliques, sobe o stack local, mostra splash até `/up` verde, revela a janela com a UI do Omni (mesma de `localhost:3030`) e supervisiona o agente; ao sair, encerra somente o runtime que possui, sem remover dados. Aceite do PO por fatia. |
+| Fora de escopo | Alterar o app Rails para a casca funcionar nas PB-024a/b; runtime nativo sem Docker (Fase 2); reescrever agentes em Rust; abandonar o acesso via navegador; versionar/copiar o mockup local; misturar a casca dentro de `app/`. PB-024c só altera health/reindexação mediante contrato e addenda próprios. |
+| Dependências | **ADR-027**; ADR-001/002 (Rails/Hotwire consumidos como estão), ADR-012 (CSP — origem `localhost:3030`), ADR-011 (fronteira de sync/agente — addendum na PB-024c), ADR-021 (índice de turnos — addendum na PB-024c); `.devstack/*` (runtime Docker do MVP). |
+| Relacionado | Pendência "Desktop Runtime" 25/06; Fase 2 (runtime nativo → addendum ADR-006/015). |
+
+**Fatias (todas Aprovadas; PB-024a autorizada após a publicação deste contrato; PB-024b/c/d aguardam autorização explícita por fatia):**
+
+- **PB-024a — Spike de validação (Tauri) — AUTORIZADA para execução após a publicação deste contrato:** protótipo mínimo — janela em `localhost:3030` + 1
+  sidecar Python + CPU/RAM na bandeja. **Objetivo:** confirmar a ergonomia do Rust (ou cair para
+  Electron, plano B reversível) **antes** de investir no produto. Sem instalador, sem orquestrar o
+  stack e sem pipeline/sync real; sidecar inerte prova apenas start/health/stop sem processo órfão.
+- **PB-024b — MVP empacotado:** casca que sobe o stack Docker, healthcheck + splash, revela a
+  janela, **bandeja**, e **supervisiona o `pipeline_agent.py`**. Instalador básico.
+- **PB-024c — Serviços autopersistidos + healthcheck + reindexação automática de turnos**
+  (absorve a pendência de 25/06): estado operacional dos serviços visível na UI; reindexação de
+  `conversation_turn_refs` automática/segura ao detectar `:stale`. **Addendum a ADR-021 e ADR-011.**
+- **PB-024d — Auto-update + assinatura de código** (distribuição confiável; trata SmartScreen).
+- **(Fase 2, futura)** — runtime nativo sem Docker (**addendum a ADR-006 e ADR-015**).
+- **(Visão, futura)** — monitoramento avançado, agentes locais adicionais, integração com o
+  navegador/outras apps, relatoria — construídos sobre esta base.
+
+**Decisões pendentes do PO (registradas no ADR-027):** runtime nativo (Fase 2); mecanismo de
+integração com o navegador/outras apps (native messaging × servidor local HTTP/WS); política de
+auto-update/assinatura; escopo exato de "monitoramento".
+
+---
+
 ## 7. Próxima ação recomendada
 
 **PB-001/PB-002 entregues**; **PB-003 concluída** (a/b/c); **PB-015 entregue (MVP)**; **PB-004 concluída** (a/b/c); **PB-005** (demandas), **PB-006** (clientes/contatos + CNPJ — ADR-022) e **PB-007** (projetos + duplicação) entregues. **As 4 listas operacionais (tarefas/demandas/clientes/projetos) estão completas — lacuna operacional da PB-001 fechada.**
@@ -586,6 +636,6 @@ etapa 2 do redesign para Conversas/Triagem; persistência futura de turnos, se r
 
 **Saneamento documental (2026-06-24, docs-only):** PB-020 redividida em **PB-020a (Apuração) / PB-020b (Validação) / PB-020c (Prévia de precificação)** — corrige o drift que fundia apuração com valoração por contrato. **Apuração não depende de contrato; contrato é precificação.** Fluxo: Conversas/Tarefas → Apuração → Validação → Precificação → Fechamento (PB-021) → Relatório/PDF (PB-022).
 
-**Redesign do core operacional (2026-07-09):** **ADR-026 aceito** + **PB-023 registrado** (§6.2). **PB-023a (fundação visual/shell/dashboard) IMPLEMENTADA, VALIDADA E ACEITA PELO PO em 2026-07-09** (ajustes da inspeção aplicados: botões PT-BR, busca da sidebar, selects contidos; commit local; **push = gate separado**); fatias b (workspace de Tarefas), c (re-skin do core), d (Configurações/Aparência) e **e (filtros avançados com multi-seleção e chips — registrada a partir da inspeção do PO)** Aprovadas, **não autorizadas**.
+**Redesign do core operacional (2026-07-09):** **ADR-026 aceito** + **PB-023 registrado** (§6.2). **PB-023a** (fundação visual/shell/dashboard, `ead9f80`) e **PB-023e** (filtros avançados, `ef161cd`) **ACEITAS PELO PO E PUBLICADAS**; fatias b (workspace de Tarefas), c (re-skin do core) e d (Configurações/Aparência) Aprovadas, **não autorizadas**.
 
-**Próxima decisão do PO:** **aceite operacional** das fatias **implementadas/validadas — aguardando aceite** (PB-019b Contratos, PB-020a Apuração) e da **frente de Triagem** (entregue/publicada; aceite operacional ainda não registrado). **Nada novo será implementado sem autorização explícita.** Itens **não iniciados**: Validação/Precificação (PB-020b/c), Fechamentos (PB-021), Relatórios/PDF (PB-022), **frente de tempo da Triagem** (classificação de gaps, validação de tempo, rascunho de apontamento, promoção a TimeEntry), **Redesign do core (PB-023a..d)**, Desktop, Revisão de código. **Decisões pendentes do PO:** granularidade da validação (PB-020b); status de contrato que valoriza (PB-020c — Suspenso?); horas sem contrato no fechamento (PB-021); **herança contrato→horas e vínculo tarefa↔contrato (ADR-026/PB-023)**; **etapa 2 do redesign (Conversas/Triagem)**.
+**Próxima ação autorizada (após a publicação deste contrato):** **PB-024a — spike Tauri** (janela WebView + sidecar Python inerte + CPU/RAM no tray), com artefato fora de `app/` e gate próprio de commit/push. **PB-024b/c/d aprovadas, não autorizadas.** Em paralelo permanecem pendentes os aceites operacionais de PB-019b/PB-020a/Triagem e as demais fatias não iniciadas. **Nada novo será implementado sem autorização explícita por fatia.** Decisões pendentes seguem nos ADR-025/026/027.

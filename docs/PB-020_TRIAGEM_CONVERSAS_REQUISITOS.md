@@ -684,6 +684,12 @@ continua diferente de cliente confirmado** (confirmacao humana prevalece — ver
 
 ## PENDENCIA FUTURA — Desktop Runtime / Servicos Autopersistidos (registrada em 2026-06-25)
 
+> **ABSORVIDA POR ADR-027 / PB-024 (2026-07-13).** Esta pendencia deixou de ser um registro solto:
+> o **ADR-027 — Omni Desktop Shell** a adota como origem dos requisitos da **Camada B (supervisor/
+> runtime)** e a formaliza como fatia **PB-024c** (servicos autopersistidos + healthcheck visivel +
+> reindexacao automatica de turnos), com **addendum futuro a ADR-021 e ADR-011** no momento da
+> implementacao. Mantida abaixo como especificacao de referencia. Ver `PRODUCT_BACKLOG.md §6.3`.
+>
 > Registro de produto (NAO implementado nesta fase). Levantado durante a entrega da IA
 > local na Triagem: a sugestao por IA depende do **indice de turnos** (`conversation_turn_refs`,
 > ADR-021) estar atualizado. Quando o `output/normalized/sessions.jsonl` muda e o indice
